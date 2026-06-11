@@ -1,4 +1,16 @@
+# robots.txt — DAROU KARIM TRADING
+# https://daroukarimtrading.com
+
 User-agent: *
 Allow: /
 
-Sitemap: https://abdoul21091999.github.io/abdoul21091999/sitemap.xml
+# Ressources statiques
+Allow: /css/
+Allow: /js/
+Allow: /assets/
+
+# Plan du site
+Sitemap: https://daroukarimtrading.com/sitemap.xml
+
+# Délai de crawl recommandé (en secondes)
+Crawl-delay: 10
