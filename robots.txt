@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://abdoul21091999.github.io/abdoul21091999/sitemap.xml

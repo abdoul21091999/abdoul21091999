@@ -1,0 +1,277 @@
+/* ============================================================
+   DAROU KARIM TRADING — responsive.css
+   Styles adaptatifs — approche mobile-first
+   ============================================================ */
+
+/* ── 1. Tablette large (≥ 768px) ── */
+@media (min-width: 768px) {
+  :root {
+    --container-pad: 2rem;
+  }
+
+  /* Navigation : afficher les liens desktop */
+  .hamburger    { display: none; }
+  .navbar__links { display: flex; }
+  .navbar__cta  { display: inline-flex; }
+  .nav-mobile   { display: none !important; }
+  .nav-overlay  { display: none !important; }
+
+  /* Grilles à 2 colonnes */
+  .services-grid    { grid-template-columns: repeat(2, 1fr); }
+  .team-grid        { grid-template-columns: repeat(2, 1fr); }
+  .mvv-grid         { grid-template-columns: repeat(2, 1fr); }
+  .process-grid     { grid-template-columns: repeat(2, 1fr); }
+
+  /* Stats : 4 colonnes */
+  .stats-bar .container {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .stat-item {
+    border-bottom: none;
+    border-right: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .stat-item:last-child { border-right: none; }
+
+  /* Secteurs : 3 colonnes */
+  .sectors-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Formulaire de contact : 2 colonnes */
+  .form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  /* Grille contact : 2 colonnes */
+  .contact-layout {
+    grid-template-columns: 1fr 1.6fr;
+  }
+
+  /* Footer : 2 colonnes */
+  .footer__top {
+    grid-template-columns: 1.8fr 1fr;
+  }
+}
+
+/* ── 2. Tablette + (≥ 900px) ── */
+@media (min-width: 900px) {
+  /* À propos (accueil) : grille 2 colonnes */
+  .about-teaser__inner {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Pourquoi nous (about page) : grille 2 colonnes */
+  .why-us__inner {
+    grid-template-columns: 1.2fr 1fr;
+  }
+
+  /* Footer : 4 colonnes */
+  .footer__top {
+    grid-template-columns: 1.8fr 1fr 1fr 1.2fr;
+  }
+
+  /* Service detail : grille 2 colonnes */
+  .service-detail__inner {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .service-detail--reverse .service-detail__inner {
+    direction: rtl;
+  }
+
+  .service-detail--reverse .service-detail__inner > * {
+    direction: ltr;
+  }
+}
+
+/* ── 3. Desktop (≥ 1024px) ── */
+@media (min-width: 1024px) {
+  /* Section services : 4 colonnes */
+  .services-grid { grid-template-columns: repeat(4, 1fr); }
+
+  /* Équipe : 3 colonnes */
+  .team-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* MVV : 3 colonnes */
+  .mvv-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Processus : 2 colonnes */
+  .process-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* À propos : sections internes */
+  .about-section__inner {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Section hero : badge plus grand */
+  .hero__title { max-width: 860px; }
+}
+
+/* ── 4. Grand écran (≥ 1280px) ── */
+@media (min-width: 1280px) {
+  :root {
+    --container-pad: 2.5rem;
+    --nav-height: 76px;
+  }
+
+  .section { padding-block: 5.5rem; }
+  .section-lg { padding-block: 8rem; }
+}
+
+/* ============================================================
+   Styles mobile uniquement (< 768px)
+   ============================================================ */
+
+@media (max-width: 767px) {
+  :root {
+    --container-pad: 1.1rem;
+  }
+
+  /* Réduire les espacements de section */
+  .section    { padding-block: 3rem; }
+  .section-sm { padding-block: 2rem; }
+  .section-lg { padding-block: 4rem; }
+
+  /* Hero */
+  .hero { padding-top: var(--nav-height); min-height: 100svh; }
+  .hero__content { padding-block: 4rem 6rem; }
+  .hero__actions { flex-direction: column; align-items: flex-start; }
+  .hero__actions .btn { width: 100%; justify-content: center; }
+  .hero__scroll { display: none; }
+
+  /* Stats */
+  .stats-bar .container { grid-template-columns: repeat(2, 1fr); }
+  .stat-item:nth-child(2n) { border-right: none; }
+
+  /* CTA Banner */
+  .cta-banner__actions { flex-direction: column; align-items: stretch; }
+  .cta-banner__actions .btn { width: 100%; justify-content: center; }
+
+  /* Contact */
+  .form-row-2 { grid-template-columns: 1fr; }
+  .contact-form-wrap { padding: 1.5rem; }
+  .contact-layout { grid-template-columns: 1fr; }
+
+  /* À propos teaser */
+  .about-teaser__badge {
+    position: static;
+    margin-top: 1.5rem;
+    display: inline-flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .about-teaser__badge-num { font-size: 1.6rem; }
+
+  /* Footer */
+  .footer__top { grid-template-columns: 1fr; }
+  .footer__bottom { flex-direction: column; text-align: center; }
+
+  /* Process */
+  .process-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   Très petit mobile (< 480px)
+   ============================================================ */
+
+@media (max-width: 479px) {
+  :root { --container-pad: 1rem; }
+
+  .hero__title { font-size: 2rem; }
+  .section-title { font-size: 1.6rem; }
+
+  .btn { padding: 0.75rem 1.5rem; font-size: 0.875rem; }
+  .btn-lg { padding: 0.9rem 1.75rem; font-size: 0.95rem; }
+
+  .service-card { padding: 1.5rem; }
+  .team-grid    { grid-template-columns: 1fr; }
+  .sectors-grid { grid-template-columns: 1fr 1fr; }
+
+  .why-us__metrics { grid-template-columns: 1fr 1fr; }
+
+  .contact-form-wrap { padding: 1.25rem; }
+
+  .page-hero__title { font-size: 1.75rem; }
+}
+
+/* ============================================================
+   Accessibilité : préférence "réduire les animations"
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hero__eyebrow,
+  .hero__title,
+  .hero__subtitle,
+  .hero__body,
+  .hero__actions {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .fade-up,
+  .fade-in,
+  .fade-left,
+  .fade-right {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ============================================================
+   Mode sombre système (optionnel, préservation de palette)
+   ============================================================ */
+
+@media (prefers-color-scheme: dark) {
+  /* On maintient intentionnellement notre palette light/dark personnalisée.
+     Les pages utilisent déjà un fond navy foncé dans les sections héros et CTA.
+     Aucun override automatique ici pour préserver le branding. */
+}
+
+/* ============================================================
+   Impression
+   ============================================================ */
+
+@media print {
+  .navbar,
+  .hamburger,
+  .back-to-top,
+  .hero__scroll {
+    display: none !important;
+  }
+
+  .hero {
+    min-height: auto;
+    padding-block: 2rem;
+    background: var(--color-navy) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body { font-size: 12pt; color: #000; }
+  a    { color: #000; text-decoration: underline; }
+
+  .section { padding-block: 1.5rem; }
+
+  .container { padding-inline: 0; }
+
+  .service-card,
+  .mvv-card,
+  .contact-card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
