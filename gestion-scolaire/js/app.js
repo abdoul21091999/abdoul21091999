@@ -123,10 +123,54 @@ function monthlyFeeFor(student) {
   const cls = getClass(student.classId);
   return cls ? Number(cls.monthlyFee) || 0 : 0;
 }
+function paymentMonths(p) {
+  if (Array.isArray(p.months) && p.months.length) return p.months;
+  return p.month ? [p.month] : [];
+}
+function paymentAmountForMonth(p, month) {
+  if (p.type !== 'monthly') return 0;
+  if (Array.isArray(p.months) && p.months.length) return Number((p.allocations && p.allocations[month]) || 0);
+  return p.month === month ? Number(p.amount) : 0;
+}
 function monthPaid(student, month) {
   return state.payments
-    .filter(p => p.studentId === student.id && p.type === 'monthly' && p.month === month)
-    .reduce((s, p) => s + Number(p.amount), 0);
+    .filter(p => p.studentId === student.id && p.type === 'monthly')
+    .reduce((s, p) => s + paymentAmountForMonth(p, month), 0);
+}
+function addMonths(m, n) {
+  const [y, mm] = m.split('-').map(Number);
+  const d = new Date(y, mm - 1 + n, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function monthRange(start, count) {
+  const out = [];
+  for (let i = 0; i < count; i++) out.push(addMonths(start, i));
+  return out;
+}
+function totalDueForMonths(student, months) {
+  const fee = monthlyFeeFor(student);
+  return months.reduce((s, m) => s + Math.max(0, fee - monthPaid(student, m)), 0);
+}
+function distributeAmountOverMonths(student, months, totalAmount) {
+  const fee = monthlyFeeFor(student);
+  let remaining = totalAmount;
+  const allocations = {};
+  months.forEach(m => {
+    const due = Math.max(0, fee - monthPaid(student, m));
+    const pay = Math.min(due, remaining);
+    if (pay > 0) { allocations[m] = pay; remaining -= pay; }
+  });
+  if (remaining > 0 && months.length) {
+    const last = months[months.length - 1];
+    allocations[last] = (allocations[last] || 0) + remaining;
+  }
+  return allocations;
+}
+function paymentLabel(p) {
+  if (p.type === 'registration') return 'رسوم تسجيل';
+  const months = paymentMonths(p);
+  if (months.length <= 1) return 'رسوم شهرية — ' + monthLabel(months[0]);
+  return `رسوم شهرية — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} أشهر)`;
 }
 function monthStatus(student, month) {
   const fee = monthlyFeeFor(student);
@@ -286,7 +330,7 @@ function renderDashboard() {
                 const st = getStudent(p.studentId);
                 return `<tr>
                   <td>${escapeHtml(st ? st.name : 'محذوف')}</td>
-                  <td>${p.type === 'registration' ? 'رسوم تسجيل' : 'رسوم شهرية — ' + monthLabel(p.month)}</td>
+                  <td>${paymentLabel(p)}</td>
                   <td>${fmtMoney(p.amount)}</td>
                   <td>${fmtDate(p.date)}</td>
                 </tr>`;
@@ -590,7 +634,7 @@ function studentDetail(id) {
         <tbody>
           ${payments.map(p => `
             <tr>
-              <td>${p.type === 'registration' ? 'تسجيل' : 'شهرية — ' + monthLabel(p.month)}</td>
+              <td>${paymentLabel(p)}</td>
               <td>${fmtMoney(p.amount)}</td>
               <td>${fmtDate(p.date)}</td>
               <td><button class="btn btn--outline btn--sm" data-print="${p.id}">🖨️ إيصال</button></td>
@@ -633,13 +677,35 @@ function paymentForm(studentId) {
           </select>
         </div>
         <div class="field" id="pf-month-wrap">
-          <label>الشهر</label>
+          <label>الشهر الأول</label>
           <input id="pf-month" type="month" value="${currentMonth()}">
         </div>
       </div>
+      <div class="field-row" id="pf-count-wrap" style="margin-bottom:14px">
+        <div class="field">
+          <label>عدد الأشهر المدفوعة</label>
+          <select id="pf-count">
+            <option value="1">شهر واحد</option>
+            <option value="2">شهران</option>
+            <option value="3">3 أشهر</option>
+            <option value="4">4 أشهر</option>
+            <option value="6">6 أشهر</option>
+            <option value="9">9 أشهر</option>
+            <option value="12">12 شهرًا (سنة كاملة)</option>
+            <option value="other">عدد مخصص...</option>
+          </select>
+        </div>
+        <div class="field" id="pf-count-custom-wrap" hidden>
+          <label>العدد المخصص</label>
+          <input id="pf-count-custom" type="number" min="1" max="36" value="1">
+        </div>
+      </div>
+      <div class="field" id="pf-months-preview-wrap" style="margin-bottom:14px">
+        <small id="pf-months-preview" style="color:var(--color-text-muted)"></small>
+      </div>
       <div class="field-row" style="margin-bottom:14px">
         <div class="field">
-          <label>المبلغ (${escapeHtml(state.settings.currency)}) *</label>
+          <label>المبلغ الإجمالي (${escapeHtml(state.settings.currency)}) *</label>
           <input id="pf-amount" type="number" min="0" placeholder="0">
         </div>
         <div class="field">
@@ -660,33 +726,63 @@ function paymentForm(studentId) {
 
   const typeSel = document.getElementById('pf-type');
   const monthWrap = document.getElementById('pf-month-wrap');
+  const countWrap = document.getElementById('pf-count-wrap');
+  const countSel = document.getElementById('pf-count');
+  const countCustomWrap = document.getElementById('pf-count-custom-wrap');
+  const countCustomInput = document.getElementById('pf-count-custom');
+  const previewWrap = document.getElementById('pf-months-preview-wrap');
+  const previewEl = document.getElementById('pf-months-preview');
   const amountInput = document.getElementById('pf-amount');
+  const monthInput = document.getElementById('pf-month');
   const studentSel = document.getElementById('pf-student');
 
-  function prefillAmount() {
+  function monthsCount() {
+    return countSel.value === 'other' ? Math.max(1, Number(countCustomInput.value) || 1) : Number(countSel.value);
+  }
+  function selectedMonths() {
+    return monthRange(monthInput.value || currentMonth(), monthsCount());
+  }
+  function updateVisibility() {
+    const isMonthly = typeSel.value === 'monthly';
+    monthWrap.style.display = isMonthly ? '' : 'none';
+    countWrap.style.display = isMonthly ? '' : 'none';
+    previewWrap.style.display = isMonthly ? '' : 'none';
+    countCustomWrap.hidden = !(isMonthly && countSel.value === 'other');
+  }
+  function refresh() {
+    updateVisibility();
     const st = getStudent(studentSel.value);
     if (!st) return;
-    if (typeSel.value === 'registration') amountInput.value = registrationBalance(st) || '';
-    else {
-      const fee = monthlyFeeFor(st);
-      const paid = monthPaid(st, document.getElementById('pf-month').value || currentMonth());
-      amountInput.value = Math.max(0, fee - paid) || '';
+    if (typeSel.value === 'registration') {
+      amountInput.value = registrationBalance(st) || '';
+      previewEl.textContent = '';
+    } else {
+      const months = selectedMonths();
+      amountInput.value = totalDueForMonths(st, months) || '';
+      previewEl.textContent = months.length > 1
+        ? `سيتم تغطية: ${months.map(monthLabel).join('، ')}`
+        : '';
     }
   }
-  typeSel.addEventListener('change', () => { monthWrap.style.display = typeSel.value === 'monthly' ? '' : 'none'; prefillAmount(); });
-  studentSel.addEventListener('change', prefillAmount);
-  document.getElementById('pf-month').addEventListener('change', prefillAmount);
-  monthWrap.style.display = typeSel.value === 'monthly' ? '' : 'none';
-  prefillAmount();
+  typeSel.addEventListener('change', refresh);
+  studentSel.addEventListener('change', refresh);
+  monthInput.addEventListener('change', refresh);
+  countSel.addEventListener('change', refresh);
+  countCustomInput.addEventListener('input', refresh);
+  refresh();
 
   document.getElementById('pf-save').addEventListener('click', () => {
     const amount = Number(amountInput.value);
     if (!amount || amount <= 0) { toast('يرجى إدخال مبلغ صحيح', 'error'); return; }
+    const st = getStudent(studentSel.value);
+    const isMonthly = typeSel.value === 'monthly';
+    const months = isMonthly ? selectedMonths() : [];
     const payment = {
       id: uid('pay'),
       studentId: studentSel.value,
       type: typeSel.value,
-      month: typeSel.value === 'monthly' ? (document.getElementById('pf-month').value || currentMonth()) : null,
+      months: isMonthly ? months : null,
+      allocations: isMonthly ? distributeAmountOverMonths(st, months, amount) : null,
       amount,
       date: document.getElementById('pf-date').value || todayISO(),
       note: document.getElementById('pf-note').value.trim(),
@@ -743,7 +839,7 @@ function renderPayments() {
               return `<tr>
                 <td>${escapeHtml(p.receiptNo || '—')}</td>
                 <td>${escapeHtml(st ? st.name : 'محذوف')}</td>
-                <td>${p.type === 'registration' ? 'رسوم تسجيل' : 'شهرية — ' + monthLabel(p.month)}</td>
+                <td>${paymentLabel(p)}</td>
                 <td>${fmtMoney(p.amount)}</td>
                 <td>${fmtDate(p.date)}</td>
                 <td class="row-actions">
@@ -784,7 +880,7 @@ function printReceipt(paymentId) {
         <tr><td>رقم الإيصال</td><td>${escapeHtml(p.receiptNo || '—')}</td></tr>
         <tr><td>اسم الطالب</td><td>${escapeHtml(st ? st.name : '—')}</td></tr>
         <tr><td>القسم الدراسي</td><td>${escapeHtml(st ? className(st.classId) : '—')}</td></tr>
-        <tr><td>نوع الرسوم</td><td>${p.type === 'registration' ? 'رسوم تسجيل' : 'رسوم شهرية — ' + monthLabel(p.month)}</td></tr>
+        <tr><td>نوع الرسوم</td><td>${paymentLabel(p)}</td></tr>
         <tr><td>تاريخ الدفع</td><td>${fmtDate(p.date)}</td></tr>
         ${p.note ? `<tr><td>ملاحظة</td><td>${escapeHtml(p.note)}</td></tr>` : ''}
         <tr class="total-row"><td>المبلغ المدفوع</td><td>${fmtMoney(p.amount)}</td></tr>
@@ -958,8 +1054,9 @@ function renderBackup() {
     const lines = [header.join(',')];
     state.payments.forEach(p => {
       const st = getStudent(p.studentId);
+      const months = paymentMonths(p);
       lines.push([p.receiptNo || '', st ? st.name : 'محذوف', p.type === 'registration' ? 'تسجيل' : 'شهرية',
-        p.month ? monthLabel(p.month) : '', p.amount, p.date, p.note || '']
+        months.length ? months.map(monthLabel).join(' / ') : '', p.amount, p.date, p.note || '']
         .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
     });
     downloadFile(`سجل-الدفعات-${todayISO()}.csv`, '﻿' + lines.join('\n'), 'text/csv;charset=utf-8');
