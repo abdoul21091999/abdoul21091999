@@ -8,7 +8,232 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<style>
+:root {
+  --color-primary: #1e40af;
+  --color-primary-dark: #1e3a8a;
+  --color-primary-light: #eff6ff;
+  --color-accent: #059669;
+  --color-accent-light: #ecfdf5;
+  --color-warning: #d97706;
+  --color-warning-light: #fffbeb;
+  --color-danger: #dc2626;
+  --color-danger-light: #fef2f2;
+  --color-bg: #f4f6fb;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-text-muted: #64748b;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(15, 23, 42, .08), 0 1px 2px rgba(15, 23, 42, .06);
+  --shadow-lg: 0 10px 30px rgba(15, 23, 42, .12);
+  --sidebar-w: 260px;
+  --font: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 15px;
+  line-height: 1.6;
+}
+button, input, select, textarea { font-family: inherit; font-size: inherit; }
+ul { margin: 0; padding: 0; list-style: none; }
+h1, h2, h3, h4 { margin: 0; }
+[hidden] { display: none !important; }
+
+/* ---------- التخطيط العام ---------- */
+.app { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, var(--color-primary-dark), var(--color-primary));
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 40;
+  transition: transform .25s ease;
+}
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.15);
+}
+.sidebar__logo { font-size: 32px; }
+.sidebar__brand strong { display: block; font-size: 16px; }
+.sidebar__brand small { display: block; opacity: .75; font-size: 12px; }
+.sidebar__nav { flex: 1; padding: 14px 10px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.nav-link {
+  display: flex; align-items: center; gap: 10px;
+  background: transparent; border: none; color: #dbeafe;
+  padding: 11px 14px; border-radius: var(--radius-sm);
+  cursor: pointer; text-align: start; width: 100%;
+  transition: background .15s ease, color .15s ease;
+}
+.nav-link span { font-size: 17px; }
+.nav-link:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nav-link.active { background: #fff; color: var(--color-primary-dark); font-weight: 700; }
+.sidebar__footer { padding: 14px 18px; font-size: 11px; opacity: .65; border-top: 1px solid rgba(255,255,255,.15); }
+
+.overlay-backdrop { display: none; }
+
+.main { flex: 1; margin-inline-start: var(--sidebar-w); display: flex; flex-direction: column; min-width: 0; }
+
+.topbar {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 14px 26px;
+  position: sticky; top: 0; z-index: 20;
+}
+.topbar h1 { font-size: 19px; flex: 1; }
+.topbar__actions { display: flex; gap: 10px; }
+.icon-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--color-text); }
+.only-mobile { display: none; }
+
+.content { padding: 24px 26px 60px; flex: 1; }
+.page { display: none; }
+.page.active { display: block; animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: none; } }
+
+/* ---------- عناصر مشتركة ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: var(--radius-sm);
+  border: 1px solid transparent; cursor: pointer; font-weight: 600;
+  font-size: 14px; transition: filter .15s ease, background .15s ease;
+  white-space: nowrap;
+}
+.btn--primary { background: var(--color-primary); color: #fff; }
+.btn--primary:hover { filter: brightness(1.08); }
+.btn--outline { background: #fff; color: var(--color-primary); border-color: var(--color-primary); }
+.btn--outline:hover { background: var(--color-primary-light); }
+.btn--danger { background: var(--color-danger-light); color: var(--color-danger); }
+.btn--danger:hover { background: #fee2e2; }
+.btn--ghost { background: transparent; color: var(--color-text-muted); }
+.btn--ghost:hover { background: #f1f5f9; }
+.btn--sm { padding: 6px 10px; font-size: 12.5px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card__header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--color-border); gap: 10px; flex-wrap: wrap; }
+.card__header h3 { font-size: 15.5px; }
+.card__body { padding: 18px 20px; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 22px; }
+.stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+.stat-card__icon { font-size: 26px; margin-bottom: 8px; display: inline-block; }
+.stat-card__label { font-size: 13px; color: var(--color-text-muted); margin-bottom: 4px; }
+.stat-card__value { font-size: 22px; font-weight: 800; }
+.stat-card--accent { border-inline-start: 4px solid var(--color-accent); }
+.stat-card--warn { border-inline-start: 4px solid var(--color-warning); }
+.stat-card--danger { border-inline-start: 4px solid var(--color-danger); }
+.stat-card--primary { border-inline-start: 4px solid var(--color-primary); }
+
+.grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
+@media (max-width: 980px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+thead th { text-align: start; padding: 10px 12px; color: var(--color-text-muted); font-weight: 700; font-size: 12.5px; border-bottom: 2px solid var(--color-border); white-space: nowrap; }
+tbody td { padding: 11px 12px; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
+tbody tr:hover { background: #f8fafc; }
+tbody tr:last-child td { border-bottom: none; }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.badge--paid { background: var(--color-accent-light); color: var(--color-accent); }
+.badge--partial { background: var(--color-warning-light); color: var(--color-warning); }
+.badge--unpaid { background: var(--color-danger-light); color: var(--color-danger); }
+.badge--muted { background: #f1f5f9; color: var(--color-text-muted); }
+
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.toolbar .field { min-width: 160px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 12.5px; font-weight: 700; color: var(--color-text-muted); }
+.field input, .field select, .field textarea {
+  padding: 9px 11px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: #fff; color: var(--color-text); width: 100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--color-primary-light); border-color: var(--color-primary); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 560px) { .field-row { grid-template-columns: 1fr; } }
+
+.empty-state { text-align: center; padding: 50px 20px; color: var(--color-text-muted); }
+.empty-state__icon { font-size: 42px; margin-bottom: 10px; }
+
+/* ---------- نافذة منبثقة ---------- */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, .5);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 40px 16px; overflow-y: auto; z-index: 100;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: #fff; border-radius: var(--radius); width: 100%; max-width: 560px;
+  box-shadow: var(--shadow-lg); animation: pop .15s ease;
+}
+@keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+.modal__header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--color-border); }
+.modal__header h3 { font-size: 16.5px; }
+.modal__close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--color-text-muted); }
+.modal__body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+.modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--color-border); }
+.modal--wide { max-width: 760px; }
+
+.toast {
+  position: fixed; bottom: 24px; inset-inline-end: 24px; background: var(--color-text);
+  color: #fff; padding: 12px 20px; border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);
+  z-index: 200; font-size: 14px; font-weight: 600;
+}
+.toast.hidden { display: none; }
+.toast--success { background: var(--color-accent); }
+.toast--error { background: var(--color-danger); }
+
+/* ---------- إيصال الطباعة ---------- */
+#print-area { display: none; }
+.receipt { padding: 30px; font-family: var(--font); max-width: 480px; margin: auto; }
+.receipt h2 { text-align: center; margin-bottom: 2px; }
+.receipt .sub { text-align: center; color: var(--color-text-muted); margin-bottom: 18px; }
+.receipt table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+.receipt td { padding: 8px 4px; border-bottom: 1px dashed var(--color-border); }
+.receipt .total-row td { font-weight: 800; font-size: 17px; border-bottom: none; border-top: 2px solid #000; }
+.receipt .sign { display: flex; justify-content: space-between; margin-top: 50px; font-size: 13px; }
+
+@media print {
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; }
+  #print-area { display: block; position: absolute; top: 0; inset-inline-start: 0; width: 100%; }
+}
+
+/* ---------- استجابة الشاشات الصغيرة ---------- */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(100%); }
+  html[dir="rtl"] .sidebar { transform: translateX(100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-inline-start: 0; }
+  .only-mobile { display: inline-block; }
+  .overlay-backdrop.open { display: block; position: fixed; inset: 0; background: rgba(15,23,42,.4); z-index: 30; }
+  .topbar__actions .btn span.label { display: none; }
+}
+@media (max-width: 560px) {
+  .content { padding: 16px 14px 50px; }
+  .topbar { padding: 12px 14px; }
+  .topbar h1 { font-size: 16px; }
+  .topbar__actions .btn { padding: 8px 10px; font-size: 12.5px; }
+}
+</style>
 </head>
 <body>
 
@@ -81,6 +306,1286 @@
 
 <div id="print-area"></div>
 
-<script src="js/app.js"></script>
+<script>
+'use strict';
+
+/* =========================================================
+   نظام إدارة رسوم المدرسة — تطبيق يعمل بالكامل من المتصفح
+   يخزّن كل البيانات في localStorage، لا حاجة لخادم أو اتصال إنترنت.
+   ========================================================= */
+
+const STORAGE_KEY = 'sfm_school_fees_v1';
+const ARABIC_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+/* ---------------- أدوات مساعدة عامة ---------------- */
+function uid(prefix) {
+  return (prefix || 'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+function currentMonth() { return new Date().toISOString().slice(0, 7); }
+function currentSchoolYear() {
+  const d = new Date();
+  const y = d.getFullYear();
+  return d.getMonth() >= 8 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+}
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, s => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[s]));
+}
+function fmtMoney(n) {
+  const num = Number(n) || 0;
+  return num.toLocaleString('en-US') + ' ' + escapeHtml(state.settings.currency);
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const date = new Date(d + 'T00:00:00');
+  if (isNaN(date)) return d;
+  return date.toLocaleDateString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+function monthLabel(m) {
+  if (!m) return '—';
+  const [y, mm] = m.split('-');
+  return `${ARABIC_MONTHS[parseInt(mm, 10) - 1] || mm} ${y}`;
+}
+function lastNMonths(n) {
+  const out = [];
+  const d = new Date();
+  d.setDate(1);
+  for (let i = 0; i < n; i++) {
+    out.push(d.toISOString().slice(0, 7));
+    d.setMonth(d.getMonth() - 1);
+  }
+  return out;
+}
+
+/* ---------------- حالة البيانات ---------------- */
+function defaultState() {
+  return {
+    settings: {
+      schoolName: 'اسم المدرسة',
+      schoolYear: currentSchoolYear(),
+      currency: 'FCFA',
+      defaultRegistrationFee: 0,
+      receiptPrefix: 'REC',
+      nextReceiptNumber: 1,
+      address: '',
+      phone: ''
+    },
+    classes: [],
+    students: [],
+    payments: []
+  };
+}
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    const base = defaultState();
+    return {
+      settings: { ...base.settings, ...(parsed.settings || {}) },
+      classes: Array.isArray(parsed.classes) ? parsed.classes : [],
+      students: Array.isArray(parsed.students) ? parsed.students : [],
+      payments: Array.isArray(parsed.payments) ? parsed.payments : []
+    };
+  } catch (e) {
+    console.error('تعذر تحميل البيانات المحفوظة', e);
+    return defaultState();
+  }
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+/* ---------------- حسابات الرسوم ---------------- */
+function getClass(id) { return state.classes.find(c => c.id === id); }
+function getStudent(id) { return state.students.find(s => s.id === id); }
+function className(id) { const c = getClass(id); return c ? c.name : '—'; }
+
+function studentPayments(studentId, type) {
+  return state.payments.filter(p => p.studentId === studentId && (!type || p.type === type));
+}
+function registrationFee(student) {
+  return student.registrationFee != null ? Number(student.registrationFee) : Number(state.settings.defaultRegistrationFee) || 0;
+}
+function registrationPaid(student) {
+  return studentPayments(student.id, 'registration').reduce((s, p) => s + Number(p.amount), 0);
+}
+function registrationBalance(student) {
+  return Math.max(0, registrationFee(student) - registrationPaid(student));
+}
+function registrationStatus(student) {
+  const fee = registrationFee(student);
+  if (fee <= 0) return 'paid';
+  const paid = registrationPaid(student);
+  if (paid >= fee) return 'paid';
+  if (paid > 0) return 'partial';
+  return 'unpaid';
+}
+function monthlyFeeFor(student) {
+  if (student.monthlyFeeOverride != null && student.monthlyFeeOverride !== '') return Number(student.monthlyFeeOverride);
+  const cls = getClass(student.classId);
+  return cls ? Number(cls.monthlyFee) || 0 : 0;
+}
+function paymentMonths(p) {
+  if (Array.isArray(p.months) && p.months.length) return p.months;
+  return p.month ? [p.month] : [];
+}
+function paymentAmountForMonth(p, month) {
+  if (p.type !== 'monthly') return 0;
+  if (Array.isArray(p.months) && p.months.length) return Number((p.allocations && p.allocations[month]) || 0);
+  return p.month === month ? Number(p.amount) : 0;
+}
+function monthPaid(student, month) {
+  return state.payments
+    .filter(p => p.studentId === student.id && p.type === 'monthly')
+    .reduce((s, p) => s + paymentAmountForMonth(p, month), 0);
+}
+function addMonths(m, n) {
+  const [y, mm] = m.split('-').map(Number);
+  const d = new Date(y, mm - 1 + n, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function monthRange(start, count) {
+  const out = [];
+  for (let i = 0; i < count; i++) out.push(addMonths(start, i));
+  return out;
+}
+function totalDueForMonths(student, months) {
+  const fee = monthlyFeeFor(student);
+  return months.reduce((s, m) => s + Math.max(0, fee - monthPaid(student, m)), 0);
+}
+function distributeAmountOverMonths(student, months, totalAmount) {
+  const fee = monthlyFeeFor(student);
+  let remaining = totalAmount;
+  const allocations = {};
+  months.forEach(m => {
+    const due = Math.max(0, fee - monthPaid(student, m));
+    const pay = Math.min(due, remaining);
+    if (pay > 0) { allocations[m] = pay; remaining -= pay; }
+  });
+  if (remaining > 0 && months.length) {
+    const last = months[months.length - 1];
+    allocations[last] = (allocations[last] || 0) + remaining;
+  }
+  return allocations;
+}
+function paymentLabel(p) {
+  if (p.type === 'registration') return 'رسوم تسجيل';
+  const months = paymentMonths(p);
+  if (months.length <= 1) return 'رسوم شهرية — ' + monthLabel(months[0]);
+  return `رسوم شهرية — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} أشهر)`;
+}
+function monthStatus(student, month) {
+  const fee = monthlyFeeFor(student);
+  if (fee <= 0) return 'paid';
+  const paid = monthPaid(student, month);
+  if (paid >= fee) return 'paid';
+  if (paid > 0) return 'partial';
+  return 'unpaid';
+}
+function isEnrolledInMonth(student, month) {
+  const regMonth = (student.registrationDate || '').slice(0, 7);
+  if (regMonth && month < regMonth) return false;
+  if (student.leaveDate) {
+    const leaveMonth = student.leaveDate.slice(0, 7);
+    if (month > leaveMonth) return false;
+  }
+  return true;
+}
+function statusBadge(status) {
+  const map = {
+    paid: ['badge--paid', 'مسدد'],
+    partial: ['badge--partial', 'جزئي'],
+    unpaid: ['badge--unpaid', 'غير مسدد']
+  };
+  const [cls, label] = map[status] || ['badge--muted', status];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+function nextReceiptNumber() {
+  const n = state.settings.nextReceiptNumber || 1;
+  state.settings.nextReceiptNumber = n + 1;
+  return `${state.settings.receiptPrefix || 'REC'}-${String(n).padStart(5, '0')}`;
+}
+
+/* ---------------- تنقّل بين الأقسام ---------------- */
+const sections = {
+  dashboard: { title: 'لوحة التحكم', render: renderDashboard },
+  students: { title: 'الطلاب', render: renderStudents },
+  classes: { title: 'الأقسام الدراسية', render: renderClasses },
+  payments: { title: 'سجل الدفعات', render: renderPayments },
+  report: { title: 'التقرير الشهري', render: renderReport },
+  backup: { title: 'النسخ الاحتياطي', render: renderBackup },
+  settings: { title: 'الإعدادات', render: renderSettings }
+};
+
+function navigate(name) {
+  Object.keys(sections).forEach(key => {
+    document.getElementById('section-' + key).classList.toggle('active', key === name);
+  });
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.section === name));
+  document.getElementById('page-title').textContent = sections[name].title;
+  sections[name].render();
+  closeSidebar();
+}
+
+function refreshCurrentSection() {
+  const active = document.querySelector('.nav-link.active');
+  const name = active ? active.dataset.section : 'dashboard';
+  sections[name].render();
+  renderBrand();
+}
+
+function renderBrand() {
+  document.getElementById('brand-name').textContent = state.settings.schoolName || 'اسم المدرسة';
+  document.getElementById('brand-year').textContent = state.settings.schoolYear || '';
+}
+
+/* ---------------- نافذة منبثقة عامة ---------------- */
+function openModal(html, opts) {
+  const container = document.getElementById('modal-container');
+  container.className = 'modal' + (opts && opts.wide ? ' modal--wide' : '');
+  container.innerHTML = html;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+  document.getElementById('modal-container').innerHTML = '';
+}
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (type ? ' toast--' + type : '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.add('hidden'), 2600);
+}
+function confirmAction(msg, onYes) {
+  openModal(`
+    <div class="modal__header"><h3>تأكيد</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body"><p>${escapeHtml(msg)}</p></div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn--danger" id="confirm-yes-btn">تأكيد</button>
+    </div>
+  `);
+  document.getElementById('confirm-yes-btn').addEventListener('click', () => { closeModal(); onYes(); });
+}
+
+/* ================= لوحة التحكم ================= */
+function renderDashboard() {
+  const el = document.getElementById('section-dashboard');
+  const month = currentMonth();
+  const activeStudents = state.students.filter(s => s.status !== 'inactive');
+
+  const totalCollectedAll = state.payments.reduce((s, p) => s + Number(p.amount), 0);
+  const collectedThisMonth = state.payments
+    .filter(p => (p.date || '').slice(0, 7) === month)
+    .reduce((s, p) => s + Number(p.amount), 0);
+
+  const outstandingRegistration = activeStudents.reduce((s, st) => s + registrationBalance(st), 0);
+
+  const enrolledThisMonth = activeStudents.filter(st => isEnrolledInMonth(st, month));
+  const outstandingMonthly = enrolledThisMonth.reduce((s, st) => {
+    const fee = monthlyFeeFor(st);
+    const paid = monthPaid(st, month);
+    return s + Math.max(0, fee - paid);
+  }, 0);
+
+  const unpaidThisMonthCount = enrolledThisMonth.filter(st => monthStatus(st, month) === 'unpaid').length;
+
+  const recent = [...state.payments].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 8);
+
+  el.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card stat-card--primary">
+        <span class="stat-card__icon">👨‍🎓</span>
+        <div class="stat-card__label">عدد الطلاب النشطين</div>
+        <div class="stat-card__value">${activeStudents.length}</div>
+      </div>
+      <div class="stat-card stat-card--accent">
+        <span class="stat-card__icon">💰</span>
+        <div class="stat-card__label">إجمالي المحصّل (${monthLabel(month)})</div>
+        <div class="stat-card__value">${fmtMoney(collectedThisMonth)}</div>
+      </div>
+      <div class="stat-card stat-card--warn">
+        <span class="stat-card__icon">📌</span>
+        <div class="stat-card__label">متبقٍ من رسوم التسجيل</div>
+        <div class="stat-card__value">${fmtMoney(outstandingRegistration)}</div>
+      </div>
+      <div class="stat-card stat-card--danger">
+        <span class="stat-card__icon">⏰</span>
+        <div class="stat-card__label">متبقٍ من الرسوم الشهرية (هذا الشهر)</div>
+        <div class="stat-card__value">${fmtMoney(outstandingMonthly)}</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card__header">
+          <h3>آخر الدفعات</h3>
+          <button class="btn btn--outline btn--sm" data-nav="payments">عرض الكل</button>
+        </div>
+        <div class="card__body">
+          ${recent.length === 0 ? emptyState('💳', 'لا توجد دفعات مسجّلة بعد') : `
+          <div class="table-wrap"><table>
+            <thead><tr><th>الطالب</th><th>النوع</th><th>المبلغ</th><th>التاريخ</th></tr></thead>
+            <tbody>
+              ${recent.map(p => {
+                const st = getStudent(p.studentId);
+                return `<tr>
+                  <td>${escapeHtml(st ? st.name : 'محذوف')}</td>
+                  <td>${paymentLabel(p)}</td>
+                  <td>${fmtMoney(p.amount)}</td>
+                  <td>${fmtDate(p.date)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table></div>`}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__header"><h3>تنبيهات سريعة</h3></div>
+        <div class="card__body">
+          <p style="margin-bottom:12px">عدد الطلاب الذين لم يسددوا رسوم شهر <strong>${monthLabel(month)}</strong>:</p>
+          <div class="stat-card stat-card--danger" style="margin-bottom:14px">
+            <div class="stat-card__value">${unpaidThisMonthCount}</div>
+          </div>
+          <button class="btn btn--outline" style="width:100%" data-nav="report">فتح التقرير الشهري</button>
+          <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
+          <p style="margin-bottom:10px">إجمالي المحصّل منذ البداية:</p>
+          <strong style="font-size:18px">${fmtMoney(totalCollectedAll)}</strong>
+        </div>
+      </div>
+    </div>
+  `;
+  el.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => navigate(b.dataset.nav)));
+}
+function emptyState(icon, text) {
+  return `<div class="empty-state"><div class="empty-state__icon">${icon}</div><div>${escapeHtml(text)}</div></div>`;
+}
+
+/* ================= الأقسام الدراسية ================= */
+function renderClasses() {
+  const el = document.getElementById('section-classes');
+  el.innerHTML = `
+    <div class="toolbar">
+      <button class="btn btn--primary" id="add-class-btn">＋ إضافة قسم دراسي</button>
+    </div>
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${state.classes.length === 0 ? emptyState('🏫', 'لم تُضِف أي قسم دراسي بعد') : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>اسم القسم</th><th>الرسم الشهري</th><th>عدد الطلاب</th><th></th></tr></thead>
+          <tbody>
+            ${state.classes.map(c => {
+              const count = state.students.filter(s => s.classId === c.id).length;
+              return `<tr>
+                <td><strong>${escapeHtml(c.name)}</strong></td>
+                <td>${fmtMoney(c.monthlyFee)}</td>
+                <td>${count}</td>
+                <td class="row-actions">
+                  <button class="btn btn--outline btn--sm" data-edit="${c.id}">تعديل</button>
+                  <button class="btn btn--danger btn--sm" data-del="${c.id}">حذف</button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  document.getElementById('add-class-btn').addEventListener('click', () => classForm());
+  el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => classForm(getClass(b.dataset.edit))));
+  el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    const c = getClass(b.dataset.del);
+    const count = state.students.filter(s => s.classId === c.id).length;
+    confirmAction(count ? `هذا القسم يضم ${count} طالبًا. سيتم إلغاء ارتباطهم بالقسم. هل تريد المتابعة؟` : `هل تريد حذف قسم "${c.name}"؟`, () => {
+      state.classes = state.classes.filter(x => x.id !== c.id);
+      state.students.forEach(s => { if (s.classId === c.id) s.classId = ''; });
+      save(); toast('تم حذف القسم', 'success'); renderClasses();
+    });
+  }));
+}
+function classForm(existing) {
+  const isEdit = !!existing;
+  openModal(`
+    <div class="modal__header"><h3>${isEdit ? 'تعديل قسم دراسي' : 'إضافة قسم دراسي'}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field" style="margin-bottom:14px">
+        <label>اسم القسم *</label>
+        <input id="cf-name" value="${escapeHtml(existing ? existing.name : '')}" placeholder="مثال: السنة الثالثة أ">
+      </div>
+      <div class="field">
+        <label>الرسم الشهري (${escapeHtml(state.settings.currency)})</label>
+        <input id="cf-fee" type="number" min="0" value="${existing ? existing.monthlyFee : ''}" placeholder="0">
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn--primary" id="cf-save">${isEdit ? 'حفظ التعديلات' : 'إضافة'}</button>
+    </div>
+  `);
+  document.getElementById('cf-save').addEventListener('click', () => {
+    const name = document.getElementById('cf-name').value.trim();
+    const fee = Number(document.getElementById('cf-fee').value) || 0;
+    if (!name) { toast('يرجى إدخال اسم القسم', 'error'); return; }
+    if (isEdit) {
+      existing.name = name; existing.monthlyFee = fee;
+    } else {
+      state.classes.push({ id: uid('cls'), name, monthlyFee: fee });
+    }
+    save(); closeModal(); toast('تم الحفظ بنجاح', 'success'); renderClasses();
+  });
+}
+
+/* ================= الطلاب ================= */
+let studentFilters = { q: '', classId: '', status: '' };
+
+function renderStudents() {
+  const el = document.getElementById('section-students');
+  const month = currentMonth();
+
+  let list = [...state.students];
+  if (studentFilters.q) {
+    const q = studentFilters.q.toLowerCase();
+    list = list.filter(s => (s.name || '').toLowerCase().includes(q) || (s.phone || '').includes(q));
+  }
+  if (studentFilters.classId) list = list.filter(s => s.classId === studentFilters.classId);
+  if (studentFilters.status) list = list.filter(s => registrationStatus(s) === studentFilters.status || monthStatus(s, month) === studentFilters.status);
+
+  list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'));
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field" style="flex:1;min-width:200px">
+        <label>بحث</label>
+        <input id="sf-q" placeholder="اسم الطالب أو رقم الهاتف" value="${escapeHtml(studentFilters.q)}">
+      </div>
+      <div class="field">
+        <label>القسم الدراسي</label>
+        <select id="sf-class">
+          <option value="">كل الأقسام</option>
+          ${state.classes.map(c => `<option value="${c.id}" ${studentFilters.classId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>حالة السداد</label>
+        <select id="sf-status">
+          <option value="">الكل</option>
+          <option value="paid" ${studentFilters.status === 'paid' ? 'selected' : ''}>مسدد</option>
+          <option value="partial" ${studentFilters.status === 'partial' ? 'selected' : ''}>جزئي</option>
+          <option value="unpaid" ${studentFilters.status === 'unpaid' ? 'selected' : ''}>غير مسدد</option>
+        </select>
+      </div>
+      <button class="btn btn--primary" id="add-student-btn" style="align-self:flex-end">＋ طالب جديد</button>
+    </div>
+
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${list.length === 0 ? emptyState('👨‍🎓', 'لا يوجد طلاب مطابقون') : `
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th>الطالب</th><th>القسم</th><th>الهاتف</th>
+            <th>رسوم التسجيل</th><th>الشهر الحالي</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${list.map(s => `
+              <tr>
+                <td><strong>${escapeHtml(s.name)}</strong>${s.status === 'inactive' ? ' <span class="badge badge--muted">غير نشط</span>' : ''}</td>
+                <td>${escapeHtml(className(s.classId))}</td>
+                <td>${escapeHtml(s.phone || '—')}</td>
+                <td>${statusBadge(registrationStatus(s))}</td>
+                <td>${statusBadge(monthStatus(s, month))}</td>
+                <td class="row-actions">
+                  <button class="btn btn--outline btn--sm" data-view="${s.id}">التفاصيل</button>
+                  <button class="btn btn--primary btn--sm" data-pay="${s.id}">دفعة</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('sf-q').addEventListener('input', e => { studentFilters.q = e.target.value; renderStudents(); });
+  document.getElementById('sf-class').addEventListener('change', e => { studentFilters.classId = e.target.value; renderStudents(); });
+  document.getElementById('sf-status').addEventListener('change', e => { studentFilters.status = e.target.value; renderStudents(); });
+  document.getElementById('add-student-btn').addEventListener('click', () => studentForm());
+  el.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => studentDetail(b.dataset.view)));
+  el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => paymentForm(b.dataset.pay)));
+}
+
+function studentForm(existing, prefill) {
+  const isEdit = !!existing;
+  const isSibling = !isEdit && !!prefill;
+  const seed = existing || prefill || {};
+  openModal(`
+    <div class="modal__header"><h3>${isEdit ? 'تعديل بيانات الطالب' : isSibling ? 'إضافة ابن آخر لنفس ولي الأمر' : 'تسجيل طالب جديد'}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      ${isSibling ? `<p style="color:var(--color-text-muted);margin-bottom:14px">سيتم تعبئة بيانات ولي الأمر تلقائيًا — عدّل اسم الابن/الابنة والقسم فقط.</p>` : ''}
+      <div class="field" style="margin-bottom:14px">
+        <label>الاسم الكامل *</label>
+        <input id="sf-name" value="${escapeHtml(existing ? existing.name : '')}" placeholder="اسم الطالب">
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>القسم الدراسي</label>
+          <select id="sf-class-id">
+            <option value="">— بدون —</option>
+            ${state.classes.map(c => `<option value="${c.id}" ${seed.classId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>رقم هاتف ولي الأمر</label>
+          <input id="sf-phone" value="${escapeHtml(seed.phone || '')}" placeholder="77 000 00 00">
+        </div>
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>اسم ولي الأمر</label>
+          <input id="sf-parent" value="${escapeHtml(seed.parentName || '')}">
+        </div>
+        <div class="field">
+          <label>تاريخ التسجيل</label>
+          <input id="sf-regdate" type="date" value="${existing ? existing.registrationDate || todayISO() : todayISO()}">
+        </div>
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>رسوم التسجيل (${escapeHtml(state.settings.currency)})</label>
+          <input id="sf-regfee" type="number" min="0" value="${existing && existing.registrationFee != null ? existing.registrationFee : state.settings.defaultRegistrationFee}">
+        </div>
+        <div class="field">
+          <label>رسم شهري خاص (اختياري)</label>
+          <input id="sf-monthlyfee" type="number" min="0" value="${existing && existing.monthlyFeeOverride != null ? existing.monthlyFeeOverride : ''}" placeholder="يُستخدم رسم القسم إن ترك فارغًا">
+        </div>
+      </div>
+      ${isEdit ? `
+      <div class="field">
+        <label>الحالة</label>
+        <select id="sf-status">
+          <option value="active" ${existing.status !== 'inactive' ? 'selected' : ''}>نشط</option>
+          <option value="inactive" ${existing.status === 'inactive' ? 'selected' : ''}>غير نشط (منسحب)</option>
+        </select>
+      </div>` : ''}
+    </div>
+    <div class="modal__footer">
+      ${isEdit ? '<button class="btn btn--danger" id="sf-delete" style="margin-inline-end:auto">حذف الطالب</button>' : ''}
+      <button class="btn btn--ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn--primary" id="sf-save">${isEdit ? 'حفظ التعديلات' : 'تسجيل الطالب'}</button>
+    </div>
+  `, { wide: true });
+
+  document.getElementById('sf-save').addEventListener('click', () => {
+    const name = document.getElementById('sf-name').value.trim();
+    if (!name) { toast('يرجى إدخال اسم الطالب', 'error'); return; }
+    const data = {
+      name,
+      classId: document.getElementById('sf-class-id').value,
+      phone: document.getElementById('sf-phone').value.trim(),
+      parentName: document.getElementById('sf-parent').value.trim(),
+      registrationDate: document.getElementById('sf-regdate').value || todayISO(),
+      registrationFee: Number(document.getElementById('sf-regfee').value) || 0,
+      monthlyFeeOverride: document.getElementById('sf-monthlyfee').value === '' ? null : Number(document.getElementById('sf-monthlyfee').value)
+    };
+    if (isEdit) {
+      Object.assign(existing, data);
+      existing.status = document.getElementById('sf-status').value;
+    } else {
+      state.students.push({ id: uid('stu'), status: 'active', ...data });
+    }
+    save(); closeModal(); toast('تم حفظ بيانات الطالب', 'success'); refreshCurrentSection();
+  });
+
+  if (isEdit) {
+    document.getElementById('sf-delete').addEventListener('click', () => {
+      confirmAction(`هل تريد حذف الطالب "${existing.name}" وكل سجل دفعاته؟ لا يمكن التراجع عن هذا الإجراء.`, () => {
+        state.students = state.students.filter(s => s.id !== existing.id);
+        state.payments = state.payments.filter(p => p.studentId !== existing.id);
+        save(); closeModal(); toast('تم حذف الطالب', 'success'); refreshCurrentSection();
+      });
+    });
+  }
+}
+
+function familyMembers(phone) {
+  if (!phone || !phone.trim()) return [];
+  const p = phone.trim();
+  return state.students.filter(s => (s.phone || '').trim() === p).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+}
+
+function studentDetail(id) {
+  const s = getStudent(id);
+  if (!s) return;
+  const month = currentMonth();
+  const payments = studentPayments(id).sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+  const siblings = familyMembers(s.phone).filter(x => x.id !== s.id);
+
+  openModal(`
+    <div class="modal__header">
+      <h3>${escapeHtml(s.name)}</h3>
+      <button class="modal__close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:18px">
+        <div class="stat-card stat-card--warn">
+          <div class="stat-card__label">متبقٍ من رسوم التسجيل</div>
+          <div class="stat-card__value">${fmtMoney(registrationBalance(s))}</div>
+        </div>
+        <div class="stat-card stat-card--primary">
+          <div class="stat-card__label">حالة شهر ${monthLabel(month)}</div>
+          <div class="stat-card__value">${statusBadge(monthStatus(s, month))}</div>
+        </div>
+      </div>
+      <p><strong>القسم:</strong> ${escapeHtml(className(s.classId))} &nbsp; | &nbsp; <strong>الهاتف:</strong> ${escapeHtml(s.phone || '—')}</p>
+      <p><strong>ولي الأمر:</strong> ${escapeHtml(s.parentName || '—')} &nbsp; | &nbsp; <strong>تاريخ التسجيل:</strong> ${fmtDate(s.registrationDate)}</p>
+      ${siblings.length ? `<p style="color:var(--color-text-muted)">👨‍👩‍👧‍👦 لولي الأمر هذا ${siblings.length + 1} أبناء مسجّلون: ${escapeHtml([s.name, ...siblings.map(x => x.name)].join('، '))}</p>` : ''}
+      <div class="row-actions" style="margin:10px 0 16px">
+        <button class="btn btn--outline btn--sm" id="sd-add-sibling">＋ إضافة ابن آخر لنفس ولي الأمر</button>
+        ${s.phone ? `<button class="btn btn--outline btn--sm" id="sd-family-invoice">🧾 فاتورة عائلية موحّدة</button>` : ''}
+      </div>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
+      <h4 style="margin-bottom:10px">سجل الدفعات</h4>
+      ${payments.length === 0 ? emptyState('💳', 'لا توجد دفعات مسجّلة') : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>النوع</th><th>المبلغ</th><th>التاريخ</th><th></th></tr></thead>
+        <tbody>
+          ${payments.map(p => `
+            <tr>
+              <td>${paymentLabel(p)}</td>
+              <td>${fmtMoney(p.amount)}</td>
+              <td>${fmtDate(p.date)}</td>
+              <td><button class="btn btn--outline btn--sm" data-print="${p.id}">🖨️ إيصال</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="sd-edit">تعديل البيانات</button>
+      <button class="btn btn--primary" id="sd-pay">＋ تسجيل دفعة</button>
+    </div>
+  `, { wide: true });
+
+  document.getElementById('sd-edit').addEventListener('click', () => studentForm(s));
+  document.getElementById('sd-pay').addEventListener('click', () => paymentForm(s.id));
+  document.getElementById('sd-add-sibling').addEventListener('click', () => studentForm(null, { parentName: s.parentName, phone: s.phone, classId: s.classId }));
+  const invoiceBtn = document.getElementById('sd-family-invoice');
+  if (invoiceBtn) invoiceBtn.addEventListener('click', () => familyInvoiceModal(s.phone));
+  document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printReceipt(b.dataset.print)));
+}
+
+/* ================= الفاتورة العائلية الموحّدة ================= */
+function familyInvoiceModal(phone) {
+  const members = familyMembers(phone);
+  if (!members.length) return;
+  let invoiceMonth = currentMonth();
+
+  function render() {
+    const rows = members.map(st => {
+      const regBal = registrationBalance(st);
+      const monBal = isEnrolledInMonth(st, invoiceMonth) ? Math.max(0, monthlyFeeFor(st) - monthPaid(st, invoiceMonth)) : 0;
+      return { s: st, regBal, monBal, total: regBal + monBal };
+    });
+    const grandTotal = rows.reduce((sum, r) => sum + r.total, 0);
+    const monthOptions = monthRange(addMonths(currentMonth(), -2), 6);
+
+    openModal(`
+      <div class="modal__header"><h3>فاتورة عائلية موحّدة</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+      <div class="modal__body">
+        <p><strong>ولي الأمر:</strong> ${escapeHtml(members[0].parentName || '—')} &nbsp; | &nbsp; <strong>الهاتف:</strong> ${escapeHtml(phone)} &nbsp; | &nbsp; <strong>عدد الأبناء:</strong> ${members.length}</p>
+        <div class="field" style="margin:14px 0;max-width:220px">
+          <label>شهر الاستحقاق</label>
+          <select id="fi-month">
+            ${monthOptions.map(m => `<option value="${m}" ${m === invoiceMonth ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>الابن/الابنة</th><th>القسم</th><th>متبقي التسجيل</th><th>متبقي الشهر</th><th>الإجمالي</th></tr></thead>
+          <tbody>
+            ${rows.map(r => `<tr>
+              <td>${escapeHtml(r.s.name)}</td>
+              <td>${escapeHtml(className(r.s.classId))}</td>
+              <td>${fmtMoney(r.regBal)}</td>
+              <td>${fmtMoney(r.monBal)}</td>
+              <td><strong>${fmtMoney(r.total)}</strong></td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>
+        <div style="text-align:end;margin-top:14px;font-size:18px"><strong>الإجمالي المستحق: ${fmtMoney(grandTotal)}</strong></div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--ghost" onclick="closeModal()">إغلاق</button>
+        <button class="btn btn--primary" id="fi-print">🖨️ طباعة الفاتورة</button>
+      </div>
+    `, { wide: true });
+
+    document.getElementById('fi-month').addEventListener('change', e => { invoiceMonth = e.target.value; render(); });
+    document.getElementById('fi-print').addEventListener('click', () => printFamilyInvoice(phone, invoiceMonth, rows, grandTotal));
+  }
+  render();
+}
+
+function printFamilyInvoice(phone, month, rows, grandTotal) {
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="receipt" style="max-width:560px">
+      <h2>${escapeHtml(state.settings.schoolName)}</h2>
+      <div class="sub">${escapeHtml(state.settings.address || '')} ${state.settings.phone ? ' — ' + escapeHtml(state.settings.phone) : ''}</div>
+      <div class="sub">فاتورة عائلية موحّدة — السنة الدراسية: ${escapeHtml(state.settings.schoolYear)}</div>
+      <hr>
+      <table>
+        <tr><td>ولي الأمر</td><td>${escapeHtml(rows[0].s.parentName || '—')}</td></tr>
+        <tr><td>الهاتف</td><td>${escapeHtml(phone)}</td></tr>
+        <tr><td>شهر الاستحقاق</td><td>${monthLabel(month)}</td></tr>
+      </table>
+      <table style="margin-top:10px">
+        <tr><td><strong>الابن/الابنة</strong></td><td><strong>القسم</strong></td><td><strong>المستحق</strong></td></tr>
+        ${rows.map(r => `<tr><td>${escapeHtml(r.s.name)}</td><td>${escapeHtml(className(r.s.classId))}</td><td>${fmtMoney(r.total)}</td></tr>`).join('')}
+        <tr class="total-row"><td colspan="2">الإجمالي الكلي المستحق</td><td>${fmtMoney(grandTotal)}</td></tr>
+      </table>
+      <div class="sign">
+        <span>توقيع المستلم: ..............................</span>
+        <span>${fmtDate(todayISO())}</span>
+      </div>
+    </div>
+  `;
+  window.print();
+}
+
+/* ================= الدفعات ================= */
+function paymentForm(studentId) {
+  const students = [...state.students].sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  if (students.length === 0) { toast('يرجى تسجيل طالب أولًا', 'error'); return; }
+  const preselect = studentId || students[0].id;
+
+  openModal(`
+    <div class="modal__header"><h3>تسجيل دفعة</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field" style="margin-bottom:14px">
+        <label>الطالب *</label>
+        <select id="pf-student">
+          ${students.map(s => `<option value="${s.id}" ${s.id === preselect ? 'selected' : ''}>${escapeHtml(s.name)} — ${escapeHtml(className(s.classId))}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>نوع الدفعة *</label>
+          <select id="pf-type">
+            <option value="registration">رسوم تسجيل</option>
+            <option value="monthly">رسوم شهرية</option>
+          </select>
+        </div>
+        <div class="field" id="pf-month-wrap">
+          <label>الشهر الأول</label>
+          <input id="pf-month" type="month" value="${currentMonth()}">
+        </div>
+      </div>
+      <div class="field-row" id="pf-count-wrap" style="margin-bottom:14px">
+        <div class="field">
+          <label>عدد الأشهر المدفوعة</label>
+          <select id="pf-count">
+            <option value="1">شهر واحد</option>
+            <option value="2">شهران</option>
+            <option value="3">3 أشهر</option>
+            <option value="4">4 أشهر</option>
+            <option value="6">6 أشهر</option>
+            <option value="9">9 أشهر</option>
+            <option value="12">12 شهرًا (سنة كاملة)</option>
+            <option value="other">عدد مخصص...</option>
+          </select>
+        </div>
+        <div class="field" id="pf-count-custom-wrap" hidden>
+          <label>العدد المخصص</label>
+          <input id="pf-count-custom" type="number" min="1" max="36" value="1">
+        </div>
+      </div>
+      <div class="field" id="pf-months-preview-wrap" style="margin-bottom:14px">
+        <small id="pf-months-preview" style="color:var(--color-text-muted)"></small>
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>المبلغ الإجمالي (${escapeHtml(state.settings.currency)}) *</label>
+          <input id="pf-amount" type="number" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>تاريخ الدفع</label>
+          <input id="pf-date" type="date" value="${todayISO()}">
+        </div>
+      </div>
+      <div class="field">
+        <label>ملاحظة (اختياري)</label>
+        <input id="pf-note" placeholder="مثال: دفعة نقدية">
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn--primary" id="pf-save">تسجيل الدفعة</button>
+    </div>
+  `);
+
+  const typeSel = document.getElementById('pf-type');
+  const monthWrap = document.getElementById('pf-month-wrap');
+  const countWrap = document.getElementById('pf-count-wrap');
+  const countSel = document.getElementById('pf-count');
+  const countCustomWrap = document.getElementById('pf-count-custom-wrap');
+  const countCustomInput = document.getElementById('pf-count-custom');
+  const previewWrap = document.getElementById('pf-months-preview-wrap');
+  const previewEl = document.getElementById('pf-months-preview');
+  const amountInput = document.getElementById('pf-amount');
+  const monthInput = document.getElementById('pf-month');
+  const studentSel = document.getElementById('pf-student');
+
+  function monthsCount() {
+    return countSel.value === 'other' ? Math.max(1, Number(countCustomInput.value) || 1) : Number(countSel.value);
+  }
+  function selectedMonths() {
+    return monthRange(monthInput.value || currentMonth(), monthsCount());
+  }
+  function updateVisibility() {
+    const isMonthly = typeSel.value === 'monthly';
+    monthWrap.style.display = isMonthly ? '' : 'none';
+    countWrap.style.display = isMonthly ? '' : 'none';
+    previewWrap.style.display = isMonthly ? '' : 'none';
+    countCustomWrap.hidden = !(isMonthly && countSel.value === 'other');
+  }
+  function refresh() {
+    updateVisibility();
+    const st = getStudent(studentSel.value);
+    if (!st) return;
+    if (typeSel.value === 'registration') {
+      amountInput.value = registrationBalance(st) || '';
+      previewEl.textContent = '';
+    } else {
+      const months = selectedMonths();
+      amountInput.value = totalDueForMonths(st, months) || '';
+      previewEl.textContent = months.length > 1
+        ? `سيتم تغطية: ${months.map(monthLabel).join('، ')}`
+        : '';
+    }
+  }
+  typeSel.addEventListener('change', refresh);
+  studentSel.addEventListener('change', refresh);
+  monthInput.addEventListener('change', refresh);
+  countSel.addEventListener('change', refresh);
+  countCustomInput.addEventListener('input', refresh);
+  refresh();
+
+  document.getElementById('pf-save').addEventListener('click', () => {
+    const amount = Number(amountInput.value);
+    if (!amount || amount <= 0) { toast('يرجى إدخال مبلغ صحيح', 'error'); return; }
+    const st = getStudent(studentSel.value);
+    const isMonthly = typeSel.value === 'monthly';
+    const months = isMonthly ? selectedMonths() : [];
+    const payment = {
+      id: uid('pay'),
+      studentId: studentSel.value,
+      type: typeSel.value,
+      months: isMonthly ? months : null,
+      allocations: isMonthly ? distributeAmountOverMonths(st, months, amount) : null,
+      amount,
+      date: document.getElementById('pf-date').value || todayISO(),
+      note: document.getElementById('pf-note').value.trim(),
+      receiptNo: nextReceiptNumber()
+    };
+    state.payments.push(payment);
+    save();
+    closeModal();
+    toast('تم تسجيل الدفعة بنجاح', 'success');
+    refreshCurrentSection();
+    printReceipt(payment.id, true);
+  });
+}
+
+let paymentFilters = { q: '', type: '' };
+
+function renderPayments() {
+  const el = document.getElementById('section-payments');
+  let list = [...state.payments];
+  if (paymentFilters.type) list = list.filter(p => p.type === paymentFilters.type);
+  if (paymentFilters.q) {
+    const q = paymentFilters.q.toLowerCase();
+    list = list.filter(p => {
+      const st = getStudent(p.studentId);
+      return st && st.name.toLowerCase().includes(q);
+    });
+  }
+  list.sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field" style="flex:1;min-width:200px">
+        <label>بحث باسم الطالب</label>
+        <input id="pyf-q" value="${escapeHtml(paymentFilters.q)}" placeholder="اسم الطالب">
+      </div>
+      <div class="field">
+        <label>نوع الدفعة</label>
+        <select id="pyf-type">
+          <option value="">الكل</option>
+          <option value="registration" ${paymentFilters.type === 'registration' ? 'selected' : ''}>رسوم تسجيل</option>
+          <option value="monthly" ${paymentFilters.type === 'monthly' ? 'selected' : ''}>رسوم شهرية</option>
+        </select>
+      </div>
+      <button class="btn btn--primary" id="pyf-add" style="align-self:flex-end">＋ تسجيل دفعة</button>
+    </div>
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${list.length === 0 ? emptyState('💳', 'لا توجد دفعات مطابقة') : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>رقم الإيصال</th><th>الطالب</th><th>النوع</th><th>المبلغ</th><th>التاريخ</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(p => {
+              const st = getStudent(p.studentId);
+              return `<tr>
+                <td>${escapeHtml(p.receiptNo || '—')}</td>
+                <td>${escapeHtml(st ? st.name : 'محذوف')}</td>
+                <td>${paymentLabel(p)}</td>
+                <td>${fmtMoney(p.amount)}</td>
+                <td>${fmtDate(p.date)}</td>
+                <td class="row-actions">
+                  <button class="btn btn--outline btn--sm" data-print="${p.id}">🖨️ إيصال</button>
+                  <button class="btn btn--danger btn--sm" data-del="${p.id}">حذف</button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  document.getElementById('pyf-q').addEventListener('input', e => { paymentFilters.q = e.target.value; renderPayments(); });
+  document.getElementById('pyf-type').addEventListener('change', e => { paymentFilters.type = e.target.value; renderPayments(); });
+  document.getElementById('pyf-add').addEventListener('click', () => paymentForm());
+  el.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printReceipt(b.dataset.print)));
+  el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    confirmAction('هل تريد حذف هذه الدفعة؟ لا يمكن التراجع عن هذا الإجراء.', () => {
+      state.payments = state.payments.filter(p => p.id !== b.dataset.del);
+      save(); toast('تم حذف الدفعة', 'success'); refreshCurrentSection();
+    });
+  }));
+}
+
+function printReceipt(paymentId) {
+  const p = state.payments.find(x => x.id === paymentId);
+  if (!p) return;
+  const st = getStudent(p.studentId);
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="receipt">
+      <h2>${escapeHtml(state.settings.schoolName)}</h2>
+      <div class="sub">${escapeHtml(state.settings.address || '')} ${state.settings.phone ? ' — ' + escapeHtml(state.settings.phone) : ''}</div>
+      <div class="sub">السنة الدراسية: ${escapeHtml(state.settings.schoolYear)}</div>
+      <hr>
+      <table>
+        <tr><td>رقم الإيصال</td><td>${escapeHtml(p.receiptNo || '—')}</td></tr>
+        <tr><td>اسم الطالب</td><td>${escapeHtml(st ? st.name : '—')}</td></tr>
+        <tr><td>القسم الدراسي</td><td>${escapeHtml(st ? className(st.classId) : '—')}</td></tr>
+        <tr><td>نوع الرسوم</td><td>${paymentLabel(p)}</td></tr>
+        <tr><td>تاريخ الدفع</td><td>${fmtDate(p.date)}</td></tr>
+        ${p.note ? `<tr><td>ملاحظة</td><td>${escapeHtml(p.note)}</td></tr>` : ''}
+        <tr class="total-row"><td>المبلغ المدفوع</td><td>${fmtMoney(p.amount)}</td></tr>
+      </table>
+      <div class="sign">
+        <span>توقيع المستلم: ..............................</span>
+        <span>${fmtDate(todayISO())}</span>
+      </div>
+    </div>
+  `;
+  window.print();
+}
+
+/* ================= التقرير الشهري ================= */
+let reportMonth = currentMonth();
+
+function renderReport() {
+  const el = document.getElementById('section-report');
+  const students = state.students.filter(s => s.status !== 'inactive' && isEnrolledInMonth(s, reportMonth));
+
+  let paid = 0, partial = 0, unpaid = 0, totalCollected = 0, totalDue = 0;
+  const rows = students.map(s => {
+    const fee = monthlyFeeFor(s);
+    const amountPaid = monthPaid(s, reportMonth);
+    const status = monthStatus(s, reportMonth);
+    if (status === 'paid') paid++; else if (status === 'partial') partial++; else unpaid++;
+    totalCollected += amountPaid;
+    totalDue += fee;
+    return { s, fee, amountPaid, status };
+  }).sort((a, b) => a.s.name.localeCompare(b.s.name, 'ar'));
+
+  const monthOptions = lastNMonths(18);
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field">
+        <label>اختر الشهر</label>
+        <select id="rp-month">
+          ${monthOptions.map(m => `<option value="${m}" ${m === reportMonth ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn--outline" id="rp-export">⬇️ تصدير CSV</button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card stat-card--accent"><div class="stat-card__label">مسدد بالكامل</div><div class="stat-card__value">${paid}</div></div>
+      <div class="stat-card stat-card--warn"><div class="stat-card__label">سداد جزئي</div><div class="stat-card__value">${partial}</div></div>
+      <div class="stat-card stat-card--danger"><div class="stat-card__label">غير مسدد</div><div class="stat-card__value">${unpaid}</div></div>
+      <div class="stat-card stat-card--primary"><div class="stat-card__label">المحصّل / المستحق</div><div class="stat-card__value">${fmtMoney(totalCollected)} / ${fmtMoney(totalDue)}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h3>تفاصيل شهر ${monthLabel(reportMonth)}</h3></div>
+      <div class="card__body" style="padding:0">
+        ${rows.length === 0 ? emptyState('📅', 'لا يوجد طلاب مسجّلون لهذا الشهر') : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>الطالب</th><th>القسم</th><th>الرسم الشهري</th><th>المدفوع</th><th>الحالة</th><th></th></tr></thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr>
+                <td>${escapeHtml(r.s.name)}</td>
+                <td>${escapeHtml(className(r.s.classId))}</td>
+                <td>${fmtMoney(r.fee)}</td>
+                <td>${fmtMoney(r.amountPaid)}</td>
+                <td>${statusBadge(r.status)}</td>
+                <td>${r.status !== 'paid' ? `<button class="btn btn--primary btn--sm" data-pay="${r.s.id}">تحصيل</button>` : ''}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('rp-month').addEventListener('change', e => { reportMonth = e.target.value; renderReport(); });
+  document.getElementById('rp-export').addEventListener('click', () => exportReportCSV(rows));
+  el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => {
+    const studentId = b.dataset.pay;
+    paymentForm(studentId);
+    setTimeout(() => {
+      const typeSel = document.getElementById('pf-type');
+      const monthInput = document.getElementById('pf-month');
+      if (typeSel) { typeSel.value = 'monthly'; typeSel.dispatchEvent(new Event('change')); }
+      if (monthInput) { monthInput.value = reportMonth; monthInput.dispatchEvent(new Event('change')); }
+    }, 0);
+  }));
+}
+
+function exportReportCSV(rows) {
+  const header = ['اسم الطالب', 'القسم', 'الرسم الشهري', 'المدفوع', 'الحالة'];
+  const statusLabel = { paid: 'مسدد', partial: 'جزئي', unpaid: 'غير مسدد' };
+  const lines = [header.join(',')];
+  rows.forEach(r => {
+    lines.push([r.s.name, className(r.s.classId), r.fee, r.amountPaid, statusLabel[r.status]]
+      .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+  });
+  downloadFile(`تقرير-${reportMonth}.csv`, '﻿' + lines.join('\n'), 'text/csv;charset=utf-8');
+}
+
+/* ================= النسخ الاحتياطي ================= */
+function renderBackup() {
+  const el = document.getElementById('section-backup');
+  el.innerHTML = `
+    <div class="grid-2">
+      <div class="card">
+        <div class="card__header"><h3>تصدير نسخة احتياطية</h3></div>
+        <div class="card__body">
+          <p style="color:var(--color-text-muted);margin-bottom:16px">احفظ نسخة كاملة من بيانات المدرسة (الطلاب، الأقسام، الدفعات) في ملف JSON يمكن استيراده لاحقًا.</p>
+          <button class="btn btn--primary" id="bk-export">⬇️ تنزيل نسخة احتياطية (JSON)</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card__header"><h3>استيراد نسخة احتياطية</h3></div>
+        <div class="card__body">
+          <p style="color:var(--color-text-muted);margin-bottom:16px">استيراد ملف نسخة احتياطية سابق. سيتم <strong>استبدال</strong> كل البيانات الحالية.</p>
+          <input type="file" id="bk-import" accept="application/json">
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <div class="card__header"><h3>تصدير قوائم CSV</h3></div>
+      <div class="card__body" style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn--outline" id="bk-export-students">⬇️ قائمة الطلاب (CSV)</button>
+        <button class="btn btn--outline" id="bk-export-payments">⬇️ سجل الدفعات (CSV)</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('bk-export').addEventListener('click', () => {
+    downloadFile(`نسخة-احتياطية-${todayISO()}.json`, JSON.stringify(state, null, 2), 'application/json');
+  });
+  document.getElementById('bk-import').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!parsed || typeof parsed !== 'object') throw new Error('bad');
+        confirmAction('سيتم استبدال كل البيانات الحالية بالبيانات المستوردة. هل تريد المتابعة؟', () => {
+          state = {
+            settings: { ...defaultState().settings, ...(parsed.settings || {}) },
+            classes: Array.isArray(parsed.classes) ? parsed.classes : [],
+            students: Array.isArray(parsed.students) ? parsed.students : [],
+            payments: Array.isArray(parsed.payments) ? parsed.payments : []
+          };
+          save();
+          toast('تم استيراد البيانات بنجاح', 'success');
+          renderBrand();
+          refreshCurrentSection();
+        });
+      } catch (err) {
+        toast('الملف غير صالح', 'error');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+  document.getElementById('bk-export-students').addEventListener('click', () => {
+    const header = ['الاسم', 'القسم', 'الهاتف', 'ولي الأمر', 'تاريخ التسجيل', 'رسوم التسجيل', 'المدفوع', 'المتبقي', 'الحالة'];
+    const statusLabel = { paid: 'مسدد', partial: 'جزئي', unpaid: 'غير مسدد' };
+    const lines = [header.join(',')];
+    state.students.forEach(s => {
+      lines.push([s.name, className(s.classId), s.phone || '', s.parentName || '', s.registrationDate || '',
+        registrationFee(s), registrationPaid(s), registrationBalance(s), statusLabel[registrationStatus(s)]]
+        .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+    });
+    downloadFile(`قائمة-الطلاب-${todayISO()}.csv`, '﻿' + lines.join('\n'), 'text/csv;charset=utf-8');
+  });
+  document.getElementById('bk-export-payments').addEventListener('click', () => {
+    const header = ['رقم الإيصال', 'الطالب', 'النوع', 'الشهر', 'المبلغ', 'التاريخ', 'ملاحظة'];
+    const lines = [header.join(',')];
+    state.payments.forEach(p => {
+      const st = getStudent(p.studentId);
+      const months = paymentMonths(p);
+      lines.push([p.receiptNo || '', st ? st.name : 'محذوف', p.type === 'registration' ? 'تسجيل' : 'شهرية',
+        months.length ? months.map(monthLabel).join(' / ') : '', p.amount, p.date, p.note || '']
+        .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+    });
+    downloadFile(`سجل-الدفعات-${todayISO()}.csv`, '﻿' + lines.join('\n'), 'text/csv;charset=utf-8');
+  });
+}
+
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ================= الإعدادات ================= */
+function renderSettings() {
+  const el = document.getElementById('section-settings');
+  const s = state.settings;
+  el.innerHTML = `
+    <div class="card" style="max-width:640px">
+      <div class="card__header"><h3>إعدادات المدرسة</h3></div>
+      <div class="card__body">
+        <div class="field" style="margin-bottom:14px">
+          <label>اسم المدرسة</label>
+          <input id="st-name" value="${escapeHtml(s.schoolName)}">
+        </div>
+        <div class="field-row" style="margin-bottom:14px">
+          <div class="field">
+            <label>السنة الدراسية</label>
+            <input id="st-year" value="${escapeHtml(s.schoolYear)}">
+          </div>
+          <div class="field">
+            <label>العملة</label>
+            <input id="st-currency" value="${escapeHtml(s.currency)}">
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:14px">
+          <div class="field">
+            <label>العنوان</label>
+            <input id="st-address" value="${escapeHtml(s.address || '')}">
+          </div>
+          <div class="field">
+            <label>رقم الهاتف</label>
+            <input id="st-phone" value="${escapeHtml(s.phone || '')}">
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:14px">
+          <div class="field">
+            <label>رسوم التسجيل الافتراضية</label>
+            <input id="st-regfee" type="number" min="0" value="${s.defaultRegistrationFee}">
+          </div>
+          <div class="field">
+            <label>بادئة رقم الإيصال</label>
+            <input id="st-prefix" value="${escapeHtml(s.receiptPrefix)}">
+          </div>
+        </div>
+        <button class="btn btn--primary" id="st-save">حفظ الإعدادات</button>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:640px;margin-top:18px;border-color:var(--color-danger)">
+      <div class="card__header"><h3 style="color:var(--color-danger)">منطقة الخطر</h3></div>
+      <div class="card__body">
+        <p style="color:var(--color-text-muted);margin-bottom:14px">حذف كل البيانات (الطلاب، الأقسام، الدفعات) نهائيًا. يُستحسن تصدير نسخة احتياطية أولًا.</p>
+        <button class="btn btn--danger" id="st-reset">🗑️ حذف كل البيانات</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('st-save').addEventListener('click', () => {
+    s.schoolName = document.getElementById('st-name').value.trim() || 'اسم المدرسة';
+    s.schoolYear = document.getElementById('st-year').value.trim();
+    s.currency = document.getElementById('st-currency').value.trim() || 'FCFA';
+    s.address = document.getElementById('st-address').value.trim();
+    s.phone = document.getElementById('st-phone').value.trim();
+    s.defaultRegistrationFee = Number(document.getElementById('st-regfee').value) || 0;
+    s.receiptPrefix = document.getElementById('st-prefix').value.trim() || 'REC';
+    save();
+    renderBrand();
+    toast('تم حفظ الإعدادات', 'success');
+  });
+  document.getElementById('st-reset').addEventListener('click', () => {
+    confirmAction('هل أنت متأكد من حذف كل البيانات نهائيًا؟ هذا الإجراء لا يمكن التراجع عنه.', () => {
+      state = defaultState();
+      save();
+      renderBrand();
+      refreshCurrentSection();
+      toast('تم حذف كل البيانات', 'success');
+    });
+  });
+}
+
+/* ================= الشريط الجانبي (جوال) ================= */
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-backdrop').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+
+/* ================= تهيئة التطبيق ================= */
+function init() {
+  renderBrand();
+
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => navigate(link.dataset.section));
+  });
+  document.getElementById('menu-toggle').addEventListener('click', openSidebar);
+  document.getElementById('sidebar-backdrop').addEventListener('click', closeSidebar);
+  document.getElementById('quick-payment-btn').addEventListener('click', () => paymentForm());
+  document.getElementById('quick-student-btn').addEventListener('click', () => studentForm());
+  document.getElementById('modal-overlay').addEventListener('click', e => {
+    if (e.target.id === 'modal-overlay') closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  navigate('dashboard');
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
