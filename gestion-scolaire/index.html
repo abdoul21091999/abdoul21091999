@@ -414,7 +414,9 @@ function registrationFee(student) {
   return student.registrationFee != null ? Number(student.registrationFee) : Number(state.settings.defaultRegistrationFee) || 0;
 }
 function registrationPaid(student) {
-  return studentPayments(student.id, 'registration').reduce((s, p) => s + Number(p.amount), 0);
+  return state.payments
+    .filter(p => p.studentId === student.id && (p.type === 'registration' || p.type === 'combo'))
+    .reduce((s, p) => s + Number(p.type === 'combo' ? (p.registrationAmount || 0) : p.amount), 0);
 }
 function registrationBalance(student) {
   return Math.max(0, registrationFee(student) - registrationPaid(student));
@@ -437,13 +439,13 @@ function paymentMonths(p) {
   return p.month ? [p.month] : [];
 }
 function paymentAmountForMonth(p, month) {
-  if (p.type !== 'monthly') return 0;
+  if (p.type !== 'monthly' && p.type !== 'combo') return 0;
   if (Array.isArray(p.months) && p.months.length) return Number((p.allocations && p.allocations[month]) || 0);
   return p.month === month ? Number(p.amount) : 0;
 }
 function monthPaid(student, month) {
   return state.payments
-    .filter(p => p.studentId === student.id && p.type === 'monthly')
+    .filter(p => p.studentId === student.id && (p.type === 'monthly' || p.type === 'combo'))
     .reduce((s, p) => s + paymentAmountForMonth(p, month), 0);
 }
 function addMonths(m, n) {
@@ -477,6 +479,10 @@ function distributeAmountOverMonths(student, months, totalAmount) {
 }
 function paymentLabel(p) {
   if (p.type === 'registration') return 'رسوم تسجيل';
+  if (p.type === 'combo') {
+    const months = paymentMonths(p);
+    return `رسوم تسجيل + رسوم شهرية (${monthLabel(months[0])})`;
+  }
   const months = paymentMonths(p);
   if (months.length <= 1) return 'رسوم شهرية — ' + monthLabel(months[0]);
   return `رسوم شهرية — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} أشهر)`;
@@ -1077,7 +1083,8 @@ function paymentForm(studentId) {
         <div class="field">
           <label>نوع الدفعة *</label>
           <select id="pf-type">
-            <option value="registration">رسوم تسجيل</option>
+            <option value="combo">رسوم تسجيل + الشهر الأول معًا</option>
+            <option value="registration">رسوم تسجيل فقط</option>
             <option value="monthly">رسوم شهرية</option>
           </select>
         </div>
@@ -1108,7 +1115,7 @@ function paymentForm(studentId) {
       <div class="field" id="pf-months-preview-wrap" style="margin-bottom:14px">
         <small id="pf-months-preview" style="color:var(--color-text-muted)"></small>
       </div>
-      <div class="field-row" style="margin-bottom:14px">
+      <div class="field-row" id="pf-amount-single-wrap" style="margin-bottom:14px">
         <div class="field">
           <label>المبلغ الإجمالي (${escapeHtml(state.settings.currency)}) *</label>
           <input id="pf-amount" type="number" min="0" placeholder="0">
@@ -1117,6 +1124,23 @@ function paymentForm(studentId) {
           <label>تاريخ الدفع</label>
           <input id="pf-date" type="date" value="${todayISO()}">
         </div>
+      </div>
+      <div class="field-row" id="pf-amount-combo-wrap" style="margin-bottom:14px" hidden>
+        <div class="field">
+          <label>مبلغ رسوم التسجيل (${escapeHtml(state.settings.currency)})</label>
+          <input id="pf-combo-reg" type="number" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>مبلغ الشهر الأول (${escapeHtml(state.settings.currency)})</label>
+          <input id="pf-combo-month" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="field" id="pf-combo-total-wrap" style="margin-bottom:14px" hidden>
+        <small id="pf-combo-total" style="color:var(--color-text-muted)"></small>
+      </div>
+      <div class="field" id="pf-combo-date-wrap" style="margin-bottom:14px" hidden>
+        <label>تاريخ الدفع</label>
+        <input id="pf-combo-date" type="date" value="${todayISO()}">
       </div>
       <div class="field">
         <label>ملاحظة (اختياري)</label>
@@ -1137,7 +1161,14 @@ function paymentForm(studentId) {
   const countCustomInput = document.getElementById('pf-count-custom');
   const previewWrap = document.getElementById('pf-months-preview-wrap');
   const previewEl = document.getElementById('pf-months-preview');
+  const singleAmountWrap = document.getElementById('pf-amount-single-wrap');
   const amountInput = document.getElementById('pf-amount');
+  const comboAmountWrap = document.getElementById('pf-amount-combo-wrap');
+  const comboTotalWrap = document.getElementById('pf-combo-total-wrap');
+  const comboTotalEl = document.getElementById('pf-combo-total');
+  const comboDateWrap = document.getElementById('pf-combo-date-wrap');
+  const comboRegInput = document.getElementById('pf-combo-reg');
+  const comboMonthInput = document.getElementById('pf-combo-month');
   const monthInput = document.getElementById('pf-month');
   const studentSel = document.getElementById('pf-student');
 
@@ -1148,19 +1179,31 @@ function paymentForm(studentId) {
     return monthRange(monthInput.value || currentMonth(), monthsCount());
   }
   function updateVisibility() {
-    const isMonthly = typeSel.value === 'monthly';
-    monthWrap.style.display = isMonthly ? '' : 'none';
+    const type = typeSel.value;
+    const isMonthly = type === 'monthly';
+    const isCombo = type === 'combo';
+    monthWrap.style.display = (isMonthly || isCombo) ? '' : 'none';
     countWrap.style.display = isMonthly ? '' : 'none';
     previewWrap.style.display = isMonthly ? '' : 'none';
     countCustomWrap.hidden = !(isMonthly && countSel.value === 'other');
+    singleAmountWrap.style.display = isCombo ? 'none' : '';
+    comboAmountWrap.hidden = !isCombo;
+    comboTotalWrap.hidden = !isCombo;
+    comboDateWrap.hidden = !isCombo;
   }
   function refresh() {
     updateVisibility();
     const st = getStudent(studentSel.value);
     if (!st) return;
-    if (typeSel.value === 'registration') {
+    const type = typeSel.value;
+    if (type === 'registration') {
       amountInput.value = registrationBalance(st) || '';
       previewEl.textContent = '';
+    } else if (type === 'combo') {
+      const month = monthInput.value || currentMonth();
+      comboRegInput.value = registrationBalance(st) || '';
+      comboMonthInput.value = Math.max(0, monthlyFeeFor(st) - monthPaid(st, month)) || '';
+      updateComboTotal();
     } else {
       const months = selectedMonths();
       amountInput.value = totalDueForMonths(st, months) || '';
@@ -1169,23 +1212,57 @@ function paymentForm(studentId) {
         : '';
     }
   }
+  function updateComboTotal() {
+    const total = (Number(comboRegInput.value) || 0) + (Number(comboMonthInput.value) || 0);
+    comboTotalEl.textContent = `الإجمالي: ${fmtMoney(total)}`;
+  }
   typeSel.addEventListener('change', refresh);
   studentSel.addEventListener('change', refresh);
   monthInput.addEventListener('change', refresh);
   countSel.addEventListener('change', refresh);
   countCustomInput.addEventListener('input', refresh);
+  comboRegInput.addEventListener('input', updateComboTotal);
+  comboMonthInput.addEventListener('input', updateComboTotal);
   refresh();
 
   document.getElementById('pf-save').addEventListener('click', () => {
+    const st = getStudent(studentSel.value);
+    const type = typeSel.value;
+
+    if (type === 'combo') {
+      const regAmt = Number(comboRegInput.value) || 0;
+      const monAmt = Number(comboMonthInput.value) || 0;
+      if (regAmt <= 0 && monAmt <= 0) { toast('يرجى إدخال مبلغ صحيح', 'error'); return; }
+      const month = monthInput.value || currentMonth();
+      const payment = {
+        id: uid('pay'),
+        studentId: studentSel.value,
+        type: 'combo',
+        registrationAmount: regAmt,
+        months: [month],
+        allocations: { [month]: monAmt },
+        amount: regAmt + monAmt,
+        date: document.getElementById('pf-combo-date').value || todayISO(),
+        note: document.getElementById('pf-note').value.trim(),
+        receiptNo: nextReceiptNumber()
+      };
+      state.payments.push(payment);
+      save();
+      closeModal();
+      toast('تم تسجيل الدفعة بنجاح', 'success');
+      refreshCurrentSection();
+      printReceipt(payment.id, true);
+      return;
+    }
+
     const amount = Number(amountInput.value);
     if (!amount || amount <= 0) { toast('يرجى إدخال مبلغ صحيح', 'error'); return; }
-    const st = getStudent(studentSel.value);
-    const isMonthly = typeSel.value === 'monthly';
+    const isMonthly = type === 'monthly';
     const months = isMonthly ? selectedMonths() : [];
     const payment = {
       id: uid('pay'),
       studentId: studentSel.value,
-      type: typeSel.value,
+      type,
       months: isMonthly ? months : null,
       allocations: isMonthly ? distributeAmountOverMonths(st, months, amount) : null,
       amount,
@@ -1227,6 +1304,7 @@ function renderPayments() {
         <label>نوع الدفعة</label>
         <select id="pyf-type">
           <option value="">الكل</option>
+          <option value="combo" ${paymentFilters.type === 'combo' ? 'selected' : ''}>تسجيل + الشهر الأول</option>
           <option value="registration" ${paymentFilters.type === 'registration' ? 'selected' : ''}>رسوم تسجيل</option>
           <option value="monthly" ${paymentFilters.type === 'monthly' ? 'selected' : ''}>رسوم شهرية</option>
         </select>
@@ -1287,6 +1365,10 @@ function printReceipt(paymentId) {
         <tr><td>القسم الدراسي</td><td>${escapeHtml(st ? className(st.classId) : '—')}</td></tr>
         <tr><td>نوع الرسوم</td><td>${paymentLabel(p)}</td></tr>
         <tr><td>تاريخ الدفع</td><td>${fmtDate(p.date)}</td></tr>
+        ${p.type === 'combo' ? `
+        <tr><td>رسوم التسجيل</td><td>${fmtMoney(p.registrationAmount || 0)}</td></tr>
+        <tr><td>رسوم الشهر الأول</td><td>${fmtMoney((p.allocations && p.allocations[paymentMonths(p)[0]]) || 0)}</td></tr>
+        ` : ''}
         ${p.note ? `<tr><td>ملاحظة</td><td>${escapeHtml(p.note)}</td></tr>` : ''}
         <tr class="total-row"><td>المبلغ المدفوع</td><td>${fmtMoney(p.amount)}</td></tr>
       </table>
@@ -1460,7 +1542,8 @@ function renderBackup() {
     state.payments.forEach(p => {
       const st = getStudent(p.studentId);
       const months = paymentMonths(p);
-      lines.push([p.receiptNo || '', st ? st.name : 'محذوف', p.type === 'registration' ? 'تسجيل' : 'شهرية',
+      const typeLabel = p.type === 'registration' ? 'تسجيل' : p.type === 'combo' ? 'تسجيل + الشهر الأول' : 'شهرية';
+      lines.push([p.receiptNo || '', st ? st.name : 'محذوف', typeLabel,
         months.length ? months.map(monthLabel).join(' / ') : '', p.amount, p.date, p.note || '']
         .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
     });
