@@ -512,11 +512,14 @@ function renderStudents() {
   el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => paymentForm(b.dataset.pay)));
 }
 
-function studentForm(existing) {
+function studentForm(existing, prefill) {
   const isEdit = !!existing;
+  const isSibling = !isEdit && !!prefill;
+  const seed = existing || prefill || {};
   openModal(`
-    <div class="modal__header"><h3>${isEdit ? 'تعديل بيانات الطالب' : 'تسجيل طالب جديد'}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__header"><h3>${isEdit ? 'تعديل بيانات الطالب' : isSibling ? 'إضافة ابن آخر لنفس ولي الأمر' : 'تسجيل طالب جديد'}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
     <div class="modal__body">
+      ${isSibling ? `<p style="color:var(--color-text-muted);margin-bottom:14px">سيتم تعبئة بيانات ولي الأمر تلقائيًا — عدّل اسم الابن/الابنة والقسم فقط.</p>` : ''}
       <div class="field" style="margin-bottom:14px">
         <label>الاسم الكامل *</label>
         <input id="sf-name" value="${escapeHtml(existing ? existing.name : '')}" placeholder="اسم الطالب">
@@ -526,18 +529,18 @@ function studentForm(existing) {
           <label>القسم الدراسي</label>
           <select id="sf-class-id">
             <option value="">— بدون —</option>
-            ${state.classes.map(c => `<option value="${c.id}" ${existing && existing.classId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+            ${state.classes.map(c => `<option value="${c.id}" ${seed.classId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
           </select>
         </div>
         <div class="field">
           <label>رقم هاتف ولي الأمر</label>
-          <input id="sf-phone" value="${escapeHtml(existing ? existing.phone || '' : '')}" placeholder="77 000 00 00">
+          <input id="sf-phone" value="${escapeHtml(seed.phone || '')}" placeholder="77 000 00 00">
         </div>
       </div>
       <div class="field-row" style="margin-bottom:14px">
         <div class="field">
           <label>اسم ولي الأمر</label>
-          <input id="sf-parent" value="${escapeHtml(existing ? existing.parentName || '' : '')}">
+          <input id="sf-parent" value="${escapeHtml(seed.parentName || '')}">
         </div>
         <div class="field">
           <label>تاريخ التسجيل</label>
@@ -602,11 +605,18 @@ function studentForm(existing) {
   }
 }
 
+function familyMembers(phone) {
+  if (!phone || !phone.trim()) return [];
+  const p = phone.trim();
+  return state.students.filter(s => (s.phone || '').trim() === p).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+}
+
 function studentDetail(id) {
   const s = getStudent(id);
   if (!s) return;
   const month = currentMonth();
   const payments = studentPayments(id).sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+  const siblings = familyMembers(s.phone).filter(x => x.id !== s.id);
 
   openModal(`
     <div class="modal__header">
@@ -626,6 +636,11 @@ function studentDetail(id) {
       </div>
       <p><strong>القسم:</strong> ${escapeHtml(className(s.classId))} &nbsp; | &nbsp; <strong>الهاتف:</strong> ${escapeHtml(s.phone || '—')}</p>
       <p><strong>ولي الأمر:</strong> ${escapeHtml(s.parentName || '—')} &nbsp; | &nbsp; <strong>تاريخ التسجيل:</strong> ${fmtDate(s.registrationDate)}</p>
+      ${siblings.length ? `<p style="color:var(--color-text-muted)">👨‍👩‍👧‍👦 لولي الأمر هذا ${siblings.length + 1} أبناء مسجّلون: ${escapeHtml([s.name, ...siblings.map(x => x.name)].join('، '))}</p>` : ''}
+      <div class="row-actions" style="margin:10px 0 16px">
+        <button class="btn btn--outline btn--sm" id="sd-add-sibling">＋ إضافة ابن آخر لنفس ولي الأمر</button>
+        ${s.phone ? `<button class="btn btn--outline btn--sm" id="sd-family-invoice">🧾 فاتورة عائلية موحّدة</button>` : ''}
+      </div>
       <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
       <h4 style="margin-bottom:10px">سجل الدفعات</h4>
       ${payments.length === 0 ? emptyState('💳', 'لا توجد دفعات مسجّلة') : `
@@ -650,7 +665,88 @@ function studentDetail(id) {
 
   document.getElementById('sd-edit').addEventListener('click', () => studentForm(s));
   document.getElementById('sd-pay').addEventListener('click', () => paymentForm(s.id));
+  document.getElementById('sd-add-sibling').addEventListener('click', () => studentForm(null, { parentName: s.parentName, phone: s.phone, classId: s.classId }));
+  const invoiceBtn = document.getElementById('sd-family-invoice');
+  if (invoiceBtn) invoiceBtn.addEventListener('click', () => familyInvoiceModal(s.phone));
   document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printReceipt(b.dataset.print)));
+}
+
+/* ================= الفاتورة العائلية الموحّدة ================= */
+function familyInvoiceModal(phone) {
+  const members = familyMembers(phone);
+  if (!members.length) return;
+  let invoiceMonth = currentMonth();
+
+  function render() {
+    const rows = members.map(st => {
+      const regBal = registrationBalance(st);
+      const monBal = isEnrolledInMonth(st, invoiceMonth) ? Math.max(0, monthlyFeeFor(st) - monthPaid(st, invoiceMonth)) : 0;
+      return { s: st, regBal, monBal, total: regBal + monBal };
+    });
+    const grandTotal = rows.reduce((sum, r) => sum + r.total, 0);
+    const monthOptions = monthRange(addMonths(currentMonth(), -2), 6);
+
+    openModal(`
+      <div class="modal__header"><h3>فاتورة عائلية موحّدة</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+      <div class="modal__body">
+        <p><strong>ولي الأمر:</strong> ${escapeHtml(members[0].parentName || '—')} &nbsp; | &nbsp; <strong>الهاتف:</strong> ${escapeHtml(phone)} &nbsp; | &nbsp; <strong>عدد الأبناء:</strong> ${members.length}</p>
+        <div class="field" style="margin:14px 0;max-width:220px">
+          <label>شهر الاستحقاق</label>
+          <select id="fi-month">
+            ${monthOptions.map(m => `<option value="${m}" ${m === invoiceMonth ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>الابن/الابنة</th><th>القسم</th><th>متبقي التسجيل</th><th>متبقي الشهر</th><th>الإجمالي</th></tr></thead>
+          <tbody>
+            ${rows.map(r => `<tr>
+              <td>${escapeHtml(r.s.name)}</td>
+              <td>${escapeHtml(className(r.s.classId))}</td>
+              <td>${fmtMoney(r.regBal)}</td>
+              <td>${fmtMoney(r.monBal)}</td>
+              <td><strong>${fmtMoney(r.total)}</strong></td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>
+        <div style="text-align:end;margin-top:14px;font-size:18px"><strong>الإجمالي المستحق: ${fmtMoney(grandTotal)}</strong></div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--ghost" onclick="closeModal()">إغلاق</button>
+        <button class="btn btn--primary" id="fi-print">🖨️ طباعة الفاتورة</button>
+      </div>
+    `, { wide: true });
+
+    document.getElementById('fi-month').addEventListener('change', e => { invoiceMonth = e.target.value; render(); });
+    document.getElementById('fi-print').addEventListener('click', () => printFamilyInvoice(phone, invoiceMonth, rows, grandTotal));
+  }
+  render();
+}
+
+function printFamilyInvoice(phone, month, rows, grandTotal) {
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="receipt" style="max-width:560px">
+      <h2>${escapeHtml(state.settings.schoolName)}</h2>
+      <div class="sub">${escapeHtml(state.settings.address || '')} ${state.settings.phone ? ' — ' + escapeHtml(state.settings.phone) : ''}</div>
+      <div class="sub">فاتورة عائلية موحّدة — السنة الدراسية: ${escapeHtml(state.settings.schoolYear)}</div>
+      <hr>
+      <table>
+        <tr><td>ولي الأمر</td><td>${escapeHtml(rows[0].s.parentName || '—')}</td></tr>
+        <tr><td>الهاتف</td><td>${escapeHtml(phone)}</td></tr>
+        <tr><td>شهر الاستحقاق</td><td>${monthLabel(month)}</td></tr>
+      </table>
+      <table style="margin-top:10px">
+        <tr><td><strong>الابن/الابنة</strong></td><td><strong>القسم</strong></td><td><strong>المستحق</strong></td></tr>
+        ${rows.map(r => `<tr><td>${escapeHtml(r.s.name)}</td><td>${escapeHtml(className(r.s.classId))}</td><td>${fmtMoney(r.total)}</td></tr>`).join('')}
+        <tr class="total-row"><td colspan="2">الإجمالي الكلي المستحق</td><td>${fmtMoney(grandTotal)}</td></tr>
+      </table>
+      <div class="sign">
+        <span>توقيع المستلم: ..............................</span>
+        <span>${fmtDate(todayISO())}</span>
+      </div>
+    </div>
+  `;
+  window.print();
 }
 
 /* ================= الدفعات ================= */
