@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام إدارة رسوم المدرسة</title>
+<meta name="description" content="برنامج كامل لإدارة رسوم التسجيل والرسوم الشهرية للطلاب، متابعة المدفوعات، طباعة الإيصالات، وإعداد التقارير الشهرية.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app">
+  <!-- الشريط الجانبي -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <span class="sidebar__logo">🎓</span>
+      <div>
+        <strong id="brand-name">اسم المدرسة</strong>
+        <small id="brand-year">السنة الدراسية</small>
+      </div>
+    </div>
+    <nav class="sidebar__nav">
+      <button class="nav-link active" data-section="dashboard"><span>📊</span> لوحة التحكم</button>
+      <button class="nav-link" data-section="students"><span>👨‍🎓</span> الطلاب</button>
+      <button class="nav-link" data-section="classes"><span>🏫</span> الأقسام الدراسية</button>
+      <button class="nav-link" data-section="payments"><span>💳</span> سجل الدفعات</button>
+      <button class="nav-link" data-section="report"><span>📅</span> التقرير الشهري</button>
+      <button class="nav-link" data-section="backup"><span>🗄️</span> النسخ الاحتياطي</button>
+      <button class="nav-link" data-section="settings"><span>⚙️</span> الإعدادات</button>
+    </nav>
+    <div class="sidebar__footer">تطبيق يعمل بالكامل من متصفحك — بياناتك محفوظة محليًا</div>
+  </aside>
+
+  <div class="overlay-backdrop" id="sidebar-backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn only-mobile" id="menu-toggle" aria-label="القائمة">☰</button>
+      <h1 id="page-title">لوحة التحكم</h1>
+      <div class="topbar__actions">
+        <button class="btn btn--primary" id="quick-payment-btn">＋ تسجيل دفعة</button>
+        <button class="btn btn--outline" id="quick-student-btn">＋ طالب جديد</button>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- لوحة التحكم -->
+      <section id="section-dashboard" class="page active"></section>
+
+      <!-- الطلاب -->
+      <section id="section-students" class="page"></section>
+
+      <!-- الأقسام -->
+      <section id="section-classes" class="page"></section>
+
+      <!-- الدفعات -->
+      <section id="section-payments" class="page"></section>
+
+      <!-- التقرير الشهري -->
+      <section id="section-report" class="page"></section>
+
+      <!-- النسخ الاحتياطي -->
+      <section id="section-backup" class="page"></section>
+
+      <!-- الإعدادات -->
+      <section id="section-settings" class="page"></section>
+
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal" id="modal-container"></div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<div id="print-area"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
