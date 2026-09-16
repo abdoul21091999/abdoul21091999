@@ -1371,6 +1371,7 @@ function familyInvoiceModal(phone) {
           </tbody>
         </table></div>
         <div style="text-align:end;margin-top:14px;font-size:18px"><strong>${L('الإجمالي المستحق:', 'Total dû :')} ${fmtMoney(grandTotal)}</strong></div>
+        ${rows.some(r => !r.s.classId && r.s.monthlyFeeOverride == null) ? `<p style="color:var(--color-warning,#b8860b);margin-top:10px;font-size:13px">⚠️ ${L('بعض الأبناء غير مرتبطين بقسم دراسي ولا يملكون رسمًا شهريًا خاصًا، لذا يظهر "متبقي الشهر" الخاص بهم 0 — عدّل بياناتهم من صفحة الطلاب وحدد القسم الدراسي.', "Certains enfants ne sont associés à aucune classe et n'ont pas de frais mensuel spécifique, donc leur mensualité affiche 0 — modifiez leurs données et associez une classe.")}</p>` : ''}
       </div>
       <div class="modal__footer">
         <button class="btn btn--ghost" onclick="closeModal()">${L('إغلاق', 'Fermer')}</button>
