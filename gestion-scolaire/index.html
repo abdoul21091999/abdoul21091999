@@ -1064,7 +1064,10 @@ function studentDetail(id) {
               <td>${paymentLabel(p)}</td>
               <td>${fmtMoney(p.amount)}</td>
               <td>${fmtDate(p.date)}</td>
-              <td><button class="btn btn--outline btn--sm" data-print="${p.id}">${L('🖨️ إيصال', '🖨️ Reçu')}</button></td>
+              <td class="row-actions">
+                <button class="btn btn--outline btn--sm" data-print="${p.id}">${L('🖨️ إيصال', '🖨️ Reçu')}</button>
+                ${s.phone ? `<button class="btn btn--outline btn--sm" data-whatsapp="${p.id}">${L('📤 واتساب', '📤 WhatsApp')}</button>` : ''}
+              </td>
             </tr>`).join('')}
         </tbody>
       </table></div>`}
@@ -1081,6 +1084,7 @@ function studentDetail(id) {
   const invoiceBtn = document.getElementById('sd-family-invoice');
   if (invoiceBtn) invoiceBtn.addEventListener('click', () => familyInvoiceModal(s.phone));
   document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printReceipt(b.dataset.print)));
+  document.querySelectorAll('[data-whatsapp]').forEach(b => b.addEventListener('click', () => sendReceiptWhatsApp(b.dataset.whatsapp)));
 }
 
 /* ================= الفاتورة العائلية الموحّدة ================= */
@@ -1124,12 +1128,14 @@ function familyInvoiceModal(phone) {
       </div>
       <div class="modal__footer">
         <button class="btn btn--ghost" onclick="closeModal()">${L('إغلاق', 'Fermer')}</button>
+        <button class="btn btn--outline" id="fi-whatsapp">${L('📤 إرسال عبر واتساب', '📤 Envoyer par WhatsApp')}</button>
         <button class="btn btn--primary" id="fi-print">${L('🖨️ طباعة الفاتورة', '🖨️ Imprimer la facture')}</button>
       </div>
     `, { wide: true });
 
     document.getElementById('fi-month').addEventListener('change', e => { invoiceMonth = e.target.value; render(); });
     document.getElementById('fi-print').addEventListener('click', () => printFamilyInvoice(phone, invoiceMonth, rows, grandTotal));
+    document.getElementById('fi-whatsapp').addEventListener('click', () => sendFamilyInvoiceWhatsApp(phone, rows, grandTotal, invoiceMonth));
   }
   render();
 }
@@ -1145,6 +1151,67 @@ function receiptHeaderHtml() {
 function receiptLicenseHtml() {
   const text = (L(state.settings.licenseInfoAr, state.settings.licenseInfoFr) || '').trim();
   return text ? `<div class="sub" style="margin-top:-10px">${escapeHtml(text)}</div>` : '';
+}
+
+/* ---------------- إرسال عبر واتساب ---------------- */
+function formatPhoneForWhatsApp(phone) {
+  let digits = (phone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.length === 9 && !digits.startsWith('221')) digits = '221' + digits;
+  return digits;
+}
+function sendWhatsApp(phone, text) {
+  const num = formatPhoneForWhatsApp(phone);
+  if (!num) { toast(L('لا يوجد رقم هاتف صالح لهذا الطالب', "Aucun numéro de téléphone valide pour cet élève"), 'error'); return; }
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(text)}`, '_blank');
+}
+function buildReceiptWhatsAppText(p) {
+  const st = getStudent(p.studentId);
+  const schoolName = displayedSchoolName();
+  const name = st ? st.name : '—';
+  const lines = L(
+    [
+      `*${schoolName}*`, 'إيصال دفع', '——————————',
+      `الطالب: ${name}`, `النوع: ${paymentLabel(p)}`,
+      `المبلغ المدفوع: ${fmtMoney(p.amount)}`, `التاريخ: ${fmtDate(p.date)}`,
+      `رقم الإيصال: ${p.receiptNo || '—'}`, '——————————', 'شكرًا لتعاونكم 🙏'
+    ],
+    [
+      `*${schoolName}*`, 'Reçu de paiement', '——————————',
+      `Élève : ${name}`, `Type : ${paymentLabel(p)}`,
+      `Montant payé : ${fmtMoney(p.amount)}`, `Date : ${fmtDate(p.date)}`,
+      `N° reçu : ${p.receiptNo || '—'}`, '——————————', 'Merci pour votre confiance 🙏'
+    ]
+  );
+  return lines.join('\n');
+}
+function sendReceiptWhatsApp(paymentId) {
+  const p = state.payments.find(x => x.id === paymentId);
+  if (!p) return;
+  const st = getStudent(p.studentId);
+  sendWhatsApp(st ? st.phone : '', buildReceiptWhatsAppText(p));
+}
+function buildFamilyInvoiceWhatsAppText(rows, grandTotal, month) {
+  const schoolName = displayedSchoolName();
+  const parentName = rows[0].s.parentName || '—';
+  const childLines = rows.map(r => `${r.s.name}: ${fmtMoney(r.total)}`);
+  const lines = L(
+    [
+      `*${schoolName}*`, `فاتورة عائلية — ولي الأمر: ${parentName}`,
+      `شهر الاستحقاق: ${monthLabel(month)}`, '——————————',
+      ...childLines, '——————————', `الإجمالي المستحق: ${fmtMoney(grandTotal)}`
+    ],
+    [
+      `*${schoolName}*`, `Facture familiale — Tuteur : ${parentName}`,
+      `Mois concerné : ${monthLabel(month)}`, '——————————',
+      ...childLines, '——————————', `Total dû : ${fmtMoney(grandTotal)}`
+    ]
+  );
+  return lines.join('\n');
+}
+function sendFamilyInvoiceWhatsApp(phone, rows, grandTotal, month) {
+  sendWhatsApp(phone, buildFamilyInvoiceWhatsAppText(rows, grandTotal, month));
 }
 
 function printFamilyInvoice(phone, month, rows, grandTotal) {
@@ -1440,6 +1507,7 @@ function renderPayments() {
                 <td>${fmtDate(p.date)}</td>
                 <td class="row-actions">
                   <button class="btn btn--outline btn--sm" data-print="${p.id}">${L('🖨️ إيصال', '🖨️ Reçu')}</button>
+                  ${st && st.phone ? `<button class="btn btn--outline btn--sm" data-whatsapp="${p.id}">${L('📤 واتساب', '📤 WhatsApp')}</button>` : ''}
                   <button class="btn btn--danger btn--sm" data-del="${p.id}">${L('حذف', 'Supprimer')}</button>
                 </td>
               </tr>`;
@@ -1453,6 +1521,7 @@ function renderPayments() {
   document.getElementById('pyf-type').addEventListener('change', e => { paymentFilters.type = e.target.value; renderPayments(); });
   document.getElementById('pyf-add').addEventListener('click', () => paymentForm());
   el.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printReceipt(b.dataset.print)));
+  el.querySelectorAll('[data-whatsapp]').forEach(b => b.addEventListener('click', () => sendReceiptWhatsApp(b.dataset.whatsapp)));
   el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
     confirmAction(L('هل تريد حذف هذه الدفعة؟ لا يمكن التراجع عن هذا الإجراء.', 'Voulez-vous supprimer ce paiement ? Action irréversible.'), () => {
       state.payments = state.payments.filter(p => p.id !== b.dataset.del);
