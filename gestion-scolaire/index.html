@@ -511,14 +511,17 @@ function getFirebaseConfig() {
 function syncSkipped() { return localStorage.getItem(SYNC_SKIPPED_KEY) === '1'; }
 
 function parseFirebaseConfigInput(raw) {
-  const match = (raw || '').match(/\{[\s\S]*\}/);
-  if (!match) return null;
-  let text = match[0]
+  const text = raw || '';
+  const candidates = text.match(/\{[^{}]*\}/g) || [];
+  const target = candidates.find(c => /apiKey/.test(c));
+  if (!target) return null;
+  const cleaned = target
+    .replace(/\/\/.*$/gm, '')
     .replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":')
     .replace(/'/g, '"')
     .replace(/,(\s*[}\]])/g, '$1');
   try {
-    const cfg = JSON.parse(text);
+    const cfg = JSON.parse(cleaned);
     return (cfg && cfg.apiKey && cfg.projectId) ? cfg : null;
   } catch (e) { return null; }
 }
