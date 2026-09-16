@@ -261,11 +261,43 @@ tbody tr:last-child td { border-bottom: none; }
   .topbar h1 { font-size: 16px; }
   .topbar__actions .btn { padding: 8px 10px; font-size: 12.5px; }
 }
+
+/* ---------- بوابة الاتصال المشترك ---------- */
+.connect-gate {
+  position: fixed; inset: 0; background: var(--color-bg);
+  z-index: 500; display: flex; align-items: center; justify-content: center;
+  padding: 24px 16px; overflow-y: auto;
+}
+.gate-card {
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); padding: 26px 22px; max-width: 440px; width: 100%;
+}
+.gate-card h2 { font-size: 18px; margin-bottom: 8px; }
+.gate-card p.help { color: var(--color-text-muted); font-size: 13.5px; margin-bottom: 16px; line-height: 1.75; }
+.gate-card textarea, .gate-card input {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  margin-bottom: 12px; background: #fff; color: var(--color-text);
+}
+.gate-card textarea { font-family: 'Courier New', monospace; font-size: 12px; direction: ltr; text-align: left; }
+.gate-card input#gate-join-code {
+  font-family: inherit; font-size: 17px; text-align: center; letter-spacing: 4px; text-transform: uppercase;
+}
+.gate-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--color-text-muted); font-size: 12.5px; }
+.gate-divider::before, .gate-divider::after { content: ''; flex: 1; height: 1px; background: var(--color-border); }
+.gate-code-display {
+  text-align: center; font-size: 30px; font-weight: 800; letter-spacing: 6px;
+  background: var(--color-primary-light); color: var(--color-primary);
+  border-radius: var(--radius); padding: 16px; margin: 14px 0; direction: ltr;
+}
 </style>
 </head>
 <body>
 
-<div class="app">
+<div class="connect-gate" id="connect-gate" hidden>
+  <div class="gate-card" id="gate-content"></div>
+</div>
+
+<div class="app" id="app-root">
   <!-- الشريط الجانبي -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar__brand">
@@ -338,6 +370,9 @@ tbody tr:last-child td { border-bottom: none; }
 
 <div id="print-area"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
 <script>
 'use strict';
 
@@ -432,18 +467,20 @@ function defaultState() {
 
 let state = loadState();
 
+function normalizeLoadedState(parsed) {
+  const base = defaultState();
+  return {
+    settings: { ...base.settings, ...(parsed.settings || {}) },
+    classes: Array.isArray(parsed.classes) ? parsed.classes : [],
+    students: Array.isArray(parsed.students) ? parsed.students : [],
+    payments: Array.isArray(parsed.payments) ? parsed.payments : []
+  };
+}
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    const base = defaultState();
-    return {
-      settings: { ...base.settings, ...(parsed.settings || {}) },
-      classes: Array.isArray(parsed.classes) ? parsed.classes : [],
-      students: Array.isArray(parsed.students) ? parsed.students : [],
-      payments: Array.isArray(parsed.payments) ? parsed.payments : []
-    };
+    return normalizeLoadedState(JSON.parse(raw));
   } catch (e) {
     console.error('تعذر تحميل البيانات المحفوظة', e);
     return defaultState();
@@ -451,6 +488,207 @@ function loadState() {
 }
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (fbDb && schoolCode) {
+    fbDb.collection('schools').doc(schoolCode).set(state).catch(err => {
+      console.error('Firestore write failed', err);
+      toast(L('تعذّر رفع آخر تحديث للمزامنة — سيُعاد المحاولة لاحقًا', 'Échec de synchronisation — nouvelle tentative plus tard'), 'error');
+    });
+  }
+}
+
+/* ---------------- الاتصال المشترك (Firebase) ---------------- */
+const FIREBASE_CONFIG_KEY = 'sfm_firebase_config';
+const SCHOOL_CODE_KEY = 'sfm_school_code';
+const SYNC_SKIPPED_KEY = 'sfm_sync_skipped';
+let fbApp = null, fbDb = null, fbUnsub = null;
+let schoolCode = localStorage.getItem(SCHOOL_CODE_KEY) || '';
+let gateCreatedCode = '';
+
+function getFirebaseConfig() {
+  try { return JSON.parse(localStorage.getItem(FIREBASE_CONFIG_KEY) || 'null'); }
+  catch (e) { return null; }
+}
+function syncSkipped() { return localStorage.getItem(SYNC_SKIPPED_KEY) === '1'; }
+
+function parseFirebaseConfigInput(raw) {
+  const match = (raw || '').match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  let text = match[0]
+    .replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":')
+    .replace(/'/g, '"')
+    .replace(/,(\s*[}\]])/g, '$1');
+  try {
+    const cfg = JSON.parse(text);
+    return (cfg && cfg.apiKey && cfg.projectId) ? cfg : null;
+  } catch (e) { return null; }
+}
+
+function generateSchoolCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function initFirebase() {
+  const cfg = getFirebaseConfig();
+  if (!cfg) return Promise.resolve(false);
+  if (fbApp) return Promise.resolve(true);
+  try {
+    fbApp = firebase.initializeApp(cfg);
+    fbDb = firebase.firestore();
+    return firebase.auth().signInAnonymously().then(() => true).catch(err => {
+      console.error('Firebase auth failed', err);
+      toast(L('تعذّر الاتصال بقاعدة البيانات — تحقق من إعدادات Firebase', 'Échec de connexion — vérifiez la configuration Firebase'), 'error');
+      fbApp = null; fbDb = null;
+      return false;
+    });
+  } catch (e) {
+    console.error('Firebase init failed', e);
+    fbApp = null; fbDb = null;
+    return Promise.resolve(false);
+  }
+}
+
+function attachSchoolListener() {
+  if (!fbDb || !schoolCode) return;
+  if (fbUnsub) { fbUnsub(); fbUnsub = null; }
+  fbUnsub = fbDb.collection('schools').doc(schoolCode).onSnapshot(snap => {
+    if (!snap.exists) return;
+    const remote = snap.data();
+    if (JSON.stringify(remote) === JSON.stringify(state)) return;
+    state = normalizeLoadedState(remote);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    renderBrand();
+    renderStaticTexts();
+    refreshCurrentSection();
+  }, err => { console.error('Firestore listen error', err); });
+}
+
+function disconnectSchool() {
+  if (fbUnsub) { fbUnsub(); fbUnsub = null; }
+  localStorage.removeItem(SCHOOL_CODE_KEY);
+  schoolCode = '';
+  refreshCurrentSection();
+  toast(L('تم قطع الاتصال المشترك — بياناتك الحالية محفوظة محليًا فقط الآن', 'Déconnecté — vos données restent maintenant uniquement locales'), 'success');
+}
+
+function renderGate() {
+  const gate = document.getElementById('connect-gate');
+  const appRoot = document.getElementById('app-root');
+  const cfg = getFirebaseConfig();
+  if (gateCreatedCode) { renderGateCodeCreated(); gate.hidden = false; appRoot.hidden = true; return; }
+  if (!cfg && !syncSkipped()) { renderGateFirebaseSetup(); gate.hidden = false; appRoot.hidden = true; return; }
+  if (cfg && !schoolCode) { renderGateSchoolCode(); gate.hidden = false; appRoot.hidden = true; return; }
+  gate.hidden = true; appRoot.hidden = false;
+}
+
+function renderGateFirebaseSetup() {
+  document.getElementById('gate-content').innerHTML = `
+    <h2>🔗 ${L('ربط قاعدة بيانات مشتركة (اختياري)', 'Connecter une base de données partagée (optionnel)')}</h2>
+    <p class="help">${L(
+      'لتتمكن أنت وشخص آخر من رؤية نفس البيانات فوريًا على جهازين مختلفين، يلزم ربط التطبيق بقاعدة بيانات Firebase مجانية (تُنشئها أنت بحساب Google). الصق كود الإعداد هنا بعد إنشائها.',
+      "Pour voir les mêmes données en temps réel sur deux appareils, connectez l'app à une base de données Firebase gratuite (créée avec votre compte Google). Collez le code de configuration ici après l'avoir créée."
+    )}</p>
+    <textarea id="gate-fb-config" rows="7" placeholder="${L('الصق هنا كود firebaseConfig كاملاً', 'Collez ici le code firebaseConfig complet')}"></textarea>
+    <button class="btn btn--primary" id="gate-fb-save" style="width:100%;margin-bottom:10px">${L('متابعة', 'Continuer')}</button>
+    <button class="btn btn--ghost" id="gate-fb-skip" style="width:100%">${L('تخطي الآن — استخدام محلي على هذا الجهاز فقط', 'Ignorer — utilisation locale sur cet appareil uniquement')}</button>
+  `;
+  document.getElementById('gate-fb-save').addEventListener('click', () => {
+    const cfg = parseFirebaseConfigInput(document.getElementById('gate-fb-config').value);
+    if (!cfg) {
+      toast(L('تعذّر قراءة الكود — تأكد من لصق كود firebaseConfig كاملاً', 'Impossible de lire le code — collez le code firebaseConfig complet'), 'error');
+      return;
+    }
+    localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(cfg));
+    localStorage.removeItem(SYNC_SKIPPED_KEY);
+    renderGate();
+  });
+  document.getElementById('gate-fb-skip').addEventListener('click', () => {
+    localStorage.setItem(SYNC_SKIPPED_KEY, '1');
+    renderGate();
+  });
+}
+
+function renderGateSchoolCode() {
+  document.getElementById('gate-content').innerHTML = `
+    <h2>🏫 ${L('الاتصال بالمدرسة', "Connexion à l'école")}</h2>
+    <p class="help">${L('أنشئ مدرسة جديدة وشارك الرمز مع الشخص الآخر، أو انضم برمز مدرسة موجود لديك.', "Créez une école et partagez le code avec l'autre personne, ou rejoignez avec un code existant.")}</p>
+    <button class="btn btn--primary" id="gate-create" style="width:100%">${L('🏫 إنشاء مدرسة جديدة', '🏫 Créer une nouvelle école')}</button>
+    <div class="gate-divider">${L('أو', 'ou')}</div>
+    <input id="gate-join-code" placeholder="${L('أدخل رمز المدرسة', "Code de l'école")}" maxlength="8">
+    <button class="btn btn--outline" id="gate-join" style="width:100%">${L('🔑 انضمام', '🔑 Rejoindre')}</button>
+  `;
+  document.getElementById('gate-create').addEventListener('click', handleGateCreate);
+  document.getElementById('gate-join').addEventListener('click', handleGateJoin);
+}
+
+function renderGateCodeCreated() {
+  document.getElementById('gate-content').innerHTML = `
+    <h2>✅ ${L('تم إنشاء المدرسة', 'École créée')}</h2>
+    <p class="help">${L('شارك هذا الرمز مع الشخص الآخر ليتصل به من جهازه (سيرى نفس بياناتك فورًا).', "Partagez ce code avec l'autre personne pour qu'elle se connecte depuis son appareil (elle verra les mêmes données instantanément).")}</p>
+    <div class="gate-code-display">${gateCreatedCode}</div>
+    <button class="btn btn--outline" id="gate-copy-code" style="width:100%;margin-bottom:10px">${L('📋 نسخ الرمز', '📋 Copier le code')}</button>
+    <button class="btn btn--primary" id="gate-continue" style="width:100%">${L('متابعة إلى التطبيق', "Continuer vers l'application")}</button>
+  `;
+  document.getElementById('gate-copy-code').addEventListener('click', () => {
+    navigator.clipboard.writeText(gateCreatedCode).then(() => toast(L('تم النسخ', 'Copié'), 'success')).catch(() => {});
+  });
+  document.getElementById('gate-continue').addEventListener('click', () => {
+    gateCreatedCode = '';
+    renderGate();
+  });
+}
+
+async function handleGateCreate() {
+  const btn = document.getElementById('gate-create');
+  btn.disabled = true;
+  const ok = await initFirebase();
+  if (!ok) { btn.disabled = false; return; }
+  const code = generateSchoolCode();
+  try {
+    await fbDb.collection('schools').doc(code).set(state);
+    schoolCode = code;
+    localStorage.setItem(SCHOOL_CODE_KEY, code);
+    attachSchoolListener();
+    gateCreatedCode = code;
+    renderGate();
+  } catch (e) {
+    console.error(e);
+    toast(L('تعذّر الإنشاء — تحقق من إعدادات Firebase (قواعد الأمان والمصادقة)', 'Échec — vérifiez la configuration Firebase (règles et authentification)'), 'error');
+    btn.disabled = false;
+  }
+}
+
+async function handleGateJoin() {
+  const input = document.getElementById('gate-join-code');
+  const code = input.value.trim().toUpperCase();
+  if (!code) return;
+  const btn = document.getElementById('gate-join');
+  btn.disabled = true;
+  const ok = await initFirebase();
+  if (!ok) { btn.disabled = false; return; }
+  try {
+    const doc = await fbDb.collection('schools').doc(code).get();
+    if (!doc.exists) {
+      toast(L('هذا الرمز غير موجود', "Ce code n'existe pas"), 'error');
+      btn.disabled = false;
+      return;
+    }
+    schoolCode = code;
+    localStorage.setItem(SCHOOL_CODE_KEY, code);
+    state = normalizeLoadedState(doc.data());
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    attachSchoolListener();
+    renderBrand();
+    renderStaticTexts();
+    renderGate();
+    refreshCurrentSection();
+  } catch (e) {
+    console.error(e);
+    toast(L('تعذّر الانضمام — تحقق من الاتصال بالإنترنت', 'Échec — vérifiez votre connexion internet'), 'error');
+    btn.disabled = false;
+  }
 }
 
 /* ---------------- حسابات الرسوم ---------------- */
@@ -1752,7 +1990,22 @@ function downloadFile(filename, content, mime) {
 function renderSettings() {
   const el = document.getElementById('section-settings');
   const s = state.settings;
+  const isConnected = !!(getFirebaseConfig() && schoolCode);
   el.innerHTML = `
+    <div class="card" style="max-width:640px;margin-bottom:18px">
+      <div class="card__header"><h3>${L('الاتصال المشترك', 'Synchronisation partagée')}</h3></div>
+      <div class="card__body">
+        ${isConnected ? `
+        <p style="color:var(--color-text-muted);margin-bottom:10px">${L('متصل ✅ — البيانات تُزامَن فوريًا مع كل من يتصل بنفس الرمز.', 'Connecté ✅ — les données se synchronisent en temps réel avec quiconque utilise le même code.')}</p>
+        <div class="gate-code-display" style="font-size:22px;padding:12px;margin-bottom:12px">${schoolCode}</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn--outline btn--sm" id="st-copy-code">${L('📋 نسخ الرمز', '📋 Copier')}</button>
+          <button class="btn btn--danger btn--sm" id="st-disconnect">${L('🔌 قطع الاتصال', '🔌 Déconnecter')}</button>
+        </div>` : `
+        <p style="color:var(--color-text-muted);margin-bottom:12px">${L('غير مفعّل — بياناتك محفوظة على هذا الجهاز فقط. يمكنك تفعيل المزامنة ليتصل شخص آخر ويرى نفس بياناتك فوريًا.', "Non activé — vos données restent uniquement sur cet appareil. Activez la synchronisation pour qu'une autre personne voie les mêmes données en temps réel.")}</p>
+        <button class="btn btn--primary btn--sm" id="st-enable-sync">${L('🔗 تفعيل المزامنة المشتركة', '🔗 Activer la synchronisation partagée')}</button>`}
+      </div>
+    </div>
     <div class="card" style="max-width:640px">
       <div class="card__header"><h3>${L('إعدادات المدرسة', "Paramètres de l'école")}</h3></div>
       <div class="card__body">
@@ -1872,6 +2125,22 @@ function renderSettings() {
     document.getElementById('st-logo-remove').hidden = true;
     toast(L('تمت إزالة الشعار', 'Logo supprimé'), 'success');
   });
+  if (isConnected) {
+    document.getElementById('st-copy-code').addEventListener('click', () => {
+      navigator.clipboard.writeText(schoolCode).then(() => toast(L('تم النسخ', 'Copié'), 'success')).catch(() => {});
+    });
+    document.getElementById('st-disconnect').addEventListener('click', () => {
+      confirmAction(L('هل تريد قطع الاتصال المشترك؟ ستبقى بياناتك الحالية محفوظة محليًا لكن لن تُزامَن بعد الآن.', 'Voulez-vous déconnecter la synchronisation ? Vos données actuelles resteront locales mais ne seront plus synchronisées.'), () => {
+        disconnectSchool();
+        renderSettings();
+      });
+    });
+  } else {
+    document.getElementById('st-enable-sync').addEventListener('click', () => {
+      localStorage.removeItem(SYNC_SKIPPED_KEY);
+      renderGate();
+    });
+  }
   document.getElementById('st-save').addEventListener('click', () => {
     s.schoolName = document.getElementById('st-name').value.trim() || L('اسم المدرسة', "Nom de l'école");
     s.schoolNameFr = document.getElementById('st-name-fr').value.trim();
@@ -1914,7 +2183,7 @@ function closeSidebar() {
 }
 
 /* ================= تهيئة التطبيق ================= */
-function init() {
+async function init() {
   document.documentElement.lang = state.settings.language;
   document.documentElement.dir = state.settings.language === 'fr' ? 'ltr' : 'rtl';
   renderBrand();
@@ -1938,6 +2207,12 @@ function init() {
   });
 
   navigate('dashboard');
+  renderGate();
+
+  if (getFirebaseConfig() && schoolCode) {
+    const ok = await initFirebase();
+    if (ok) attachSchoolListener();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
