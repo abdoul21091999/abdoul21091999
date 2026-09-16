@@ -265,8 +265,8 @@ tbody tr:last-child td { border-bottom: none; }
 /* ---------- بوابة الاتصال المشترك ---------- */
 .connect-gate {
   position: fixed; inset: 0; background: var(--color-bg);
-  z-index: 500; display: flex; align-items: center; justify-content: center;
-  padding: 24px 16px; overflow-y: auto;
+  z-index: 500; display: flex; align-items: flex-start; justify-content: center;
+  padding: 40px 16px; overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
 .gate-card {
   background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius);
@@ -511,7 +511,7 @@ function getFirebaseConfig() {
 function syncSkipped() { return localStorage.getItem(SYNC_SKIPPED_KEY) === '1'; }
 
 function parseFirebaseConfigInput(raw) {
-  const text = raw || '';
+  const text = (raw || '').replace(/[‘’‛]/g, "'").replace(/[“”‟]/g, '"');
   const candidates = text.match(/\{[^{}]*\}/g) || [];
   const target = candidates.find(c => /apiKey/.test(c));
   if (!target) return null;
@@ -598,14 +598,19 @@ function renderGateFirebaseSetup() {
     <button class="btn btn--ghost" id="gate-fb-skip" style="width:100%">${L('تخطي الآن — استخدام محلي على هذا الجهاز فقط', 'Ignorer — utilisation locale sur cet appareil uniquement')}</button>
   `;
   document.getElementById('gate-fb-save').addEventListener('click', () => {
-    const cfg = parseFirebaseConfigInput(document.getElementById('gate-fb-config').value);
-    if (!cfg) {
-      toast(L('تعذّر قراءة الكود — تأكد من لصق كود firebaseConfig كاملاً', 'Impossible de lire le code — collez le code firebaseConfig complet'), 'error');
-      return;
+    try {
+      const cfg = parseFirebaseConfigInput(document.getElementById('gate-fb-config').value);
+      if (!cfg) {
+        toast(L('تعذّر قراءة الكود — تأكد من لصق كود firebaseConfig كاملاً', 'Impossible de lire le code — collez le code firebaseConfig complet'), 'error');
+        return;
+      }
+      localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(cfg));
+      localStorage.removeItem(SYNC_SKIPPED_KEY);
+      renderGate();
+    } catch (e) {
+      console.error(e);
+      toast(L('حدث خطأ غير متوقع — أعد المحاولة', 'Erreur inattendue — réessayez'), 'error');
     }
-    localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(cfg));
-    localStorage.removeItem(SYNC_SKIPPED_KEY);
-    renderGate();
   });
   document.getElementById('gate-fb-skip').addEventListener('click', () => {
     localStorage.setItem(SYNC_SKIPPED_KEY, '1');
