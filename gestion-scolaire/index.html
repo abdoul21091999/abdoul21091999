@@ -1334,6 +1334,30 @@ function studentDetail(id) {
 }
 
 /* ================= الفاتورة العائلية الموحّدة ================= */
+function distributeFamilyPayment(rows, month, amountPaid, note) {
+  let remaining = amountPaid;
+  const created = [];
+  for (const r of rows) {
+    if (remaining <= 0) break;
+    const regAmt = Math.min(r.regBal, remaining);
+    remaining -= regAmt;
+    const monAmt = Math.min(r.monBal, remaining);
+    remaining -= monAmt;
+    if (regAmt <= 0 && monAmt <= 0) continue;
+    const base = { id: uid('pay'), studentId: r.s.id, date: todayISO(), note: note || '', receiptNo: nextReceiptNumber() };
+    let payment;
+    if (regAmt > 0 && monAmt > 0) {
+      payment = { ...base, type: 'combo', registrationAmount: regAmt, months: [month], allocations: { [month]: monAmt }, amount: regAmt + monAmt };
+    } else if (regAmt > 0) {
+      payment = { ...base, type: 'registration', months: null, allocations: null, amount: regAmt };
+    } else {
+      payment = { ...base, type: 'monthly', months: [month], allocations: { [month]: monAmt }, amount: monAmt };
+    }
+    state.payments.push(payment);
+    created.push(payment);
+  }
+  return { created, remaining };
+}
 function familyInvoiceModal(phone) {
   const members = familyMembers(phone);
   if (!members.length) return;
@@ -1372,6 +1396,18 @@ function familyInvoiceModal(phone) {
         </table></div>
         <div style="text-align:end;margin-top:14px;font-size:18px"><strong>${L('الإجمالي المستحق:', 'Total dû :')} ${fmtMoney(grandTotal)}</strong></div>
         ${rows.some(r => !r.s.classId && r.s.monthlyFeeOverride == null) ? `<p style="color:var(--color-warning,#b8860b);margin-top:10px;font-size:13px">⚠️ ${L('بعض الأبناء غير مرتبطين بقسم دراسي ولا يملكون رسمًا شهريًا خاصًا، لذا يظهر "متبقي الشهر" الخاص بهم 0 — عدّل بياناتهم من صفحة الطلاب وحدد القسم الدراسي.', "Certains enfants ne sont associés à aucune classe et n'ont pas de frais mensuel spécifique, donc leur mensualité affiche 0 — modifiez leurs données et associez une classe.")}</p>` : ''}
+        ${grandTotal > 0 ? `
+        <hr style="margin:18px 0;border:none;border-top:1px solid var(--color-border)">
+        <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:10px">${L('إذا دفع ولي الأمر مبلغًا واحدًا يغطي كل أبنائه، أدخله هنا وسيوزَّعه البرنامج تلقائيًا: يبدأ برسوم التسجيل المتبقية لكل ابن، ثم بالرسوم الشهرية.', "Si le tuteur paie un seul montant pour tous ses enfants, saisissez-le ici — il sera réparti automatiquement : d'abord l'inscription restante de chaque enfant, puis les mensualités.")}</p>
+        <div class="field-row" style="align-items:end">
+          <div class="field">
+            <label>${L('المبلغ المدفوع الآن', 'Montant payé maintenant')} (${escapeHtml(state.settings.currency)})</label>
+            <input id="fi-pay-amount" type="number" min="0" max="${grandTotal}" value="${grandTotal}">
+          </div>
+          <div class="field">
+            <button class="btn btn--primary" id="fi-record-payment" style="width:100%">${L('✅ تسجيل الدفعة وتوزيعها', '✅ Enregistrer et répartir')}</button>
+          </div>
+        </div>` : ''}
       </div>
       <div class="modal__footer">
         <button class="btn btn--ghost" onclick="closeModal()">${L('إغلاق', 'Fermer')}</button>
@@ -1383,6 +1419,19 @@ function familyInvoiceModal(phone) {
     document.getElementById('fi-month').addEventListener('change', e => { invoiceMonth = e.target.value; render(); });
     document.getElementById('fi-print').addEventListener('click', () => printFamilyInvoice(phone, invoiceMonth, rows, grandTotal));
     document.getElementById('fi-whatsapp').addEventListener('click', () => sendFamilyInvoiceWhatsApp(phone, rows, grandTotal, invoiceMonth));
+    const recordBtn = document.getElementById('fi-record-payment');
+    if (recordBtn) {
+      recordBtn.addEventListener('click', () => {
+        const amt = Number(document.getElementById('fi-pay-amount').value);
+        if (!amt || amt <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
+        const { created } = distributeFamilyPayment(rows, invoiceMonth, Math.min(amt, grandTotal), L('دفعة عائلية موحّدة', 'Paiement familial groupé'));
+        if (!created.length) { toast(L('لا يوجد مبلغ مستحق لتوزيعه', 'Aucun montant dû à répartir'), 'error'); return; }
+        save();
+        toast(L('تم تسجيل الدفعة وتوزيعها على الأبناء بنجاح', 'Paiement enregistré et réparti avec succès'), 'success');
+        refreshCurrentSection();
+        render();
+      });
+    }
   }
   render();
 }
