@@ -3027,17 +3027,23 @@ function printQuranWeekly(halaqaId, weekStart) {
 }
 
 /* ---- كشف الخاتمين اليومي (صباح/مساء) ---- */
-function getKhatimRecord(memberId, date) {
-  return state.quranKhatimRecords.find(r => r.memberId === memberId && r.date === date);
+function getKhatimWeeklyRecord(memberId, weekStart) {
+  return state.quranKhatimRecords.find(r => r.memberId === memberId && r.weekStart === weekStart);
 }
 function khatimRecordFilled(rec) {
-  if (!rec) return false;
-  return !!((rec.morning && (rec.morning.amount || rec.morning.start)) || (rec.evening && (rec.evening.amount || rec.evening.start)));
+  if (!rec || !rec.days) return false;
+  return Object.values(rec.days).some(d => {
+    if (!d) return false;
+    const m = d.morning || {}, e = d.evening || {};
+    return !!(m.start || m.amount || m.result || e.start || e.amount || e.result);
+  });
 }
 let quranKhatimState = { halaqaId: '', date: todayISO() };
 function renderQuranKhatim() {
   const el = document.getElementById('quran-subview');
   if (!quranKhatimState.halaqaId && state.quranHalaqat.length) quranKhatimState.halaqaId = state.quranHalaqat[0].id;
+  const weekStart = quranWeekStart(quranKhatimState.date);
+  const weekEnd = addDaysISO(weekStart, 4);
   const members = state.quranMembers.filter(m => m.halaqaId === quranKhatimState.halaqaId && m.status !== 'inactive' && m.role === 'khatim')
     .sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
 
@@ -3051,20 +3057,21 @@ function renderQuranKhatim() {
         </select>
       </div>
       <div class="field">
-        <label>${L('التاريخ', 'Date')}</label>
+        <label>${L('أي يوم ضمن الأسبوع', 'Un jour de la semaine')}</label>
         <input id="qk-date" type="date" value="${quranKhatimState.date}">
       </div>
-      <button class="btn btn--outline" id="qk-print" style="align-self:flex-end">${L('🖨️ طباعة كشف اليوم', '🖨️ Imprimer la fiche du jour')}</button>
+      <button class="btn btn--outline" id="qk-print" style="align-self:flex-end">${L('🖨️ طباعة كشف الأسبوع', '🖨️ Imprimer la fiche de la semaine')}</button>
     </div>
+    <p style="color:var(--color-text-muted);margin-bottom:14px">${L('الأسبوع من', 'Semaine du')} <strong>${fmtDate(weekStart)}</strong> ${L('إلى', 'au')} <strong>${fmtDate(weekEnd)}</strong></p>
     <div class="card">
       <div class="card__body" style="padding:0">
         ${state.quranHalaqat.length === 0 ? emptyState('🕌', L('أضِف حلقة أولًا', "Ajoutez d'abord un cercle")) :
         members.length === 0 ? emptyState('📖', L('لا يوجد خاتمون في هذه الحلقة', 'Aucun khatim dans ce cercle')) : `
         <div class="table-wrap"><table>
-          <thead><tr><th>${L('الاسم', 'Nom')}</th><th>${L('حالة اليوم', 'État du jour')}</th><th></th></tr></thead>
+          <thead><tr><th>${L('الاسم', 'Nom')}</th><th>${L('حالة الأسبوع', 'État de la semaine')}</th><th></th></tr></thead>
           <tbody>
             ${members.map(m => {
-              const rec = getKhatimRecord(m.id, quranKhatimState.date);
+              const rec = getKhatimWeeklyRecord(m.id, weekStart);
               return `<tr>
                 <td><strong>${escapeHtml(m.name)}</strong></td>
                 <td>${khatimRecordFilled(rec) ? `<span class="badge badge--paid">${L('معبأ', 'Rempli')}</span>` : `<span class="badge badge--muted">${L('فارغ', 'Vide')}</span>`}</td>
@@ -3081,31 +3088,43 @@ function renderQuranKhatim() {
   const dateInput = document.getElementById('qk-date');
   if (dateInput) dateInput.addEventListener('change', e => { quranKhatimState.date = e.target.value || todayISO(); renderQuranKhatim(); });
   const printBtn = document.getElementById('qk-print');
-  if (printBtn) printBtn.addEventListener('click', () => printQuranKhatim(quranKhatimState.halaqaId, quranKhatimState.date));
-  el.querySelectorAll('[data-fill]').forEach(b => b.addEventListener('click', () => khatimRecordForm(b.dataset.fill, quranKhatimState.date)));
+  if (printBtn) printBtn.addEventListener('click', () => printQuranKhatim(quranKhatimState.halaqaId, weekStart));
+  el.querySelectorAll('[data-fill]').forEach(b => b.addEventListener('click', () => khatimRecordForm(b.dataset.fill, weekStart)));
 }
-function khatimRecordForm(memberId, date) {
+function khatimSessionGridHtml(sessionKey, title, days, dayData) {
+  return `
+    <h4 style="margin-bottom:10px">${title}</h4>
+    <div class="table-wrap" style="margin-bottom:18px">
+      <table style="width:100%;border-collapse:collapse;text-align:center">
+        <thead>
+          <tr>
+            <th style="padding:6px;border:1px solid var(--color-border)"></th>
+            ${days.map((d, i) => `<th style="padding:6px;border:1px solid var(--color-border);font-size:12px;white-space:nowrap">${L(QURAN_DAY_LABELS[i].ar, QURAN_DAY_LABELS[i].fr)}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${['start', 'amount', 'result'].map(field => `
+          <tr>
+            <td style="padding:6px;border:1px solid var(--color-border);font-weight:700;font-size:12px">${field === 'start' ? L('البداية', 'Début') : field === 'amount' ? L('المقدار', 'Qté') : L('النتيجة', 'Résultat')}</td>
+            ${days.map((d, i) => `<td style="padding:4px;border:1px solid var(--color-border)"><input id="kf-${sessionKey}-${field}-${i}" style="width:100%;min-width:56px;border:none;text-align:center;padding:4px;background:transparent" value="${escapeHtml((dayData[i][sessionKey] || {})[field] || '')}"></td>`).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+function khatimRecordForm(memberId, weekStart) {
   const m = getMember(memberId);
   if (!m) return;
-  const rec = getKhatimRecord(memberId, date) || {};
-  const morning = rec.morning || {};
-  const evening = rec.evening || {};
+  const rec = getKhatimWeeklyRecord(memberId, weekStart) || {};
+  const days = quranWeekDays(weekStart);
+  const dayData = days.map(d => (rec.days && rec.days[d]) || {});
 
   openModal(`
-    <div class="modal__header"><h3>${escapeHtml(m.name)} — ${fmtDate(date)}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__header"><h3>${escapeHtml(m.name)} — ${L('الأسبوع من', 'Semaine du')} ${fmtDate(weekStart)}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
     <div class="modal__body">
-      <h4 style="margin-bottom:10px">${L('حصة الصباح', 'Séance du matin')}</h4>
-      <div class="field-row" style="margin-bottom:16px">
-        <div class="field"><label>${L('البداية', 'Début')}</label><input id="kf-m-start" value="${escapeHtml(morning.start || '')}"></div>
-        <div class="field"><label>${L('المقدار', 'Quantité')}</label><input id="kf-m-amount" value="${escapeHtml(morning.amount || '')}"></div>
-        <div class="field"><label>${L('النتيجة', 'Résultat')}</label><input id="kf-m-result" value="${escapeHtml(morning.result || '')}"></div>
-      </div>
-      <h4 style="margin-bottom:10px">${L('حصة المساء', 'Séance du soir')}</h4>
-      <div class="field-row" style="margin-bottom:16px">
-        <div class="field"><label>${L('البداية', 'Début')}</label><input id="kf-e-start" value="${escapeHtml(evening.start || '')}"></div>
-        <div class="field"><label>${L('المقدار', 'Quantité')}</label><input id="kf-e-amount" value="${escapeHtml(evening.amount || '')}"></div>
-        <div class="field"><label>${L('النتيجة', 'Résultat')}</label><input id="kf-e-result" value="${escapeHtml(evening.result || '')}"></div>
-      </div>
+      ${khatimSessionGridHtml('morning', L('حصة الصباح', 'Séance du matin'), days, dayData)}
+      ${khatimSessionGridHtml('evening', L('حصة المساء', 'Séance du soir'), days, dayData)}
     </div>
     <div class="modal__footer">
       <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
@@ -3114,20 +3133,24 @@ function khatimRecordForm(memberId, date) {
   `, { wide: true });
 
   document.getElementById('kf-save').addEventListener('click', () => {
-    const data = {
-      memberId, date,
-      morning: {
-        start: document.getElementById('kf-m-start').value.trim(),
-        amount: document.getElementById('kf-m-amount').value.trim(),
-        result: document.getElementById('kf-m-result').value.trim()
-      },
-      evening: {
-        start: document.getElementById('kf-e-start').value.trim(),
-        amount: document.getElementById('kf-e-amount').value.trim(),
-        result: document.getElementById('kf-e-result').value.trim()
+    const newDays = {};
+    days.forEach((d, i) => {
+      const morning = {
+        start: document.getElementById('kf-morning-start-' + i).value.trim(),
+        amount: document.getElementById('kf-morning-amount-' + i).value.trim(),
+        result: document.getElementById('kf-morning-result-' + i).value.trim()
+      };
+      const evening = {
+        start: document.getElementById('kf-evening-start-' + i).value.trim(),
+        amount: document.getElementById('kf-evening-amount-' + i).value.trim(),
+        result: document.getElementById('kf-evening-result-' + i).value.trim()
+      };
+      if (morning.start || morning.amount || morning.result || evening.start || evening.amount || evening.result) {
+        newDays[d] = { morning, evening };
       }
-    };
-    const existingIdx = state.quranKhatimRecords.findIndex(r => r.memberId === memberId && r.date === date);
+    });
+    const data = { memberId, weekStart, days: newDays };
+    const existingIdx = state.quranKhatimRecords.findIndex(r => r.memberId === memberId && r.weekStart === weekStart);
     if (existingIdx >= 0) {
       state.quranKhatimRecords[existingIdx] = { ...state.quranKhatimRecords[existingIdx], ...data };
     } else {
@@ -3136,9 +3159,39 @@ function khatimRecordForm(memberId, date) {
     save(); closeModal(); toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success'); renderQuranKhatim();
   });
 }
-function printQuranKhatim(halaqaId, date) {
+function khatimSessionPrintTableHtml(sessionKey, title, days, members, weekStart) {
+  return `
+    <p style="text-align:center;font-weight:700;margin:18px 0 6px">${title}</p>
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2">${L('الاسم', 'Nom')}</th>
+          ${days.map((d, i) => `<th colspan="3">${L(QURAN_DAY_LABELS[i].ar, QURAN_DAY_LABELS[i].fr)}</th>`).join('')}
+        </tr>
+        <tr>
+          ${days.map(() => `<th>${L('البداية', 'Début')}</th><th>${L('المقدار', 'Qté')}</th><th>${L('النتيجة', 'Résultat')}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${members.map(m => {
+          const rec = getKhatimWeeklyRecord(m.id, weekStart) || {};
+          return `<tr>
+            <td>${escapeHtml(m.name)}</td>
+            ${days.map(d => {
+              const s = (rec.days && rec.days[d] && rec.days[d][sessionKey]) || {};
+              return `<td>${escapeHtml(s.start || '')}</td><td>${escapeHtml(s.amount || '')}</td><td>${escapeHtml(s.result || '')}</td>`;
+            }).join('')}
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+function printQuranKhatim(halaqaId, weekStart) {
   const h = getHalaqa(halaqaId);
   if (!h) return;
+  const weekEnd = addDaysISO(weekStart, 4);
+  const days = quranWeekDays(weekStart);
   const members = state.quranMembers.filter(m => m.halaqaId === halaqaId && m.status !== 'inactive' && m.role === 'khatim')
     .sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
 
@@ -3148,31 +3201,9 @@ function printQuranKhatim(halaqaId, date) {
       ${quranLogoHtml()}
       <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedQuranSchoolName())}</h2>
       <p style="text-align:center;margin:0 0 4px">${L('جدول المتابعة اليومية للخاتمين', 'Fiche de suivi quotidien des khatimeen')} — ${escapeHtml(h.name)}</p>
-      <p style="text-align:center;margin:0 0 16px;color:#555">${fmtDate(date)}</p>
-      <table>
-        <thead>
-          <tr>
-            <th rowspan="2">${L('الاسم', 'Nom')}</th>
-            <th colspan="3">${L('حصة الصباح', 'Séance du matin')}</th>
-            <th colspan="3">${L('حصة المساء', 'Séance du soir')}</th>
-          </tr>
-          <tr>
-            <th>${L('البداية', 'Début')}</th><th>${L('المقدار', 'Qté')}</th><th>${L('النتيجة', 'Résultat')}</th>
-            <th>${L('البداية', 'Début')}</th><th>${L('المقدار', 'Qté')}</th><th>${L('النتيجة', 'Résultat')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${members.map(m => {
-            const rec = getKhatimRecord(m.id, date) || {};
-            const morning = rec.morning || {}, evening = rec.evening || {};
-            return `<tr>
-              <td>${escapeHtml(m.name)}</td>
-              <td>${escapeHtml(morning.start || '')}</td><td>${escapeHtml(morning.amount || '')}</td><td>${escapeHtml(morning.result || '')}</td>
-              <td>${escapeHtml(evening.start || '')}</td><td>${escapeHtml(evening.amount || '')}</td><td>${escapeHtml(evening.result || '')}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
+      <p style="text-align:center;margin:0 0 16px;color:#555">${L('الأسبوع من', 'Semaine du')} ${fmtDate(weekStart)} ${L('إلى', 'au')} ${fmtDate(weekEnd)}</p>
+      ${khatimSessionPrintTableHtml('morning', L('حصة الصباح', 'Séance du matin'), days, members, weekStart)}
+      ${khatimSessionPrintTableHtml('evening', L('حصة المساء', 'Séance du soir'), days, members, weekStart)}
     </div>
   `;
   window.print();
