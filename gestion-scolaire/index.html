@@ -313,6 +313,8 @@ tbody tr:last-child td { border-bottom: none; }
       <button class="nav-link" data-section="classes"><span>🏫</span> <span class="nav-label"></span></button>
       <button class="nav-link" data-section="payments"><span>💳</span> <span class="nav-label"></span></button>
       <button class="nav-link" data-section="report"><span>📅</span> <span class="nav-label"></span></button>
+      <button class="nav-link" data-section="expenses"><span>💸</span> <span class="nav-label"></span></button>
+      <button class="nav-link" data-section="staff"><span>👥</span> <span class="nav-label"></span></button>
       <button class="nav-link" data-section="backup"><span>🗄️</span> <span class="nav-label"></span></button>
       <button class="nav-link" data-section="settings"><span>⚙️</span> <span class="nav-label"></span></button>
     </nav>
@@ -351,6 +353,12 @@ tbody tr:last-child td { border-bottom: none; }
 
       <!-- التقرير الشهري -->
       <section id="section-report" class="page"></section>
+
+      <!-- المصروفات -->
+      <section id="section-expenses" class="page"></section>
+
+      <!-- الموظفون والرواتب -->
+      <section id="section-staff" class="page"></section>
 
       <!-- النسخ الاحتياطي -->
       <section id="section-backup" class="page"></section>
@@ -461,7 +469,10 @@ function defaultState() {
     },
     classes: [],
     students: [],
-    payments: []
+    payments: [],
+    expenses: [],
+    staff: [],
+    salaryPayments: []
   };
 }
 
@@ -473,7 +484,10 @@ function normalizeLoadedState(parsed) {
     settings: { ...base.settings, ...(parsed.settings || {}) },
     classes: Array.isArray(parsed.classes) ? parsed.classes : [],
     students: Array.isArray(parsed.students) ? parsed.students : [],
-    payments: Array.isArray(parsed.payments) ? parsed.payments : []
+    payments: Array.isArray(parsed.payments) ? parsed.payments : [],
+    expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+    staff: Array.isArray(parsed.staff) ? parsed.staff : [],
+    salaryPayments: Array.isArray(parsed.salaryPayments) ? parsed.salaryPayments : []
   };
 }
 function loadState() {
@@ -826,6 +840,8 @@ const sections = {
   classes: { ar: 'الأقسام الدراسية', fr: 'Classes', render: renderClasses },
   payments: { ar: 'سجل الدفعات', fr: 'Paiements', render: renderPayments },
   report: { ar: 'التقرير الشهري', fr: 'Rapport mensuel', render: renderReport },
+  expenses: { ar: 'المصروفات', fr: 'Dépenses', render: renderExpenses },
+  staff: { ar: 'الموظفون والرواتب', fr: 'Personnel & salaires', render: renderStaff },
   backup: { ar: 'النسخ الاحتياطي', fr: 'Sauvegarde', render: renderBackup },
   settings: { ar: 'الإعدادات', fr: 'Paramètres', render: renderSettings }
 };
@@ -941,6 +957,13 @@ function renderDashboard() {
 
   const unpaidThisMonthCount = enrolledThisMonth.filter(st => monthStatus(st, month) === 'unpaid').length;
 
+  const expensesThisMonth = state.expenses
+    .filter(e => (e.date || '').slice(0, 7) === month)
+    .reduce((s, e) => s + Number(e.amount), 0);
+  const salariesThisMonth = state.salaryPayments
+    .filter(p => p.month === month)
+    .reduce((s, p) => s + Number(p.amount), 0);
+
   const recent = [...state.payments].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 8);
 
   el.innerHTML = `
@@ -964,6 +987,16 @@ function renderDashboard() {
         <span class="stat-card__icon">⏰</span>
         <div class="stat-card__label">${L('متبقٍ من الرسوم الشهرية (هذا الشهر)', 'Solde restant — mensualité (ce mois)')}</div>
         <div class="stat-card__value">${fmtMoney(outstandingMonthly)}</div>
+      </div>
+      <div class="stat-card stat-card--warn">
+        <span class="stat-card__icon">💸</span>
+        <div class="stat-card__label">${L('المصروفات', 'Dépenses')} (${monthLabel(month)})</div>
+        <div class="stat-card__value">${fmtMoney(expensesThisMonth)}</div>
+      </div>
+      <div class="stat-card stat-card--warn">
+        <span class="stat-card__icon">🧾</span>
+        <div class="stat-card__label">${L('الرواتب المدفوعة', 'Salaires payés')} (${monthLabel(month)})</div>
+        <div class="stat-card__value">${fmtMoney(salariesThisMonth)}</div>
       </div>
     </div>
 
@@ -1947,6 +1980,396 @@ function exportReportCSV(rows) {
   downloadFile(`${L('تقرير', 'rapport')}-${reportMonth}.csv`, '﻿' + lines.join('\n'), 'text/csv;charset=utf-8');
 }
 
+/* ================= المصروفات ================= */
+let expenseFilters = { month: currentMonth() };
+function expenseCategorySuggestions() {
+  return [
+    L('إيجار', 'Loyer'), L('كهرباء وماء', 'Électricité et eau'), L('قرطاسية ومستلزمات', 'Fournitures'),
+    L('صيانة', 'Entretien'), L('نقل', 'Transport'), L('اتصالات وإنترنت', 'Télécom et internet'), L('أخرى', 'Autre')
+  ];
+}
+function renderExpenses() {
+  const el = document.getElementById('section-expenses');
+  const list = state.expenses
+    .filter(e => !expenseFilters.month || (e.date || '').slice(0, 7) === expenseFilters.month)
+    .sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+  const total = list.reduce((s, e) => s + Number(e.amount), 0);
+  const monthOptions = lastNMonths(18);
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field">
+        <label>${L('الشهر', 'Mois')}</label>
+        <select id="ex-month">
+          <option value="" ${!expenseFilters.month ? 'selected' : ''}>${L('كل الأشهر', 'Tous les mois')}</option>
+          ${monthOptions.map(m => `<option value="${m}" ${m === expenseFilters.month ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn--primary" id="add-expense-btn" style="align-self:flex-end">${L('＋ إضافة مصروف', '＋ Ajouter une dépense')}</button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card stat-card--danger">
+        <div class="stat-card__label">${L('إجمالي المصروفات', 'Total des dépenses')}</div>
+        <div class="stat-card__value">${fmtMoney(total)}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${list.length === 0 ? emptyState('💸', L('لا توجد مصروفات مسجّلة', 'Aucune dépense enregistrée')) : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>${L('التاريخ', 'Date')}</th><th>${L('الفئة', 'Catégorie')}</th><th>${L('الوصف', 'Description')}</th><th>${L('المبلغ', 'Montant')}</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(e => `<tr>
+              <td>${fmtDate(e.date)}</td>
+              <td>${escapeHtml(e.category || '—')}</td>
+              <td>${escapeHtml(e.note || '—')}</td>
+              <td>${fmtMoney(e.amount)}</td>
+              <td class="row-actions">
+                <button class="btn btn--outline btn--sm" data-edit="${e.id}">${L('تعديل', 'Modifier')}</button>
+                <button class="btn btn--danger btn--sm" data-del="${e.id}">${L('حذف', 'Supprimer')}</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  document.getElementById('ex-month').addEventListener('change', e => { expenseFilters.month = e.target.value; renderExpenses(); });
+  document.getElementById('add-expense-btn').addEventListener('click', () => expenseForm());
+  el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => expenseForm(state.expenses.find(x => x.id === b.dataset.edit))));
+  el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    confirmAction(L('هل تريد حذف هذا المصروف؟', 'Voulez-vous supprimer cette dépense ?'), () => {
+      state.expenses = state.expenses.filter(x => x.id !== b.dataset.del);
+      save(); toast(L('تم الحذف', 'Supprimé'), 'success'); renderExpenses();
+    });
+  }));
+}
+function expenseForm(existing) {
+  const isEdit = !!existing;
+  openModal(`
+    <div class="modal__header"><h3>${isEdit ? L('تعديل مصروف', 'Modifier la dépense') : L('إضافة مصروف', 'Ajouter une dépense')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('الفئة', 'Catégorie')}</label>
+          <input id="ef-category" list="ef-category-list" value="${escapeHtml(existing ? existing.category || '' : '')}" placeholder="${L('مثال: إيجار', 'Ex : Loyer')}">
+          <datalist id="ef-category-list">
+            ${expenseCategorySuggestions().map(c => `<option value="${escapeHtml(c)}">`).join('')}
+          </datalist>
+        </div>
+        <div class="field">
+          <label>${L('المبلغ *', 'Montant *')} (${escapeHtml(state.settings.currency)})</label>
+          <input id="ef-amount" type="number" min="0" value="${existing ? existing.amount : ''}" placeholder="0">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('التاريخ', 'Date')}</label>
+        <input id="ef-date" type="date" value="${existing ? existing.date || todayISO() : todayISO()}">
+      </div>
+      <div class="field">
+        <label>${L('وصف / ملاحظة', 'Description / remarque')}</label>
+        <input id="ef-note" value="${escapeHtml(existing ? existing.note || '' : '')}">
+      </div>
+    </div>
+    <div class="modal__footer">
+      ${isEdit ? `<button class="btn btn--danger" id="ef-delete" style="margin-inline-end:auto">${L('حذف', 'Supprimer')}</button>` : ''}
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="ef-save">${isEdit ? L('حفظ التعديلات', 'Enregistrer') : L('إضافة', 'Ajouter')}</button>
+    </div>
+  `);
+  document.getElementById('ef-save').addEventListener('click', () => {
+    const amount = Number(document.getElementById('ef-amount').value);
+    if (!amount || amount <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
+    const data = {
+      category: document.getElementById('ef-category').value.trim(),
+      amount,
+      date: document.getElementById('ef-date').value || todayISO(),
+      note: document.getElementById('ef-note').value.trim()
+    };
+    if (isEdit) {
+      Object.assign(existing, data);
+    } else {
+      state.expenses.push({ id: uid('exp'), ...data });
+    }
+    save(); closeModal(); toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success'); refreshCurrentSection();
+  });
+  if (isEdit) {
+    document.getElementById('ef-delete').addEventListener('click', () => {
+      confirmAction(L('هل تريد حذف هذا المصروف؟', 'Voulez-vous supprimer cette dépense ?'), () => {
+        state.expenses = state.expenses.filter(x => x.id !== existing.id);
+        save(); closeModal(); toast(L('تم الحذف', 'Supprimé'), 'success'); refreshCurrentSection();
+      });
+    });
+  }
+}
+
+/* ================= الموظفون والرواتب ================= */
+function getStaffMember(id) { return state.staff.find(x => x.id === id); }
+function salaryPaid(staff, month) {
+  return state.salaryPayments.filter(p => p.staffId === staff.id && p.month === month).reduce((s, p) => s + Number(p.amount), 0);
+}
+function salaryBalance(staff, month) {
+  return Math.max(0, (Number(staff.monthlySalary) || 0) - salaryPaid(staff, month));
+}
+function salaryStatus(staff, month) {
+  const fee = Number(staff.monthlySalary) || 0;
+  if (fee <= 0) return 'paid';
+  const paid = salaryPaid(staff, month);
+  if (paid >= fee) return 'paid';
+  if (paid > 0) return 'partial';
+  return 'unpaid';
+}
+function renderStaff() {
+  const el = document.getElementById('section-staff');
+  const month = currentMonth();
+  const list = [...state.staff].sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <button class="btn btn--primary" id="add-staff-btn">${L('＋ إضافة موظف', '＋ Ajouter un employé')}</button>
+    </div>
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${list.length === 0 ? emptyState('👥', L('لم تُضِف أي موظف بعد', "Aucun employé ajouté pour l'instant")) : `
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th>${L('الاسم', 'Nom')}</th><th>${L('الوظيفة', 'Poste')}</th><th>${L('الراتب الشهري', 'Salaire mensuel')}</th>
+            <th>${L('حالة', 'Statut')} ${monthLabel(month)}</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${list.map(st => `
+              <tr>
+                <td><strong>${escapeHtml(st.name)}</strong>${st.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
+                <td>${escapeHtml(st.role || '—')}</td>
+                <td>${fmtMoney(st.monthlySalary)}</td>
+                <td>${statusBadge(salaryStatus(st, month))}</td>
+                <td class="row-actions">
+                  <button class="btn btn--outline btn--sm" data-view="${st.id}">${L('التفاصيل', 'Détails')}</button>
+                  <button class="btn btn--primary btn--sm" data-pay="${st.id}">${L('دفعة راتب', 'Payer salaire')}</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  document.getElementById('add-staff-btn').addEventListener('click', () => staffForm());
+  el.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => staffDetail(b.dataset.view)));
+  el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => salaryPaymentForm(b.dataset.pay)));
+}
+function staffForm(existing) {
+  const isEdit = !!existing;
+  openModal(`
+    <div class="modal__header"><h3>${isEdit ? L('تعديل بيانات الموظف', "Modifier les données de l'employé") : L('إضافة موظف جديد', 'Ajouter un nouvel employé')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('الاسم الكامل *', 'Nom complet *')}</label>
+        <input id="stf-name" value="${escapeHtml(existing ? existing.name : '')}">
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('الوظيفة', 'Poste')}</label>
+          <input id="stf-role" value="${escapeHtml(existing ? existing.role || '' : '')}" placeholder="${L('مثال: معلم، حارس، إداري', 'Ex : enseignant, gardien, administratif')}">
+        </div>
+        <div class="field">
+          <label>${L('رقم الهاتف', 'Téléphone')}</label>
+          <input id="stf-phone" value="${escapeHtml(existing ? existing.phone || '' : '')}">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('الراتب الشهري *', 'Salaire mensuel *')} (${escapeHtml(state.settings.currency)})</label>
+        <input id="stf-salary" type="number" min="0" value="${existing ? existing.monthlySalary : ''}" placeholder="0">
+      </div>
+      ${isEdit ? `
+      <div class="field">
+        <label>${L('الحالة', 'Statut')}</label>
+        <select id="stf-status">
+          <option value="active" ${existing.status !== 'inactive' ? 'selected' : ''}>${L('نشط', 'Actif')}</option>
+          <option value="inactive" ${existing.status === 'inactive' ? 'selected' : ''}>${L('غير نشط (منتهي التعاقد)', 'Inactif (fin de contrat)')}</option>
+        </select>
+      </div>` : ''}
+    </div>
+    <div class="modal__footer">
+      ${isEdit ? `<button class="btn btn--danger" id="stf-delete" style="margin-inline-end:auto">${L('حذف الموظف', "Supprimer l'employé")}</button>` : ''}
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="stf-save">${isEdit ? L('حفظ التعديلات', 'Enregistrer') : L('إضافة', 'Ajouter')}</button>
+    </div>
+  `, { wide: true });
+
+  document.getElementById('stf-save').addEventListener('click', () => {
+    const name = document.getElementById('stf-name').value.trim();
+    if (!name) { toast(L('يرجى إدخال اسم الموظف', "Veuillez saisir le nom de l'employé"), 'error'); return; }
+    const data = {
+      name,
+      role: document.getElementById('stf-role').value.trim(),
+      phone: document.getElementById('stf-phone').value.trim(),
+      monthlySalary: Number(document.getElementById('stf-salary').value) || 0
+    };
+    if (isEdit) {
+      Object.assign(existing, data);
+      existing.status = document.getElementById('stf-status').value;
+    } else {
+      state.staff.push({ id: uid('stf'), status: 'active', ...data });
+    }
+    save(); closeModal(); toast(L('تم حفظ بيانات الموظف', "Données de l'employé enregistrées"), 'success'); refreshCurrentSection();
+  });
+  if (isEdit) {
+    document.getElementById('stf-delete').addEventListener('click', () => {
+      confirmAction(
+        L(`هل تريد حذف الموظف "${existing.name}" وكل سجل رواتبه؟ لا يمكن التراجع عن هذا الإجراء.`, `Voulez-vous supprimer l'employé « ${existing.name} » et tout son historique de salaires ? Action irréversible.`),
+        () => {
+          state.staff = state.staff.filter(s => s.id !== existing.id);
+          state.salaryPayments = state.salaryPayments.filter(p => p.staffId !== existing.id);
+          save(); closeModal(); toast(L('تم حذف الموظف', 'Employé supprimé'), 'success'); refreshCurrentSection();
+        }
+      );
+    });
+  }
+}
+function staffDetail(id) {
+  const st = getStaffMember(id);
+  if (!st) return;
+  const month = currentMonth();
+  const payments = state.salaryPayments.filter(p => p.staffId === id).sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+
+  openModal(`
+    <div class="modal__header">
+      <h3>${escapeHtml(st.name)}</h3>
+      <button class="modal__close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:18px">
+        <div class="stat-card stat-card--primary">
+          <div class="stat-card__label">${L('الراتب الشهري', 'Salaire mensuel')}</div>
+          <div class="stat-card__value">${fmtMoney(st.monthlySalary)}</div>
+        </div>
+        <div class="stat-card stat-card--warn">
+          <div class="stat-card__label">${L('حالة شهر', 'Statut de')} ${monthLabel(month)}</div>
+          <div class="stat-card__value">${statusBadge(salaryStatus(st, month))}</div>
+        </div>
+      </div>
+      <p><strong>${L('الوظيفة:', 'Poste :')}</strong> ${escapeHtml(st.role || '—')} &nbsp; | &nbsp; <strong>${L('الهاتف:', 'Téléphone :')}</strong> ${escapeHtml(st.phone || '—')}</p>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
+      <h4 style="margin-bottom:10px">${L('سجل الرواتب', 'Historique des salaires')}</h4>
+      ${payments.length === 0 ? emptyState('🧾', L('لا توجد دفعات مسجّلة', 'Aucun paiement enregistré')) : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>${L('الشهر', 'Mois')}</th><th>${L('المبلغ', 'Montant')}</th><th>${L('التاريخ', 'Date')}</th><th></th></tr></thead>
+        <tbody>
+          ${payments.map(p => `
+            <tr>
+              <td>${monthLabel(p.month)}</td>
+              <td>${fmtMoney(p.amount)}</td>
+              <td>${fmtDate(p.date)}</td>
+              <td class="row-actions">
+                <button class="btn btn--outline btn--sm" data-print="${p.id}">${L('🖨️ إيصال', '🖨️ Reçu')}</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="stfd-edit">${L('تعديل البيانات', 'Modifier')}</button>
+      <button class="btn btn--primary" id="stfd-pay">${L('＋ تسجيل دفعة راتب', '＋ Nouveau paiement')}</button>
+    </div>
+  `, { wide: true });
+
+  document.getElementById('stfd-edit').addEventListener('click', () => staffForm(st));
+  document.getElementById('stfd-pay').addEventListener('click', () => salaryPaymentForm(st.id));
+  document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printSalaryReceipt(b.dataset.print)));
+}
+function salaryPaymentForm(staffId) {
+  const st = getStaffMember(staffId);
+  if (!st) return;
+  let month = currentMonth();
+  const monthOptions = lastNMonths(18);
+
+  openModal(`
+    <div class="modal__header"><h3>${L('تسجيل دفعة راتب', 'Enregistrer un paiement de salaire')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <p><strong>${L('الموظف:', 'Employé :')}</strong> ${escapeHtml(st.name)}</p>
+      <div class="field-row" style="margin:14px 0">
+        <div class="field">
+          <label>${L('الشهر', 'Mois')}</label>
+          <select id="sp-month">
+            ${monthOptions.map(m => `<option value="${m}" ${m === month ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>${L('المبلغ *', 'Montant *')} (${escapeHtml(state.settings.currency)})</label>
+          <input id="sp-amount" type="number" min="0" value="${salaryBalance(st, month) || ''}">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('تاريخ الدفع', 'Date de paiement')}</label>
+        <input id="sp-date" type="date" value="${todayISO()}">
+      </div>
+      <div class="field">
+        <label>${L('ملاحظة (اختياري)', 'Remarque (optionnel)')}</label>
+        <input id="sp-note">
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="sp-save">${L('تسجيل الدفعة', 'Enregistrer le paiement')}</button>
+    </div>
+  `);
+
+  document.getElementById('sp-month').addEventListener('change', e => {
+    month = e.target.value;
+    document.getElementById('sp-amount').value = salaryBalance(st, month) || '';
+  });
+
+  document.getElementById('sp-save').addEventListener('click', () => {
+    const amount = Number(document.getElementById('sp-amount').value);
+    if (!amount || amount <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
+    const payment = {
+      id: uid('sal'),
+      staffId: st.id,
+      month: document.getElementById('sp-month').value,
+      amount,
+      date: document.getElementById('sp-date').value || todayISO(),
+      note: document.getElementById('sp-note').value.trim(),
+      receiptNo: nextReceiptNumber()
+    };
+    state.salaryPayments.push(payment);
+    save(); closeModal(); toast(L('تم تسجيل الدفعة بنجاح', 'Paiement enregistré avec succès'), 'success');
+    refreshCurrentSection();
+    printSalaryReceipt(payment.id);
+  });
+}
+function printSalaryReceipt(paymentId) {
+  const p = state.salaryPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  const st = getStaffMember(p.staffId);
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="receipt">
+      ${receiptHeaderHtml()}
+      ${receiptLogoHtml()}
+      <h2>${escapeHtml(displayedSchoolName())}</h2>
+      ${receiptLicenseHtml()}
+      <div class="sub">${escapeHtml(state.settings.address || '')} ${state.settings.phone ? ' — ' + escapeHtml(state.settings.phone) : ''}</div>
+      <hr>
+      <table>
+        <tr><td>${L('رقم الإيصال', 'N° reçu')}</td><td>${escapeHtml(p.receiptNo || '—')}</td></tr>
+        <tr><td>${L('اسم الموظف', "Nom de l'employé")}</td><td>${escapeHtml(st ? st.name : '—')}</td></tr>
+        <tr><td>${L('الوظيفة', 'Poste')}</td><td>${escapeHtml(st ? (st.role || '—') : '—')}</td></tr>
+        <tr><td>${L('شهر الراتب', 'Mois du salaire')}</td><td>${monthLabel(p.month)}</td></tr>
+        <tr><td>${L('تاريخ الدفع', 'Date de paiement')}</td><td>${fmtDate(p.date)}</td></tr>
+        ${p.note ? `<tr><td>${L('ملاحظة', 'Remarque')}</td><td>${escapeHtml(p.note)}</td></tr>` : ''}
+        <tr class="total-row"><td>${L('المبلغ المدفوع', 'Montant payé')}</td><td>${fmtMoney(p.amount)}</td></tr>
+      </table>
+      <div class="sign">
+        <span>${L('توقيع المستلم: ..............................', 'Signature : ..............................')}</span>
+        <span>${fmtDate(todayISO())}</span>
+      </div>
+    </div>
+  `;
+  window.print();
+}
+
 /* ================= النسخ الاحتياطي ================= */
 function renderBackup() {
   const el = document.getElementById('section-backup');
@@ -1972,6 +2395,8 @@ function renderBackup() {
       <div class="card__body" style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn--outline" id="bk-export-students">${L('⬇️ قائمة الطلاب (CSV)', '⬇️ Liste des élèves (CSV)')}</button>
         <button class="btn btn--outline" id="bk-export-payments">${L('⬇️ سجل الدفعات (CSV)', '⬇️ Historique des paiements (CSV)')}</button>
+        <button class="btn btn--outline" id="bk-export-expenses">${L('⬇️ المصروفات (CSV)', '⬇️ Dépenses (CSV)')}</button>
+        <button class="btn btn--outline" id="bk-export-salaries">${L('⬇️ رواتب الموظفين (CSV)', '⬇️ Salaires du personnel (CSV)')}</button>
       </div>
     </div>
   `;
@@ -1988,12 +2413,7 @@ function renderBackup() {
         const parsed = JSON.parse(reader.result);
         if (!parsed || typeof parsed !== 'object') throw new Error('bad');
         confirmAction(L('سيتم استبدال كل البيانات الحالية بالبيانات المستوردة. هل تريد المتابعة؟', 'Toutes les données actuelles seront remplacées par celles importées. Continuer ?'), () => {
-          state = {
-            settings: { ...defaultState().settings, ...(parsed.settings || {}) },
-            classes: Array.isArray(parsed.classes) ? parsed.classes : [],
-            students: Array.isArray(parsed.students) ? parsed.students : [],
-            payments: Array.isArray(parsed.payments) ? parsed.payments : []
-          };
+          state = normalizeLoadedState(parsed);
           save();
           toast(L('تم استيراد البيانات بنجاح', 'Données importées avec succès'), 'success');
           document.documentElement.lang = state.settings.language;
@@ -2032,6 +2452,25 @@ function renderBackup() {
         .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
     });
     downloadFile(`${L('سجل-الدفعات', 'historique-paiements')}-${todayISO()}.csv`, '﻿' + lines.join('\n'), 'text/csv;charset=utf-8');
+  });
+  document.getElementById('bk-export-expenses').addEventListener('click', () => {
+    const header = [L('التاريخ', 'Date'), L('الفئة', 'Catégorie'), L('الوصف', 'Description'), L('المبلغ', 'Montant')];
+    const lines = [header.join(',')];
+    state.expenses.forEach(e => {
+      lines.push([e.date || '', e.category || '', e.note || '', e.amount]
+        .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+    });
+    downloadFile(`${L('المصروفات', 'depenses')}-${todayISO()}.csv`, '﻿' + lines.join('\n'), 'text/csv;charset=utf-8');
+  });
+  document.getElementById('bk-export-salaries').addEventListener('click', () => {
+    const header = [L('رقم الإيصال', 'N° reçu'), L('الموظف', 'Employé'), L('الوظيفة', 'Poste'), L('الشهر', 'Mois'), L('المبلغ', 'Montant'), L('التاريخ', 'Date'), L('ملاحظة', 'Remarque')];
+    const lines = [header.join(',')];
+    state.salaryPayments.forEach(p => {
+      const st = getStaffMember(p.staffId);
+      lines.push([p.receiptNo || '', st ? st.name : L('محذوف', 'Supprimé'), st ? (st.role || '') : '', monthLabel(p.month), p.amount, p.date, p.note || '']
+        .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+    });
+    downloadFile(`${L('رواتب-الموظفين', 'salaires-personnel')}-${todayISO()}.csv`, '﻿' + lines.join('\n'), 'text/csv;charset=utf-8');
   });
 }
 
