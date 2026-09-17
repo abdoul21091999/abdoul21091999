@@ -251,6 +251,24 @@ tbody tr:last-child td { border-bottom: none; }
 .subtabs button { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-weight: 600; font-size: 13px; cursor: pointer; }
 .subtabs button.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 
+/* ---------- الرسوم البيانية (تقييم الأداء) ---------- */
+.chart-bars { display: flex; flex-direction: column; gap: 12px; direction: ltr; }
+.chart-bar-row { display: flex; align-items: center; gap: 10px; cursor: default; }
+.chart-bar-label { width: 150px; flex-shrink: 0; font-size: 13px; color: var(--color-text); text-align: end; direction: rtl; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-bar-track { flex: 1; height: 20px; background: var(--color-bg); border-radius: 4px; overflow: hidden; }
+.chart-bar-fill { height: 100%; border-radius: 4px 0 0 4px; background: #2a78d6; transition: width .25s ease; }
+.chart-bar-value { width: 48px; flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--color-text); font-variant-numeric: tabular-nums; }
+.chart-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12.5px; color: var(--color-text-muted); direction: ltr; }
+.chart-legend__item { display: flex; align-items: center; gap: 6px; }
+.chart-legend__key { display: inline-block; width: 16px; height: 2px; border-radius: 1px; }
+.chart-tooltip {
+  position: fixed; z-index: 700; background: var(--color-text); color: #fff; font-size: 12.5px;
+  padding: 6px 10px; border-radius: 6px; pointer-events: none; opacity: 0; transition: opacity .1s;
+  max-width: 220px; line-height: 1.6;
+}
+.chart-tooltip.show { opacity: 1; }
+.chart-tooltip strong { font-variant-numeric: tabular-nums; }
+
 /* ---------- طباعة كشوف تحفيظ القرآن ---------- */
 .sheet-print { padding: 16px; font-family: var(--font); }
 .sheet-print table { width: 100%; border-collapse: collapse; font-size: 11px; }
@@ -417,6 +435,7 @@ tbody tr:last-child td { border-bottom: none; }
 </div>
 
 <div id="toast" class="toast hidden"></div>
+<div id="chart-tooltip" class="chart-tooltip"></div>
 
 <div id="print-area"></div>
 
@@ -2511,11 +2530,12 @@ function renderQuran() {
       <button data-view="members" class="${quranView === 'members' ? 'active' : ''}">${L('الأعضاء', 'Membres')}</button>
       <button data-view="weekly" class="${quranView === 'weekly' ? 'active' : ''}">${L('الكشف الأسبوعي', 'Fiche hebdomadaire')}</button>
       <button data-view="khatim" class="${quranView === 'khatim' ? 'active' : ''}">${L('كشف الخاتمين', 'Fiche des khatimeen')}</button>
+      <button data-view="performance" class="${quranView === 'performance' ? 'active' : ''}">${L('📊 الأداء', '📊 Performance')}</button>
     </div>
     <div id="quran-subview"></div>
   `;
   el.querySelectorAll('#quran-subtabs button').forEach(b => b.addEventListener('click', () => { quranView = b.dataset.view; renderQuran(); }));
-  const renderers = { halaqat: renderQuranHalaqat, members: renderQuranMembers, weekly: renderQuranWeekly, khatim: renderQuranKhatim };
+  const renderers = { halaqat: renderQuranHalaqat, members: renderQuranMembers, weekly: renderQuranWeekly, khatim: renderQuranKhatim, performance: renderQuranPerformance };
   renderers[quranView]();
 }
 
@@ -3156,6 +3176,233 @@ function printQuranKhatim(halaqaId, date) {
     </div>
   `;
   window.print();
+}
+
+/* ================= تقييم الأداء (تحفيظ القرآن) ================= */
+function chartTooltipShow(evt, html) {
+  const tip = document.getElementById('chart-tooltip');
+  tip.innerHTML = html;
+  tip.classList.add('show');
+  const x = evt.clientX, y = evt.clientY;
+  const pad = 14;
+  tip.style.left = Math.min(x + pad, window.innerWidth - tip.offsetWidth - 8) + 'px';
+  tip.style.top = Math.max(y - tip.offsetHeight - pad, 8) + 'px';
+}
+function chartTooltipHide() {
+  document.getElementById('chart-tooltip').classList.remove('show');
+}
+function quranWeekStartsBack(count) {
+  const list = [];
+  let w = quranWeekStart(todayISO());
+  for (let i = 0; i < count; i++) { list.push(w); w = addDaysISO(w, -7); }
+  return list.reverse();
+}
+function studentWeekStats(rec) {
+  const out = { filledDays: 0, present: 0, absent: 0, possibleMarks: 0, doneMarks: 0 };
+  const att = (rec && rec.attendance) || {};
+  Object.values(att).forEach(v => {
+    if (!v || typeof v !== 'object') return;
+    out.filledDays++;
+    if (v.absent) { out.absent++; return; }
+    out.present++;
+    out.possibleMarks += 3;
+    out.doneMarks += (v.d ? 1 : 0) + (v.j ? 1 : 0) + (v.m ? 1 : 0);
+  });
+  return out;
+}
+function halaqaPerformanceStats(halaqaId, weekStarts) {
+  const members = state.quranMembers.filter(m => m.halaqaId === halaqaId && m.role === 'student' && m.status !== 'inactive');
+  const totals = { doneMarks: 0, possibleMarks: 0, present: 0, filledDays: 0 };
+  members.forEach(m => {
+    weekStarts.forEach(ws => {
+      const s = studentWeekStats(getWeeklyRecord(m.id, ws));
+      totals.doneMarks += s.doneMarks; totals.possibleMarks += s.possibleMarks;
+      totals.present += s.present; totals.filledDays += s.filledDays;
+    });
+  });
+  return {
+    memberCount: members.length,
+    completionRate: totals.possibleMarks > 0 ? Math.round((totals.doneMarks / totals.possibleMarks) * 100) : null,
+    attendanceRate: totals.filledDays > 0 ? Math.round((totals.present / totals.filledDays) * 100) : null
+  };
+}
+function studentPerformanceSeries(memberId, weekStarts) {
+  return weekStarts.map(ws => {
+    const s = studentWeekStats(getWeeklyRecord(memberId, ws));
+    return {
+      weekStart: ws,
+      completionRate: s.possibleMarks > 0 ? Math.round((s.doneMarks / s.possibleMarks) * 100) : null,
+      attendanceRate: s.filledDays > 0 ? Math.round((s.present / s.filledDays) * 100) : null
+    };
+  });
+}
+function buildBarChartHtml(items) {
+  return `<div class="chart-bars">
+    ${items.map((it, idx) => `
+      <div class="chart-bar-row" data-bar="${idx}">
+        <div class="chart-bar-label">${escapeHtml(it.label)}</div>
+        <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${it.value == null ? 0 : it.value}%"></div></div>
+        <div class="chart-bar-value">${it.value == null ? '—' : it.value + '%'}</div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+function buildLineChartSvg(weekLabels, series) {
+  const width = 640, height = 220;
+  const padL = 34, padR = 10, padT = 16, padB = 26;
+  const plotW = width - padL - padR, plotH = height - padT - padB;
+  const n = weekLabels.length;
+  const xFor = i => padL + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+  const yFor = v => padT + plotH - (v / 100) * plotH;
+  let svg = `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:auto;overflow:visible" role="img">`;
+  [0, 25, 50, 75, 100].forEach(g => {
+    const y = yFor(g);
+    svg += `<line x1="${padL}" y1="${y}" x2="${width - padR}" y2="${y}" stroke="#e1e0d9" stroke-width="1"/>`;
+    svg += `<text x="${padL - 6}" y="${y + 3}" font-size="9" fill="#898781" text-anchor="end">${g}</text>`;
+  });
+  svg += `<line x1="${padL}" y1="${padT + plotH}" x2="${width - padR}" y2="${padT + plotH}" stroke="#c3c2b7" stroke-width="1"/>`;
+  weekLabels.forEach((lbl, i) => {
+    if (n > 8 && i % 2 !== 0 && i !== n - 1) return;
+    svg += `<text x="${xFor(i)}" y="${height - 8}" font-size="9" fill="#898781" text-anchor="middle">${escapeXml(lbl)}</text>`;
+  });
+  series.forEach(s => {
+    const pts = s.values.map((v, i) => v == null ? null : { x: xFor(i), y: yFor(v), v, i }).filter(Boolean);
+    if (pts.length) {
+      const path = pts.map((p, idx) => (idx === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+      svg += `<path d="${path}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }
+    pts.forEach(p => {
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${s.color}" stroke="#fff" stroke-width="2"/>`;
+      svg += `<circle cx="${p.x}" cy="${p.y}" r="14" fill="transparent" data-chart-point="${s.key}:${p.i}" style="cursor:pointer"/>`;
+    });
+  });
+  svg += `</svg>`;
+  return svg;
+}
+function escapeXml(str) { return escapeHtml(str); }
+
+let quranPerfState = { weeksBack: 8, halaqaId: '', memberId: '' };
+function renderQuranPerformance() {
+  const el = document.getElementById('quran-subview');
+  const weekStarts = quranWeekStartsBack(quranPerfState.weeksBack);
+  const weekLabels = weekStarts.map(w => {
+    const [, mm, dd] = w.split('-');
+    return `${dd}/${mm}`;
+  });
+
+  const halaqaItems = [...state.quranHalaqat]
+    .map(h => ({ h, stats: halaqaPerformanceStats(h.id, weekStarts) }))
+    .filter(x => x.stats.memberCount > 0)
+    .sort((a, b) => (b.stats.completionRate || 0) - (a.stats.completionRate || 0));
+
+  if (!quranPerfState.halaqaId && state.quranHalaqat.length) quranPerfState.halaqaId = state.quranHalaqat[0].id;
+  const studentMembers = state.quranMembers.filter(m => m.halaqaId === quranPerfState.halaqaId && m.role === 'student' && m.status !== 'inactive')
+    .sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
+  if (!quranPerfState.memberId || !studentMembers.some(m => m.id === quranPerfState.memberId)) {
+    quranPerfState.memberId = studentMembers.length ? studentMembers[0].id : '';
+  }
+  const series = quranPerfState.memberId ? studentPerformanceSeries(quranPerfState.memberId, weekStarts) : [];
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field">
+        <label>${L('المدة', 'Période')}</label>
+        <select id="qp-weeks">
+          <option value="4" ${quranPerfState.weeksBack === 4 ? 'selected' : ''}>${L('آخر 4 أسابيع', '4 dernières semaines')}</option>
+          <option value="8" ${quranPerfState.weeksBack === 8 ? 'selected' : ''}>${L('آخر 8 أسابيع', '8 dernières semaines')}</option>
+          <option value="12" ${quranPerfState.weeksBack === 12 ? 'selected' : ''}>${L('آخر 12 أسبوعًا', '12 dernières semaines')}</option>
+          <option value="26" ${quranPerfState.weeksBack === 26 ? 'selected' : ''}>${L('آخر 26 أسبوعًا', '26 dernières semaines')}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <div class="card__header"><h3>${L('مقارنة الحلقات — تقييم الأساتذة', 'Comparaison des cercles — évaluation des enseignants')}</h3></div>
+      <div class="card__body">
+        <p style="color:var(--color-text-muted);font-size:12.5px;margin-bottom:14px">${L('نسبة إنجاز علامات (د/ج/م) لكل طلاب الحلقة خلال المدة المختارة — مؤشر على انتظام الحفظ والمراجعة في الحلقة.', "Taux d'accomplissement des marques (د/ج/م) pour tous les élèves du cercle sur la période — indicateur de régularité.")}</p>
+        ${halaqaItems.length === 0 ? emptyState('📊', L('لا توجد بيانات كافية بعد', 'Pas encore assez de données')) : buildBarChartHtml(halaqaItems.map(x => ({ label: x.h.name, value: x.stats.completionRate })))}
+        ${halaqaItems.length === 0 ? '' : `
+        <div class="table-wrap" style="margin-top:16px"><table>
+          <thead><tr><th>${L('الحلقة', 'Cercle')}</th><th>${L('الأستاذ', 'Enseignant')}</th><th>${L('عدد الطلاب', 'Élèves')}</th><th>${L('نسبة الإنجاز', 'Taux de réussite')}</th><th>${L('نسبة الحضور', 'Taux de présence')}</th></tr></thead>
+          <tbody>
+            ${halaqaItems.map(x => `<tr>
+              <td>${escapeHtml(x.h.name)}</td>
+              <td>${escapeHtml(x.h.teacherName || '—')}</td>
+              <td>${x.stats.memberCount}</td>
+              <td>${x.stats.completionRate == null ? '—' : x.stats.completionRate + '%'}</td>
+              <td>${x.stats.attendanceRate == null ? '—' : x.stats.attendanceRate + '%'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h3>${L('تقدّم التلاميذ', 'Progrès des élèves')}</h3></div>
+      <div class="card__body">
+        <div class="field-row" style="margin-bottom:16px">
+          <div class="field">
+            <label>${L('الحلقة', 'Cercle')}</label>
+            <select id="qp-halaqa">
+              ${state.quranHalaqat.length === 0 ? `<option value="">${L('لا توجد حلقات', 'Aucun cercle')}</option>` :
+                state.quranHalaqat.map(h => `<option value="${h.id}" ${quranPerfState.halaqaId === h.id ? 'selected' : ''}>${escapeHtml(h.name)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label>${L('الطالب', 'Élève')}</label>
+            <select id="qp-member">
+              ${studentMembers.length === 0 ? `<option value="">${L('لا يوجد طلاب', "Aucun élève")}</option>` :
+                studentMembers.map(m => `<option value="${m.id}" ${quranPerfState.memberId === m.id ? 'selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        ${series.length === 0 || !quranPerfState.memberId ? emptyState('📈', L('اختر طالبًا لعرض تقدّمه', "Choisissez un élève pour voir son progrès")) : `
+        <div class="chart-legend">
+          <span class="chart-legend__item"><span class="chart-legend__key" style="background:#2a78d6"></span>${L('نسبة الإنجاز', 'Taux de réussite')}</span>
+          <span class="chart-legend__item"><span class="chart-legend__key" style="background:#eb6834"></span>${L('نسبة الحضور', 'Taux de présence')}</span>
+        </div>
+        <div id="qp-line-chart">${buildLineChartSvg(weekLabels, [
+          { key: 'completion', color: '#2a78d6', values: series.map(s => s.completionRate) },
+          { key: 'attendance', color: '#eb6834', values: series.map(s => s.attendanceRate) }
+        ])}</div>
+        <div class="table-wrap" style="margin-top:16px"><table>
+          <thead><tr><th>${L('الأسبوع', 'Semaine')}</th><th>${L('نسبة الإنجاز', 'Taux de réussite')}</th><th>${L('نسبة الحضور', 'Taux de présence')}</th></tr></thead>
+          <tbody>
+            ${series.map((s, i) => `<tr>
+              <td>${fmtDate(s.weekStart)}</td>
+              <td>${s.completionRate == null ? '—' : s.completionRate + '%'}</td>
+              <td>${s.attendanceRate == null ? '—' : s.attendanceRate + '%'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('qp-weeks').addEventListener('change', e => { quranPerfState.weeksBack = Number(e.target.value); renderQuranPerformance(); });
+  const halaqaSel = document.getElementById('qp-halaqa');
+  if (halaqaSel) halaqaSel.addEventListener('change', e => { quranPerfState.halaqaId = e.target.value; quranPerfState.memberId = ''; renderQuranPerformance(); });
+  const memberSel = document.getElementById('qp-member');
+  if (memberSel) memberSel.addEventListener('change', e => { quranPerfState.memberId = e.target.value; renderQuranPerformance(); });
+
+  el.querySelectorAll('.chart-bar-row').forEach((row, idx) => {
+    const item = halaqaItems[idx];
+    if (!item) return;
+    row.addEventListener('mousemove', e => chartTooltipShow(e,
+      `${escapeHtml(item.h.name)}${item.h.teacherName ? ' — ' + escapeHtml(item.h.teacherName) : ''}<br>${L('الطلاب', 'Élèves')}: <strong>${item.stats.memberCount}</strong><br>${L('الإنجاز', 'Réussite')}: <strong>${item.stats.completionRate == null ? '—' : item.stats.completionRate + '%'}</strong> · ${L('الحضور', 'Présence')}: <strong>${item.stats.attendanceRate == null ? '—' : item.stats.attendanceRate + '%'}</strong>`
+    ));
+    row.addEventListener('mouseleave', chartTooltipHide);
+  });
+  el.querySelectorAll('[data-chart-point]').forEach(pt => {
+    const [key, idxStr] = pt.dataset.chartPoint.split(':');
+    const i = Number(idxStr);
+    const s = series[i];
+    if (!s) return;
+    pt.addEventListener('mousemove', e => chartTooltipShow(e,
+      `${fmtDate(s.weekStart)}<br>${L('الإنجاز', 'Réussite')}: <strong>${s.completionRate == null ? '—' : s.completionRate + '%'}</strong><br>${L('الحضور', 'Présence')}: <strong>${s.attendanceRate == null ? '—' : s.attendanceRate + '%'}</strong>`
+    ));
+    pt.addEventListener('mouseleave', chartTooltipHide);
+  });
 }
 
 /* ================= النسخ الاحتياطي ================= */
