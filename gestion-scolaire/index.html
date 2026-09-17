@@ -4637,6 +4637,10 @@ function renderSettings() {
             <input id="st-quran-name-fr" value="${escapeHtml(s.quranSchoolNameFr || '')}">
           </div>
         </div>
+        <div class="field" style="margin-bottom:14px;max-width:280px">
+          <label>${L('رسوم التسجيل الافتراضية لتحفيظ القرآن', "Frais d'inscription par défaut — école coranique")} (${escapeHtml(s.currency)})</label>
+          <input id="st-quran-regfee" type="number" min="0" value="${s.quranDefaultRegistrationFee || 0}">
+        </div>
         <button class="btn btn--primary" id="st-save-identity">${L('حفظ', 'Enregistrer')}</button>
       </div>
     </div>
@@ -4723,6 +4727,7 @@ function renderSettings() {
     s.foundationNameFr = document.getElementById('st-foundation-name-fr').value.trim();
     s.quranSchoolNameAr = document.getElementById('st-quran-name').value.trim();
     s.quranSchoolNameFr = document.getElementById('st-quran-name-fr').value.trim();
+    s.quranDefaultRegistrationFee = Number(document.getElementById('st-quran-regfee').value) || 0;
     save();
     renderBrand();
     toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success');
