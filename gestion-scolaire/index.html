@@ -246,6 +246,17 @@ tbody tr:last-child td { border-bottom: none; }
   #print-area { display: block; position: absolute; top: 0; inset-inline-start: 0; width: 100%; }
 }
 
+/* ---------- تبويبات فرعية ---------- */
+.subtabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.subtabs button { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-weight: 600; font-size: 13px; cursor: pointer; }
+.subtabs button.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+/* ---------- طباعة كشوف تحفيظ القرآن ---------- */
+.sheet-print { padding: 16px; font-family: var(--font); }
+.sheet-print table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.sheet-print th, .sheet-print td { border: 1px solid #999; padding: 4px 6px; text-align: center; }
+.sheet-print th { background: #f1f1f1; }
+
 /* ---------- استجابة الشاشات الصغيرة ---------- */
 @media (max-width: 900px) {
   .sidebar { transform: translateX(var(--hide-x, 100%)); }
@@ -315,6 +326,7 @@ tbody tr:last-child td { border-bottom: none; }
       <button class="nav-link" data-section="report"><span>📅</span> <span class="nav-label"></span></button>
       <button class="nav-link" data-section="expenses"><span>💸</span> <span class="nav-label"></span></button>
       <button class="nav-link" data-section="staff"><span>👥</span> <span class="nav-label"></span></button>
+      <button class="nav-link" data-section="quran"><span>🕌</span> <span class="nav-label"></span></button>
       <button class="nav-link" data-section="backup"><span>🗄️</span> <span class="nav-label"></span></button>
       <button class="nav-link" data-section="settings"><span>⚙️</span> <span class="nav-label"></span></button>
     </nav>
@@ -359,6 +371,9 @@ tbody tr:last-child td { border-bottom: none; }
 
       <!-- الموظفون والرواتب -->
       <section id="section-staff" class="page"></section>
+
+      <!-- تحفيظ القرآن -->
+      <section id="section-quran" class="page"></section>
 
       <!-- النسخ الاحتياطي -->
       <section id="section-backup" class="page"></section>
@@ -472,7 +487,11 @@ function defaultState() {
     payments: [],
     expenses: [],
     staff: [],
-    salaryPayments: []
+    salaryPayments: [],
+    quranHalaqat: [],
+    quranMembers: [],
+    quranWeeklyRecords: [],
+    quranKhatimRecords: []
   };
 }
 
@@ -487,7 +506,11 @@ function normalizeLoadedState(parsed) {
     payments: Array.isArray(parsed.payments) ? parsed.payments : [],
     expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
     staff: Array.isArray(parsed.staff) ? parsed.staff : [],
-    salaryPayments: Array.isArray(parsed.salaryPayments) ? parsed.salaryPayments : []
+    salaryPayments: Array.isArray(parsed.salaryPayments) ? parsed.salaryPayments : [],
+    quranHalaqat: Array.isArray(parsed.quranHalaqat) ? parsed.quranHalaqat : [],
+    quranMembers: Array.isArray(parsed.quranMembers) ? parsed.quranMembers : [],
+    quranWeeklyRecords: Array.isArray(parsed.quranWeeklyRecords) ? parsed.quranWeeklyRecords : [],
+    quranKhatimRecords: Array.isArray(parsed.quranKhatimRecords) ? parsed.quranKhatimRecords : []
   };
 }
 function loadState() {
@@ -842,6 +865,7 @@ const sections = {
   report: { ar: 'التقرير الشهري', fr: 'Rapport mensuel', render: renderReport },
   expenses: { ar: 'المصروفات', fr: 'Dépenses', render: renderExpenses },
   staff: { ar: 'الموظفون والرواتب', fr: 'Personnel & salaires', render: renderStaff },
+  quran: { ar: 'تحفيظ القرآن', fr: 'Mémorisation du Coran', render: renderQuran },
   backup: { ar: 'النسخ الاحتياطي', fr: 'Sauvegarde', render: renderBackup },
   settings: { ar: 'الإعدادات', fr: 'Paramètres', render: renderSettings }
 };
@@ -2365,6 +2389,595 @@ function printSalaryReceipt(paymentId) {
         <span>${L('توقيع المستلم: ..............................', 'Signature : ..............................')}</span>
         <span>${fmtDate(todayISO())}</span>
       </div>
+    </div>
+  `;
+  window.print();
+}
+
+/* ================= تحفيظ القرآن ================= */
+let quranView = 'halaqat';
+function renderQuran() {
+  const el = document.getElementById('section-quran');
+  el.innerHTML = `
+    <div class="subtabs" id="quran-subtabs">
+      <button data-view="halaqat" class="${quranView === 'halaqat' ? 'active' : ''}">${L('الحلقات', 'Cercles')}</button>
+      <button data-view="members" class="${quranView === 'members' ? 'active' : ''}">${L('الأعضاء', 'Membres')}</button>
+      <button data-view="weekly" class="${quranView === 'weekly' ? 'active' : ''}">${L('الكشف الأسبوعي', 'Fiche hebdomadaire')}</button>
+      <button data-view="khatim" class="${quranView === 'khatim' ? 'active' : ''}">${L('كشف الخاتمين', 'Fiche des khatimeen')}</button>
+    </div>
+    <div id="quran-subview"></div>
+  `;
+  el.querySelectorAll('#quran-subtabs button').forEach(b => b.addEventListener('click', () => { quranView = b.dataset.view; renderQuran(); }));
+  const renderers = { halaqat: renderQuranHalaqat, members: renderQuranMembers, weekly: renderQuranWeekly, khatim: renderQuranKhatim };
+  renderers[quranView]();
+}
+
+function getHalaqa(id) { return state.quranHalaqat.find(h => h.id === id); }
+function halaqaName(id) { const h = getHalaqa(id); return h ? h.name : '—'; }
+function halaqaMemberCount(id) { return state.quranMembers.filter(m => m.halaqaId === id && m.status !== 'inactive').length; }
+function getMember(id) { return state.quranMembers.find(m => m.id === id); }
+function memberRoleLabel(role) {
+  const map = { student: L('طالب', 'Élève'), helper: L('مساعد', 'Assistant'), khatim: L('خاتم', 'Khatim') };
+  return map[role] || role;
+}
+function memberRoleBadgeClass(role) {
+  return role === 'student' ? 'badge--paid' : role === 'khatim' ? 'badge--partial' : 'badge--muted';
+}
+function addDaysISO(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+function quranWeekStart(dateStr) {
+  const d = new Date((dateStr || todayISO()) + 'T00:00:00');
+  const diff = (d.getDay() + 1) % 7; // أيام منذ آخر يوم سبت
+  return addDaysISO(d.toISOString().slice(0, 10), -diff);
+}
+function quranWeekDays(weekStart) {
+  return [0, 1, 2, 3, 4].map(i => addDaysISO(weekStart, i));
+}
+const QURAN_DAY_LABELS = [
+  { ar: 'السبت', fr: 'Samedi' }, { ar: 'الأحد', fr: 'Dimanche' }, { ar: 'الإثنين', fr: 'Lundi' },
+  { ar: 'الثلاثاء', fr: 'Mardi' }, { ar: 'الأربعاء', fr: 'Mercredi' }
+];
+function attendanceLabel(val) {
+  const map = { present: L('حضور', 'Présent'), absent: L('غياب', 'Absent'), late: L('تأخر', 'Retard') };
+  return map[val] || '—';
+}
+
+/* ---- الحلقات ---- */
+function renderQuranHalaqat() {
+  const el = document.getElementById('quran-subview');
+  const list = [...state.quranHalaqat].sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
+  el.innerHTML = `
+    <div class="toolbar">
+      <button class="btn btn--primary" id="add-halaqa-btn">${L('＋ إضافة حلقة', '＋ Ajouter un cercle')}</button>
+    </div>
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${list.length === 0 ? emptyState('🕌', L('لم تُضِف أي حلقة بعد', "Aucun cercle ajouté pour l'instant")) : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>${L('اسم الحلقة', 'Nom du cercle')}</th><th>${L('الأستاذ', 'Enseignant')}</th><th>${L('عدد الأعضاء', 'Membres')}</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(h => `<tr>
+              <td><strong>${escapeHtml(h.name)}</strong></td>
+              <td>${escapeHtml(h.teacherName || '—')}</td>
+              <td>${halaqaMemberCount(h.id)}</td>
+              <td class="row-actions">
+                <button class="btn btn--outline btn--sm" data-edit="${h.id}">${L('تعديل', 'Modifier')}</button>
+                <button class="btn btn--danger btn--sm" data-del="${h.id}">${L('حذف', 'Supprimer')}</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  document.getElementById('add-halaqa-btn').addEventListener('click', () => halaqaForm());
+  el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => halaqaForm(getHalaqa(b.dataset.edit))));
+  el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    const h = getHalaqa(b.dataset.del);
+    const count = halaqaMemberCount(h.id);
+    const msg = count
+      ? L(`هذه الحلقة تضم ${count} عضوًا. سيتم حذفهم أيضًا مع كل سجلاتهم. هل تريد المتابعة؟`, `Ce cercle compte ${count} membre(s). Ils seront supprimés avec tous leurs registres. Continuer ?`)
+      : L(`هل تريد حذف حلقة "${h.name}"؟`, `Voulez-vous supprimer le cercle « ${h.name} » ?`);
+    confirmAction(msg, () => {
+      const memberIds = state.quranMembers.filter(m => m.halaqaId === h.id).map(m => m.id);
+      state.quranHalaqat = state.quranHalaqat.filter(x => x.id !== h.id);
+      state.quranMembers = state.quranMembers.filter(m => m.halaqaId !== h.id);
+      state.quranWeeklyRecords = state.quranWeeklyRecords.filter(r => !memberIds.includes(r.memberId));
+      state.quranKhatimRecords = state.quranKhatimRecords.filter(r => !memberIds.includes(r.memberId));
+      save(); toast(L('تم حذف الحلقة', 'Cercle supprimé'), 'success'); renderQuranHalaqat();
+    });
+  }));
+}
+function halaqaForm(existing) {
+  const isEdit = !!existing;
+  openModal(`
+    <div class="modal__header"><h3>${isEdit ? L('تعديل حلقة', 'Modifier le cercle') : L('إضافة حلقة تحفيظ', 'Ajouter un cercle')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('اسم الحلقة *', 'Nom du cercle *')}</label>
+        <input id="hf-name" value="${escapeHtml(existing ? existing.name : '')}" placeholder="${L('مثال: حلقة المعلم علي لوح', 'Ex : Cercle du Cheikh Ali Louh')}">
+      </div>
+      <div class="field">
+        <label>${L('اسم الأستاذ', "Nom de l'enseignant")}</label>
+        <input id="hf-teacher" list="hf-teacher-list" value="${escapeHtml(existing ? existing.teacherName || '' : '')}">
+        <datalist id="hf-teacher-list">
+          ${state.staff.map(s => `<option value="${escapeHtml(s.name)}">`).join('')}
+        </datalist>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="hf-save">${isEdit ? L('حفظ التعديلات', 'Enregistrer') : L('إضافة', 'Ajouter')}</button>
+    </div>
+  `);
+  document.getElementById('hf-save').addEventListener('click', () => {
+    const name = document.getElementById('hf-name').value.trim();
+    if (!name) { toast(L('يرجى إدخال اسم الحلقة', 'Veuillez saisir le nom du cercle'), 'error'); return; }
+    const data = { name, teacherName: document.getElementById('hf-teacher').value.trim() };
+    if (isEdit) { Object.assign(existing, data); } else { state.quranHalaqat.push({ id: uid('hlq'), ...data }); }
+    save(); closeModal(); toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success'); renderQuranHalaqat();
+  });
+}
+
+/* ---- الأعضاء (تلاميذ / مساعدون / خاتمون) ---- */
+let quranMemberFilters = { halaqaId: '' };
+function renderQuranMembers() {
+  const el = document.getElementById('quran-subview');
+  let list = [...state.quranMembers];
+  if (quranMemberFilters.halaqaId) list = list.filter(m => m.halaqaId === quranMemberFilters.halaqaId);
+  list.sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field" style="min-width:200px">
+        <label>${L('الحلقة', 'Cercle')}</label>
+        <select id="qm-halaqa-filter">
+          <option value="">${L('كل الحلقات', 'Tous les cercles')}</option>
+          ${state.quranHalaqat.map(h => `<option value="${h.id}" ${quranMemberFilters.halaqaId === h.id ? 'selected' : ''}>${escapeHtml(h.name)}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn--primary" id="add-member-btn" style="align-self:flex-end">${L('＋ إضافة عضو', '＋ Ajouter un membre')}</button>
+    </div>
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${state.quranHalaqat.length === 0 ? emptyState('🕌', L('أضِف حلقة أولًا من تبويب "الحلقات"', "Ajoutez d'abord un cercle dans l'onglet « Cercles »")) :
+        list.length === 0 ? emptyState('👤', L('لا يوجد أعضاء مطابقون', 'Aucun membre correspondant')) : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>${L('الاسم', 'Nom')}</th><th>${L('الحلقة', 'Cercle')}</th><th>${L('الدور', 'Rôle')}</th><th>${L('المستوى/السنة', 'Niveau')}</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(m => `<tr>
+              <td><strong>${escapeHtml(m.name)}</strong>${m.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
+              <td>${escapeHtml(halaqaName(m.halaqaId))}</td>
+              <td><span class="badge ${memberRoleBadgeClass(m.role)}">${memberRoleLabel(m.role)}</span></td>
+              <td>${escapeHtml(m.level || '—')}</td>
+              <td class="row-actions">
+                <button class="btn btn--outline btn--sm" data-edit="${m.id}">${L('تعديل', 'Modifier')}</button>
+                <button class="btn btn--danger btn--sm" data-del="${m.id}">${L('حذف', 'Supprimer')}</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  document.getElementById('qm-halaqa-filter').addEventListener('change', e => { quranMemberFilters.halaqaId = e.target.value; renderQuranMembers(); });
+  const addBtn = document.getElementById('add-member-btn');
+  if (addBtn) addBtn.addEventListener('click', () => {
+    if (state.quranHalaqat.length === 0) { toast(L('أضِف حلقة أولًا', "Ajoutez d'abord un cercle"), 'error'); return; }
+    memberForm();
+  });
+  el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => memberForm(getMember(b.dataset.edit))));
+  el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    const m = getMember(b.dataset.del);
+    confirmAction(L(`هل تريد حذف "${m.name}" وكل سجلاته؟`, `Voulez-vous supprimer « ${m.name} » et tous ses registres ?`), () => {
+      state.quranMembers = state.quranMembers.filter(x => x.id !== m.id);
+      state.quranWeeklyRecords = state.quranWeeklyRecords.filter(r => r.memberId !== m.id);
+      state.quranKhatimRecords = state.quranKhatimRecords.filter(r => r.memberId !== m.id);
+      save(); toast(L('تم الحذف', 'Supprimé'), 'success'); renderQuranMembers();
+    });
+  }));
+}
+function memberForm(existing) {
+  const isEdit = !!existing;
+  openModal(`
+    <div class="modal__header"><h3>${isEdit ? L('تعديل بيانات العضو', 'Modifier le membre') : L('إضافة عضو جديد', 'Ajouter un membre')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('الحلقة *', 'Cercle *')}</label>
+        <select id="mf-halaqa">
+          ${state.quranHalaqat.map(h => `<option value="${h.id}" ${(existing ? existing.halaqaId : quranMemberFilters.halaqaId) === h.id ? 'selected' : ''}>${escapeHtml(h.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('الاسم الكامل *', 'Nom complet *')}</label>
+        <input id="mf-name" value="${escapeHtml(existing ? existing.name : '')}">
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('الدور *', 'Rôle *')}</label>
+          <select id="mf-role">
+            <option value="student" ${(!existing || existing.role === 'student') ? 'selected' : ''}>${L('طالب (درس + مراجعة)', 'Élève (leçon + révision)')}</option>
+            <option value="helper" ${existing && existing.role === 'helper' ? 'selected' : ''}>${L('مساعد (حضور فقط)', 'Assistant (présence uniquement)')}</option>
+            <option value="khatim" ${existing && existing.role === 'khatim' ? 'selected' : ''}>${L('خاتم (متابعة يومية)', 'Khatim (suivi quotidien)')}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>${L('المستوى/السنة', 'Niveau / année')}</label>
+          <input id="mf-level" value="${escapeHtml(existing ? existing.level || '' : '')}" placeholder="${L('مثال: 07', 'Ex : 07')}">
+        </div>
+      </div>
+      ${isEdit ? `
+      <div class="field">
+        <label>${L('الحالة', 'Statut')}</label>
+        <select id="mf-status">
+          <option value="active" ${existing.status !== 'inactive' ? 'selected' : ''}>${L('نشط', 'Actif')}</option>
+          <option value="inactive" ${existing.status === 'inactive' ? 'selected' : ''}>${L('غير نشط', 'Inactif')}</option>
+        </select>
+      </div>` : ''}
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="mf-save">${isEdit ? L('حفظ التعديلات', 'Enregistrer') : L('إضافة', 'Ajouter')}</button>
+    </div>
+  `);
+  document.getElementById('mf-save').addEventListener('click', () => {
+    const name = document.getElementById('mf-name').value.trim();
+    if (!name) { toast(L('يرجى إدخال الاسم', 'Veuillez saisir le nom'), 'error'); return; }
+    const data = {
+      halaqaId: document.getElementById('mf-halaqa').value,
+      name,
+      role: document.getElementById('mf-role').value,
+      level: document.getElementById('mf-level').value.trim()
+    };
+    if (isEdit) {
+      Object.assign(existing, data);
+      existing.status = document.getElementById('mf-status').value;
+    } else {
+      state.quranMembers.push({ id: uid('qm'), status: 'active', ...data });
+    }
+    save(); closeModal(); toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success'); refreshCurrentSection();
+  });
+}
+
+/* ---- الكشف الأسبوعي (الدرس + المراجعة + الحضور) ---- */
+function getWeeklyRecord(memberId, weekStart) {
+  return state.quranWeeklyRecords.find(r => r.memberId === memberId && r.weekStart === weekStart);
+}
+function weeklyRecordFilled(rec) {
+  if (!rec) return false;
+  const hasAttendance = rec.attendance && Object.values(rec.attendance).some(v => v);
+  return !!(hasAttendance || rec.lessonAmount || rec.revisionAmount);
+}
+let quranWeeklyState = { halaqaId: '', date: todayISO() };
+function renderQuranWeekly() {
+  const el = document.getElementById('quran-subview');
+  if (!quranWeeklyState.halaqaId && state.quranHalaqat.length) quranWeeklyState.halaqaId = state.quranHalaqat[0].id;
+  const weekStart = quranWeekStart(quranWeeklyState.date);
+  const weekEnd = addDaysISO(weekStart, 4);
+  const members = state.quranMembers.filter(m => m.halaqaId === quranWeeklyState.halaqaId && m.status !== 'inactive' && (m.role === 'student' || m.role === 'helper'))
+    .sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field">
+        <label>${L('الحلقة', 'Cercle')}</label>
+        <select id="qw-halaqa">
+          ${state.quranHalaqat.length === 0 ? `<option value="">${L('لا توجد حلقات', 'Aucun cercle')}</option>` :
+            state.quranHalaqat.map(h => `<option value="${h.id}" ${quranWeeklyState.halaqaId === h.id ? 'selected' : ''}>${escapeHtml(h.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>${L('أي يوم ضمن الأسبوع', 'Un jour de la semaine')}</label>
+        <input id="qw-date" type="date" value="${quranWeeklyState.date}">
+      </div>
+      <button class="btn btn--outline" id="qw-print" style="align-self:flex-end">${L('🖨️ طباعة الكشف الأسبوعي', '🖨️ Imprimer la fiche')}</button>
+    </div>
+    <p style="color:var(--color-text-muted);margin-bottom:14px">${L('الأسبوع من', 'Semaine du')} <strong>${fmtDate(weekStart)}</strong> ${L('إلى', 'au')} <strong>${fmtDate(weekEnd)}</strong></p>
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${state.quranHalaqat.length === 0 ? emptyState('🕌', L('أضِف حلقة أولًا', "Ajoutez d'abord un cercle")) :
+        members.length === 0 ? emptyState('👤', L('لا يوجد أعضاء في هذه الحلقة', 'Aucun membre dans ce cercle')) : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>${L('الاسم', 'Nom')}</th><th>${L('الدور', 'Rôle')}</th><th>${L('حالة الأسبوع', 'État de la semaine')}</th><th></th></tr></thead>
+          <tbody>
+            ${members.map(m => {
+              const rec = getWeeklyRecord(m.id, weekStart);
+              return `<tr>
+                <td><strong>${escapeHtml(m.name)}</strong></td>
+                <td><span class="badge ${memberRoleBadgeClass(m.role)}">${memberRoleLabel(m.role)}</span></td>
+                <td>${weeklyRecordFilled(rec) ? `<span class="badge badge--paid">${L('معبأ', 'Rempli')}</span>` : `<span class="badge badge--muted">${L('فارغ', 'Vide')}</span>`}</td>
+                <td class="row-actions"><button class="btn btn--primary btn--sm" data-fill="${m.id}">${L('📝 تعبئة الكشف', '📝 Remplir')}</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  const halaqaSel = document.getElementById('qw-halaqa');
+  if (halaqaSel) halaqaSel.addEventListener('change', e => { quranWeeklyState.halaqaId = e.target.value; renderQuranWeekly(); });
+  const dateInput = document.getElementById('qw-date');
+  if (dateInput) dateInput.addEventListener('change', e => { quranWeeklyState.date = e.target.value || todayISO(); renderQuranWeekly(); });
+  const printBtn = document.getElementById('qw-print');
+  if (printBtn) printBtn.addEventListener('click', () => printQuranWeekly(quranWeeklyState.halaqaId, weekStart));
+  el.querySelectorAll('[data-fill]').forEach(b => b.addEventListener('click', () => weeklyRecordForm(b.dataset.fill, weekStart)));
+}
+function weeklyRecordForm(memberId, weekStart) {
+  const m = getMember(memberId);
+  if (!m) return;
+  const rec = getWeeklyRecord(memberId, weekStart) || {};
+  const attendance = rec.attendance || {};
+  const days = quranWeekDays(weekStart);
+  const isStudent = m.role === 'student';
+
+  openModal(`
+    <div class="modal__header"><h3>${escapeHtml(m.name)} — ${L('الأسبوع من', 'Semaine du')} ${fmtDate(weekStart)}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      ${isStudent ? `
+      <h4 style="margin-bottom:10px">${L('الدرس (تسميع جديد)', 'Leçon (nouvelle récitation)')}</h4>
+      <div class="field-row" style="margin-bottom:10px">
+        <div class="field"><label>${L('بداية الأسبوع — السورة', 'Début — Sourate')}</label><input id="wf-lesson-start-surah" value="${escapeHtml(rec.lessonStartSurah || '')}"></div>
+        <div class="field"><label>${L('رقم الآية', 'N° verset')}</label><input id="wf-lesson-start-ayah" value="${escapeHtml(rec.lessonStartAyah || '')}"></div>
+      </div>
+      <div class="field-row" style="margin-bottom:10px">
+        <div class="field"><label>${L('نهاية الأسبوع — السورة', 'Fin — Sourate')}</label><input id="wf-lesson-end-surah" value="${escapeHtml(rec.lessonEndSurah || '')}"></div>
+        <div class="field"><label>${L('رقم الآية', 'N° verset')}</label><input id="wf-lesson-end-ayah" value="${escapeHtml(rec.lessonEndAyah || '')}"></div>
+      </div>
+      <div class="field" style="margin-bottom:16px"><label>${L('المقدار (مثال: 3 أوجه)', 'Quantité (ex : 3 faces)')}</label><input id="wf-lesson-amount" value="${escapeHtml(rec.lessonAmount || '')}"></div>
+
+      <h4 style="margin-bottom:10px">${L('المراجعة', 'Révision')}</h4>
+      <div class="field-row" style="margin-bottom:10px">
+        <div class="field"><label>${L('بداية الأسبوع', 'Début de semaine')}</label><input id="wf-rev-start" value="${escapeHtml(rec.revisionStart || '')}"></div>
+        <div class="field"><label>${L('نهاية الأسبوع', 'Fin de semaine')}</label><input id="wf-rev-end" value="${escapeHtml(rec.revisionEnd || '')}"></div>
+      </div>
+      <div class="field" style="margin-bottom:16px"><label>${L('المقدار', 'Quantité')}</label><input id="wf-rev-amount" value="${escapeHtml(rec.revisionAmount || '')}"></div>
+      ` : ''}
+
+      <h4 style="margin-bottom:10px">${L('الحضور اليومي', 'Présence quotidienne')}</h4>
+      <div class="field-row" style="flex-wrap:wrap">
+        ${days.map((d, i) => `
+          <div class="field" style="min-width:110px">
+            <label>${L(QURAN_DAY_LABELS[i].ar, QURAN_DAY_LABELS[i].fr)}</label>
+            <select id="wf-att-${i}">
+              <option value="" ${!attendance[d] ? 'selected' : ''}>—</option>
+              <option value="present" ${attendance[d] === 'present' ? 'selected' : ''}>${L('حضور', 'Présent')}</option>
+              <option value="absent" ${attendance[d] === 'absent' ? 'selected' : ''}>${L('غياب', 'Absent')}</option>
+              <option value="late" ${attendance[d] === 'late' ? 'selected' : ''}>${L('تأخر', 'Retard')}</option>
+            </select>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="wf-save">${L('حفظ', 'Enregistrer')}</button>
+    </div>
+  `, { wide: true });
+
+  document.getElementById('wf-save').addEventListener('click', () => {
+    const newAttendance = {};
+    days.forEach((d, i) => {
+      const v = document.getElementById('wf-att-' + i).value;
+      if (v) newAttendance[d] = v;
+    });
+    const data = { memberId, weekStart, attendance: newAttendance };
+    if (isStudent) {
+      data.lessonStartSurah = document.getElementById('wf-lesson-start-surah').value.trim();
+      data.lessonStartAyah = document.getElementById('wf-lesson-start-ayah').value.trim();
+      data.lessonEndSurah = document.getElementById('wf-lesson-end-surah').value.trim();
+      data.lessonEndAyah = document.getElementById('wf-lesson-end-ayah').value.trim();
+      data.lessonAmount = document.getElementById('wf-lesson-amount').value.trim();
+      data.revisionStart = document.getElementById('wf-rev-start').value.trim();
+      data.revisionEnd = document.getElementById('wf-rev-end').value.trim();
+      data.revisionAmount = document.getElementById('wf-rev-amount').value.trim();
+    }
+    const existingIdx = state.quranWeeklyRecords.findIndex(r => r.memberId === memberId && r.weekStart === weekStart);
+    if (existingIdx >= 0) {
+      state.quranWeeklyRecords[existingIdx] = { ...state.quranWeeklyRecords[existingIdx], ...data };
+    } else {
+      state.quranWeeklyRecords.push({ id: uid('qwr'), ...data });
+    }
+    save(); closeModal(); toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success'); renderQuranWeekly();
+  });
+}
+function printQuranWeekly(halaqaId, weekStart) {
+  const h = getHalaqa(halaqaId);
+  if (!h) return;
+  const weekEnd = addDaysISO(weekStart, 4);
+  const days = quranWeekDays(weekStart);
+  const members = state.quranMembers.filter(m => m.halaqaId === halaqaId && m.status !== 'inactive' && (m.role === 'student' || m.role === 'helper'))
+    .sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
+
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="sheet-print">
+      ${receiptLogoHtml()}
+      <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedSchoolName())}</h2>
+      <p style="text-align:center;margin:0 0 4px">${escapeHtml(h.name)}${h.teacherName ? ' — ' + escapeHtml(h.teacherName) : ''}</p>
+      <p style="text-align:center;margin:0 0 16px;color:#555">${L('الأسبوع من', 'Semaine du')} ${fmtDate(weekStart)} ${L('إلى', 'au')} ${fmtDate(weekEnd)}</p>
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2">${L('الاسم', 'Nom')}</th>
+            <th colspan="5">${L('الدرس', 'Leçon')}</th>
+            <th colspan="3">${L('المراجعة', 'Révision')}</th>
+            ${days.map((d, i) => `<th rowspan="2">${L(QURAN_DAY_LABELS[i].ar, QURAN_DAY_LABELS[i].fr)}</th>`).join('')}
+          </tr>
+          <tr>
+            <th>${L('من (سورة)', 'Deb. sourate')}</th><th>${L('آية', 'Verset')}</th><th>${L('إلى (سورة)', 'Fin sourate')}</th><th>${L('آية', 'Verset')}</th><th>${L('المقدار', 'Qté')}</th>
+            <th>${L('من', 'De')}</th><th>${L('إلى', 'À')}</th><th>${L('المقدار', 'Qté')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${members.map(m => {
+            const rec = getWeeklyRecord(m.id, weekStart) || {};
+            const att = rec.attendance || {};
+            return `<tr>
+              <td>${escapeHtml(m.name)}</td>
+              <td>${escapeHtml(rec.lessonStartSurah || '')}</td><td>${escapeHtml(rec.lessonStartAyah || '')}</td>
+              <td>${escapeHtml(rec.lessonEndSurah || '')}</td><td>${escapeHtml(rec.lessonEndAyah || '')}</td>
+              <td>${escapeHtml(rec.lessonAmount || '')}</td>
+              <td>${escapeHtml(rec.revisionStart || '')}</td><td>${escapeHtml(rec.revisionEnd || '')}</td><td>${escapeHtml(rec.revisionAmount || '')}</td>
+              ${days.map(d => `<td>${att[d] ? escapeHtml(attendanceLabel(att[d])) : ''}</td>`).join('')}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  window.print();
+}
+
+/* ---- كشف الخاتمين اليومي (صباح/مساء) ---- */
+function getKhatimRecord(memberId, date) {
+  return state.quranKhatimRecords.find(r => r.memberId === memberId && r.date === date);
+}
+function khatimRecordFilled(rec) {
+  if (!rec) return false;
+  return !!((rec.morning && (rec.morning.amount || rec.morning.start)) || (rec.evening && (rec.evening.amount || rec.evening.start)));
+}
+let quranKhatimState = { halaqaId: '', date: todayISO() };
+function renderQuranKhatim() {
+  const el = document.getElementById('quran-subview');
+  if (!quranKhatimState.halaqaId && state.quranHalaqat.length) quranKhatimState.halaqaId = state.quranHalaqat[0].id;
+  const members = state.quranMembers.filter(m => m.halaqaId === quranKhatimState.halaqaId && m.status !== 'inactive' && m.role === 'khatim')
+    .sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field">
+        <label>${L('الحلقة', 'Cercle')}</label>
+        <select id="qk-halaqa">
+          ${state.quranHalaqat.length === 0 ? `<option value="">${L('لا توجد حلقات', 'Aucun cercle')}</option>` :
+            state.quranHalaqat.map(h => `<option value="${h.id}" ${quranKhatimState.halaqaId === h.id ? 'selected' : ''}>${escapeHtml(h.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>${L('التاريخ', 'Date')}</label>
+        <input id="qk-date" type="date" value="${quranKhatimState.date}">
+      </div>
+      <button class="btn btn--outline" id="qk-print" style="align-self:flex-end">${L('🖨️ طباعة كشف اليوم', '🖨️ Imprimer la fiche du jour')}</button>
+    </div>
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${state.quranHalaqat.length === 0 ? emptyState('🕌', L('أضِف حلقة أولًا', "Ajoutez d'abord un cercle")) :
+        members.length === 0 ? emptyState('📖', L('لا يوجد خاتمون في هذه الحلقة', 'Aucun khatim dans ce cercle')) : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>${L('الاسم', 'Nom')}</th><th>${L('حالة اليوم', 'État du jour')}</th><th></th></tr></thead>
+          <tbody>
+            ${members.map(m => {
+              const rec = getKhatimRecord(m.id, quranKhatimState.date);
+              return `<tr>
+                <td><strong>${escapeHtml(m.name)}</strong></td>
+                <td>${khatimRecordFilled(rec) ? `<span class="badge badge--paid">${L('معبأ', 'Rempli')}</span>` : `<span class="badge badge--muted">${L('فارغ', 'Vide')}</span>`}</td>
+                <td class="row-actions"><button class="btn btn--primary btn--sm" data-fill="${m.id}">${L('📝 تعبئة الكشف', '📝 Remplir')}</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  const halaqaSel = document.getElementById('qk-halaqa');
+  if (halaqaSel) halaqaSel.addEventListener('change', e => { quranKhatimState.halaqaId = e.target.value; renderQuranKhatim(); });
+  const dateInput = document.getElementById('qk-date');
+  if (dateInput) dateInput.addEventListener('change', e => { quranKhatimState.date = e.target.value || todayISO(); renderQuranKhatim(); });
+  const printBtn = document.getElementById('qk-print');
+  if (printBtn) printBtn.addEventListener('click', () => printQuranKhatim(quranKhatimState.halaqaId, quranKhatimState.date));
+  el.querySelectorAll('[data-fill]').forEach(b => b.addEventListener('click', () => khatimRecordForm(b.dataset.fill, quranKhatimState.date)));
+}
+function khatimRecordForm(memberId, date) {
+  const m = getMember(memberId);
+  if (!m) return;
+  const rec = getKhatimRecord(memberId, date) || {};
+  const morning = rec.morning || {};
+  const evening = rec.evening || {};
+
+  openModal(`
+    <div class="modal__header"><h3>${escapeHtml(m.name)} — ${fmtDate(date)}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <h4 style="margin-bottom:10px">${L('حصة الصباح', 'Séance du matin')}</h4>
+      <div class="field-row" style="margin-bottom:16px">
+        <div class="field"><label>${L('البداية', 'Début')}</label><input id="kf-m-start" value="${escapeHtml(morning.start || '')}"></div>
+        <div class="field"><label>${L('المقدار', 'Quantité')}</label><input id="kf-m-amount" value="${escapeHtml(morning.amount || '')}"></div>
+        <div class="field"><label>${L('النتيجة', 'Résultat')}</label><input id="kf-m-result" value="${escapeHtml(morning.result || '')}"></div>
+      </div>
+      <h4 style="margin-bottom:10px">${L('حصة المساء', 'Séance du soir')}</h4>
+      <div class="field-row" style="margin-bottom:16px">
+        <div class="field"><label>${L('البداية', 'Début')}</label><input id="kf-e-start" value="${escapeHtml(evening.start || '')}"></div>
+        <div class="field"><label>${L('المقدار', 'Quantité')}</label><input id="kf-e-amount" value="${escapeHtml(evening.amount || '')}"></div>
+        <div class="field"><label>${L('النتيجة', 'Résultat')}</label><input id="kf-e-result" value="${escapeHtml(evening.result || '')}"></div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="kf-save">${L('حفظ', 'Enregistrer')}</button>
+    </div>
+  `, { wide: true });
+
+  document.getElementById('kf-save').addEventListener('click', () => {
+    const data = {
+      memberId, date,
+      morning: {
+        start: document.getElementById('kf-m-start').value.trim(),
+        amount: document.getElementById('kf-m-amount').value.trim(),
+        result: document.getElementById('kf-m-result').value.trim()
+      },
+      evening: {
+        start: document.getElementById('kf-e-start').value.trim(),
+        amount: document.getElementById('kf-e-amount').value.trim(),
+        result: document.getElementById('kf-e-result').value.trim()
+      }
+    };
+    const existingIdx = state.quranKhatimRecords.findIndex(r => r.memberId === memberId && r.date === date);
+    if (existingIdx >= 0) {
+      state.quranKhatimRecords[existingIdx] = { ...state.quranKhatimRecords[existingIdx], ...data };
+    } else {
+      state.quranKhatimRecords.push({ id: uid('qkr'), ...data });
+    }
+    save(); closeModal(); toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success'); renderQuranKhatim();
+  });
+}
+function printQuranKhatim(halaqaId, date) {
+  const h = getHalaqa(halaqaId);
+  if (!h) return;
+  const members = state.quranMembers.filter(m => m.halaqaId === halaqaId && m.status !== 'inactive' && m.role === 'khatim')
+    .sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
+
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="sheet-print">
+      ${receiptLogoHtml()}
+      <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedSchoolName())}</h2>
+      <p style="text-align:center;margin:0 0 4px">${L('جدول المتابعة اليومية للخاتمين', 'Fiche de suivi quotidien des khatimeen')} — ${escapeHtml(h.name)}</p>
+      <p style="text-align:center;margin:0 0 16px;color:#555">${fmtDate(date)}</p>
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2">${L('الاسم', 'Nom')}</th>
+            <th colspan="3">${L('حصة الصباح', 'Séance du matin')}</th>
+            <th colspan="3">${L('حصة المساء', 'Séance du soir')}</th>
+          </tr>
+          <tr>
+            <th>${L('البداية', 'Début')}</th><th>${L('المقدار', 'Qté')}</th><th>${L('النتيجة', 'Résultat')}</th>
+            <th>${L('البداية', 'Début')}</th><th>${L('المقدار', 'Qté')}</th><th>${L('النتيجة', 'Résultat')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${members.map(m => {
+            const rec = getKhatimRecord(m.id, date) || {};
+            const morning = rec.morning || {}, evening = rec.evening || {};
+            return `<tr>
+              <td>${escapeHtml(m.name)}</td>
+              <td>${escapeHtml(morning.start || '')}</td><td>${escapeHtml(morning.amount || '')}</td><td>${escapeHtml(morning.result || '')}</td>
+              <td>${escapeHtml(evening.start || '')}</td><td>${escapeHtml(evening.amount || '')}</td><td>${escapeHtml(evening.result || '')}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
     </div>
   `;
   window.print();
