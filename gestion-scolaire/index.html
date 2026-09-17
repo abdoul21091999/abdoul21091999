@@ -671,9 +671,7 @@ function renderGate() {
 const APP_MODE_KEY = 'sfm_app_mode';
 let appMode = localStorage.getItem(APP_MODE_KEY) || '';
 function renderModeGate() {
-  const fLogo = foundationLogoSrc();
   document.getElementById('mode-gate-content').innerHTML = `
-    ${fLogo ? `<img class="mode-gate__logo" src="${fLogo}" alt="">` : ''}
     <h2 style="text-align:center;margin-bottom:6px">${escapeHtml(displayedFoundationName())}</h2>
     <p style="text-align:center;color:var(--color-text-muted)">${L('اختر القسم الذي تريد العمل عليه', 'Choisissez la section à utiliser')}</p>
     <div class="mode-cards">
