@@ -532,7 +532,8 @@ function defaultState() {
       foundationLogo: '',
       quranSchoolNameAr: 'مدرسة عبد الله بن مسعود رضي الله عنه لتحفيظ القرآن الكريم',
       quranSchoolNameFr: "École Abdoullah Ibn Massoud (qu'Allah l'agrée) pour la mémorisation du Saint Coran",
-      quranLogo: ''
+      quranLogo: '',
+      quranDefaultRegistrationFee: 0
     },
     classes: [],
     students: [],
@@ -543,7 +544,11 @@ function defaultState() {
     quranHalaqat: [],
     quranMembers: [],
     quranWeeklyRecords: [],
-    quranKhatimRecords: []
+    quranKhatimRecords: [],
+    quranPayments: [],
+    quranExpenses: [],
+    quranStaff: [],
+    quranSalaryPayments: []
   };
 }
 
@@ -562,7 +567,11 @@ function normalizeLoadedState(parsed) {
     quranHalaqat: Array.isArray(parsed.quranHalaqat) ? parsed.quranHalaqat : [],
     quranMembers: Array.isArray(parsed.quranMembers) ? parsed.quranMembers : [],
     quranWeeklyRecords: Array.isArray(parsed.quranWeeklyRecords) ? parsed.quranWeeklyRecords : [],
-    quranKhatimRecords: Array.isArray(parsed.quranKhatimRecords) ? parsed.quranKhatimRecords : []
+    quranKhatimRecords: Array.isArray(parsed.quranKhatimRecords) ? parsed.quranKhatimRecords : [],
+    quranPayments: Array.isArray(parsed.quranPayments) ? parsed.quranPayments : [],
+    quranExpenses: Array.isArray(parsed.quranExpenses) ? parsed.quranExpenses : [],
+    quranStaff: Array.isArray(parsed.quranStaff) ? parsed.quranStaff : [],
+    quranSalaryPayments: Array.isArray(parsed.quranSalaryPayments) ? parsed.quranSalaryPayments : []
   };
 }
 function loadState() {
@@ -2531,11 +2540,17 @@ function renderQuran() {
       <button data-view="weekly" class="${quranView === 'weekly' ? 'active' : ''}">${L('الكشف الأسبوعي', 'Fiche hebdomadaire')}</button>
       <button data-view="khatim" class="${quranView === 'khatim' ? 'active' : ''}">${L('كشف الخاتمين', 'Fiche des khatimeen')}</button>
       <button data-view="performance" class="${quranView === 'performance' ? 'active' : ''}">${L('📊 الأداء', '📊 Performance')}</button>
+      <button data-view="report" class="${quranView === 'report' ? 'active' : ''}">${L('📅 التقرير الشهري', '📅 Rapport mensuel')}</button>
+      <button data-view="expenses" class="${quranView === 'expenses' ? 'active' : ''}">${L('💸 المصروفات', '💸 Dépenses')}</button>
+      <button data-view="staff" class="${quranView === 'staff' ? 'active' : ''}">${L('👥 الأساتذة والرواتب', '👥 Enseignants & salaires')}</button>
     </div>
     <div id="quran-subview"></div>
   `;
   el.querySelectorAll('#quran-subtabs button').forEach(b => b.addEventListener('click', () => { quranView = b.dataset.view; renderQuran(); }));
-  const renderers = { halaqat: renderQuranHalaqat, members: renderQuranMembers, weekly: renderQuranWeekly, khatim: renderQuranKhatim, performance: renderQuranPerformance };
+  const renderers = {
+    halaqat: renderQuranHalaqat, members: renderQuranMembers, weekly: renderQuranWeekly, khatim: renderQuranKhatim,
+    performance: renderQuranPerformance, report: renderQuranReport, expenses: renderQuranExpenses, staff: renderQuranStaff
+  };
   renderers[quranView]();
 }
 
@@ -2550,6 +2565,92 @@ function memberRoleLabel(role) {
 function memberRoleBadgeClass(role) {
   return role === 'student' ? 'badge--paid' : role === 'khatim' ? 'badge--partial' : 'badge--muted';
 }
+
+/* ---- حسابات رسوم التحفيظ ---- */
+function quranRegistrationFee(member) {
+  return member.registrationFee != null ? Number(member.registrationFee) : Number(state.settings.quranDefaultRegistrationFee) || 0;
+}
+function quranRegistrationPaid(member) {
+  return state.quranPayments
+    .filter(p => p.memberId === member.id && (p.type === 'registration' || p.type === 'combo'))
+    .reduce((s, p) => s + Number(p.type === 'combo' ? (p.registrationAmount || 0) : p.amount), 0);
+}
+function quranRegistrationBalance(member) {
+  return Math.max(0, quranRegistrationFee(member) - quranRegistrationPaid(member));
+}
+function quranRegistrationStatus(member) {
+  const fee = quranRegistrationFee(member);
+  if (fee <= 0) return 'paid';
+  const paid = quranRegistrationPaid(member);
+  if (paid >= fee) return 'paid';
+  if (paid > 0) return 'partial';
+  return 'unpaid';
+}
+function quranMonthlyFeeFor(member) {
+  if (member.monthlyFeeOverride != null && member.monthlyFeeOverride !== '') return Number(member.monthlyFeeOverride);
+  const h = getHalaqa(member.halaqaId);
+  return h ? Number(h.monthlyFee) || 0 : 0;
+}
+function quranPaymentAmountForMonth(p, month) {
+  if (p.type !== 'monthly' && p.type !== 'combo') return 0;
+  if (Array.isArray(p.months) && p.months.length) return Number((p.allocations && p.allocations[month]) || 0);
+  return p.month === month ? Number(p.amount) : 0;
+}
+function quranMonthPaid(member, month) {
+  return state.quranPayments
+    .filter(p => p.memberId === member.id && (p.type === 'monthly' || p.type === 'combo'))
+    .reduce((s, p) => s + quranPaymentAmountForMonth(p, month), 0);
+}
+function quranMonthStatus(member, month) {
+  const fee = quranMonthlyFeeFor(member);
+  if (fee <= 0) return 'paid';
+  const paid = quranMonthPaid(member, month);
+  if (paid >= fee) return 'paid';
+  if (paid > 0) return 'partial';
+  return 'unpaid';
+}
+function quranIsEnrolledInMonth(member, month) {
+  const regMonth = (member.registrationDate || '').slice(0, 7);
+  if (regMonth && month < regMonth) return false;
+  if (member.leaveDate) {
+    const leaveMonth = member.leaveDate.slice(0, 7);
+    if (month > leaveMonth) return false;
+  }
+  return true;
+}
+function quranTotalDueForMonths(member, months) {
+  const fee = quranMonthlyFeeFor(member);
+  return months.reduce((s, m) => s + Math.max(0, fee - quranMonthPaid(member, m)), 0);
+}
+function quranDistributeAmountOverMonths(member, months, totalAmount) {
+  const fee = quranMonthlyFeeFor(member);
+  let remaining = totalAmount;
+  const allocations = {};
+  months.forEach(m => {
+    const due = Math.max(0, fee - quranMonthPaid(member, m));
+    const pay = Math.min(due, remaining);
+    if (pay > 0) { allocations[m] = pay; remaining -= pay; }
+  });
+  if (remaining > 0 && months.length) {
+    const last = months[months.length - 1];
+    allocations[last] = (allocations[last] || 0) + remaining;
+  }
+  return allocations;
+}
+function quranPaymentLabel(p) {
+  if (p.type === 'registration') return L('رسوم تسجيل', "Frais d'inscription");
+  if (p.type === 'combo') {
+    const months = paymentMonths(p);
+    return L(`رسوم تسجيل + رسوم شهرية (${monthLabel(months[0])})`, `Inscription + mensualité (${monthLabel(months[0])})`);
+  }
+  const months = paymentMonths(p);
+  if (months.length <= 1) return L('رسوم شهرية — ', 'Mensualité — ') + monthLabel(months[0]);
+  return L(
+    `رسوم شهرية — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} أشهر)`,
+    `Mensualités — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} mois)`
+  );
+}
+
 function addDaysISO(dateStr, n) {
   const d = new Date(dateStr + 'T00:00:00');
   d.setDate(d.getDate() + n);
@@ -2584,11 +2685,12 @@ function renderQuranHalaqat() {
       <div class="card__body" style="padding:0">
         ${list.length === 0 ? emptyState('🕌', L('لم تُضِف أي حلقة بعد', "Aucun cercle ajouté pour l'instant")) : `
         <div class="table-wrap"><table>
-          <thead><tr><th>${L('اسم الحلقة', 'Nom du cercle')}</th><th>${L('الأستاذ', 'Enseignant')}</th><th>${L('عدد الأعضاء', 'Membres')}</th><th></th></tr></thead>
+          <thead><tr><th>${L('اسم الحلقة', 'Nom du cercle')}</th><th>${L('الأستاذ', 'Enseignant')}</th><th>${L('الرسم الشهري', 'Frais mensuel')}</th><th>${L('عدد الأعضاء', 'Membres')}</th><th></th></tr></thead>
           <tbody>
             ${list.map(h => `<tr>
               <td><strong>${escapeHtml(h.name)}</strong></td>
               <td>${escapeHtml(h.teacherName || '—')}</td>
+              <td>${fmtMoney(h.monthlyFee)}</td>
               <td>${halaqaMemberCount(h.id)}</td>
               <td class="row-actions">
                 <button class="btn btn--outline btn--sm" data-edit="${h.id}">${L('تعديل', 'Modifier')}</button>
@@ -2614,6 +2716,7 @@ function renderQuranHalaqat() {
       state.quranMembers = state.quranMembers.filter(m => m.halaqaId !== h.id);
       state.quranWeeklyRecords = state.quranWeeklyRecords.filter(r => !memberIds.includes(r.memberId));
       state.quranKhatimRecords = state.quranKhatimRecords.filter(r => !memberIds.includes(r.memberId));
+      state.quranPayments = state.quranPayments.filter(p => !memberIds.includes(p.memberId));
       save(); toast(L('تم حذف الحلقة', 'Cercle supprimé'), 'success'); renderQuranHalaqat();
     });
   }));
@@ -2627,12 +2730,16 @@ function halaqaForm(existing) {
         <label>${L('اسم الحلقة *', 'Nom du cercle *')}</label>
         <input id="hf-name" value="${escapeHtml(existing ? existing.name : '')}" placeholder="${L('مثال: حلقة المعلم علي لوح', 'Ex : Cercle du Cheikh Ali Louh')}">
       </div>
-      <div class="field">
+      <div class="field" style="margin-bottom:14px">
         <label>${L('اسم الأستاذ', "Nom de l'enseignant")}</label>
         <input id="hf-teacher" list="hf-teacher-list" value="${escapeHtml(existing ? existing.teacherName || '' : '')}">
         <datalist id="hf-teacher-list">
-          ${state.staff.map(s => `<option value="${escapeHtml(s.name)}">`).join('')}
+          ${[...state.staff, ...state.quranStaff].map(s => `<option value="${escapeHtml(s.name)}">`).join('')}
         </datalist>
+      </div>
+      <div class="field">
+        <label>${L('الرسم الشهري لكل طالب', 'Frais mensuel par élève')} (${escapeHtml(state.settings.currency)})</label>
+        <input id="hf-monthly-fee" type="number" min="0" value="${existing ? existing.monthlyFee || '' : ''}" placeholder="0">
       </div>
     </div>
     <div class="modal__footer">
@@ -2643,7 +2750,11 @@ function halaqaForm(existing) {
   document.getElementById('hf-save').addEventListener('click', () => {
     const name = document.getElementById('hf-name').value.trim();
     if (!name) { toast(L('يرجى إدخال اسم الحلقة', 'Veuillez saisir le nom du cercle'), 'error'); return; }
-    const data = { name, teacherName: document.getElementById('hf-teacher').value.trim() };
+    const data = {
+      name,
+      teacherName: document.getElementById('hf-teacher').value.trim(),
+      monthlyFee: Number(document.getElementById('hf-monthly-fee').value) || 0
+    };
     if (isEdit) { Object.assign(existing, data); } else { state.quranHalaqat.push({ id: uid('hlq'), ...data }); }
     save(); closeModal(); toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success'); renderQuranHalaqat();
   });
@@ -2673,14 +2784,21 @@ function renderQuranMembers() {
         ${state.quranHalaqat.length === 0 ? emptyState('🕌', L('أضِف حلقة أولًا من تبويب "الحلقات"', "Ajoutez d'abord un cercle dans l'onglet « Cercles »")) :
         list.length === 0 ? emptyState('👤', L('لا يوجد أعضاء مطابقون', 'Aucun membre correspondant')) : `
         <div class="table-wrap"><table>
-          <thead><tr><th>${L('الاسم', 'Nom')}</th><th>${L('الحلقة', 'Cercle')}</th><th>${L('الدور', 'Rôle')}</th><th>${L('المستوى/السنة', 'Niveau')}</th><th></th></tr></thead>
+          <thead><tr>
+            <th>${L('الاسم', 'Nom')}</th><th>${L('الحلقة', 'Cercle')}</th><th>${L('الدور', 'Rôle')}</th><th>${L('المستوى/السنة', 'Niveau')}</th>
+            <th>${L('رسوم التسجيل', 'Inscription')}</th><th>${L('الشهر الحالي', 'Ce mois')}</th><th></th>
+          </tr></thead>
           <tbody>
             ${list.map(m => `<tr>
               <td><strong>${escapeHtml(m.name)}</strong>${m.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
               <td>${escapeHtml(halaqaName(m.halaqaId))}</td>
               <td><span class="badge ${memberRoleBadgeClass(m.role)}">${memberRoleLabel(m.role)}</span></td>
               <td>${escapeHtml(m.level || '—')}</td>
+              <td>${statusBadge(quranRegistrationStatus(m))}</td>
+              <td>${statusBadge(quranMonthStatus(m, currentMonth()))}</td>
               <td class="row-actions">
+                <button class="btn btn--outline btn--sm" data-view="${m.id}">${L('التفاصيل', 'Détails')}</button>
+                <button class="btn btn--primary btn--sm" data-pay="${m.id}">${L('دفعة', 'Paiement')}</button>
                 <button class="btn btn--outline btn--sm" data-edit="${m.id}">${L('تعديل', 'Modifier')}</button>
                 <button class="btn btn--danger btn--sm" data-del="${m.id}">${L('حذف', 'Supprimer')}</button>
               </td>
@@ -2696,6 +2814,8 @@ function renderQuranMembers() {
     if (state.quranHalaqat.length === 0) { toast(L('أضِف حلقة أولًا', "Ajoutez d'abord un cercle"), 'error'); return; }
     memberForm();
   });
+  el.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => quranMemberDetail(b.dataset.view)));
+  el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => quranPaymentForm(b.dataset.pay)));
   el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => memberForm(getMember(b.dataset.edit))));
   el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
     const m = getMember(b.dataset.del);
@@ -2703,6 +2823,7 @@ function renderQuranMembers() {
       state.quranMembers = state.quranMembers.filter(x => x.id !== m.id);
       state.quranWeeklyRecords = state.quranWeeklyRecords.filter(r => r.memberId !== m.id);
       state.quranKhatimRecords = state.quranKhatimRecords.filter(r => r.memberId !== m.id);
+      state.quranPayments = state.quranPayments.filter(p => p.memberId !== m.id);
       save(); toast(L('تم الحذف', 'Supprimé'), 'success'); renderQuranMembers();
     });
   }));
@@ -2736,6 +2857,26 @@ function memberForm(existing) {
           <input id="mf-level" value="${escapeHtml(existing ? existing.level || '' : '')}" placeholder="${L('مثال: 07', 'Ex : 07')}">
         </div>
       </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('تاريخ التسجيل', "Date d'inscription")}</label>
+          <input id="mf-regdate" type="date" value="${existing ? existing.registrationDate || todayISO() : todayISO()}">
+        </div>
+        <div class="field">
+          <label>${L('رقم هاتف ولي الأمر', 'Téléphone du tuteur')}</label>
+          <input id="mf-phone" value="${escapeHtml(existing ? existing.phone || '' : '')}">
+        </div>
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('رسوم التسجيل', "Frais d'inscription")} (${escapeHtml(state.settings.currency)})</label>
+          <input id="mf-regfee" type="number" min="0" value="${existing && existing.registrationFee != null ? existing.registrationFee : state.settings.quranDefaultRegistrationFee}">
+        </div>
+        <div class="field">
+          <label>${L('رسم شهري خاص (اختياري)', 'Frais mensuel spécifique (optionnel)')}</label>
+          <input id="mf-monthlyfee" type="number" min="0" value="${existing && existing.monthlyFeeOverride != null ? existing.monthlyFeeOverride : ''}" placeholder="${L('يُستخدم رسم الحلقة إن ترك فارغًا', 'Frais du cercle utilisé si laissé vide')}">
+        </div>
+      </div>
       ${isEdit ? `
       <div class="field">
         <label>${L('الحالة', 'Statut')}</label>
@@ -2757,7 +2898,11 @@ function memberForm(existing) {
       halaqaId: document.getElementById('mf-halaqa').value,
       name,
       role: document.getElementById('mf-role').value,
-      level: document.getElementById('mf-level').value.trim()
+      level: document.getElementById('mf-level').value.trim(),
+      registrationDate: document.getElementById('mf-regdate').value || todayISO(),
+      phone: document.getElementById('mf-phone').value.trim(),
+      registrationFee: Number(document.getElementById('mf-regfee').value) || 0,
+      monthlyFeeOverride: document.getElementById('mf-monthlyfee').value === '' ? null : Number(document.getElementById('mf-monthlyfee').value)
     };
     if (isEdit) {
       Object.assign(existing, data);
@@ -3434,6 +3579,770 @@ function renderQuranPerformance() {
     ));
     pt.addEventListener('mouseleave', chartTooltipHide);
   });
+}
+
+/* ================= رسوم تحفيظ القرآن (دفعات) ================= */
+function quranMemberDetail(id) {
+  const m = getMember(id);
+  if (!m) return;
+  const month = currentMonth();
+  const payments = state.quranPayments.filter(p => p.memberId === id).sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+
+  openModal(`
+    <div class="modal__header">
+      <h3>${escapeHtml(m.name)}</h3>
+      <button class="modal__close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:18px">
+        <div class="stat-card stat-card--warn">
+          <div class="stat-card__label">${L('متبقٍ من رسوم التسجيل', 'Solde restant — inscription')}</div>
+          <div class="stat-card__value">${fmtMoney(quranRegistrationBalance(m))}</div>
+        </div>
+        <div class="stat-card stat-card--primary">
+          <div class="stat-card__label">${L('حالة شهر', 'Statut de')} ${monthLabel(month)}</div>
+          <div class="stat-card__value">${statusBadge(quranMonthStatus(m, month))}</div>
+        </div>
+      </div>
+      <p><strong>${L('الحلقة:', 'Cercle :')}</strong> ${escapeHtml(halaqaName(m.halaqaId))} &nbsp; | &nbsp; <strong>${L('الدور:', 'Rôle :')}</strong> ${memberRoleLabel(m.role)}</p>
+      <p><strong>${L('الهاتف:', 'Téléphone :')}</strong> ${escapeHtml(m.phone || '—')} &nbsp; | &nbsp; <strong>${L('تاريخ التسجيل:', "Date d'inscription :")}</strong> ${fmtDate(m.registrationDate)}</p>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
+      <h4 style="margin-bottom:10px">${L('سجل الدفعات', 'Historique des paiements')}</h4>
+      ${payments.length === 0 ? emptyState('💳', L('لا توجد دفعات مسجّلة', 'Aucun paiement enregistré')) : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>${L('النوع', 'Type')}</th><th>${L('المبلغ', 'Montant')}</th><th>${L('التاريخ', 'Date')}</th><th></th></tr></thead>
+        <tbody>
+          ${payments.map(p => `
+            <tr>
+              <td>${quranPaymentLabel(p)}</td>
+              <td>${fmtMoney(p.amount)}</td>
+              <td>${fmtDate(p.date)}</td>
+              <td class="row-actions">
+                <button class="btn btn--outline btn--sm" data-print="${p.id}">${L('🖨️ إيصال', '🖨️ Reçu')}</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="qmd-edit">${L('تعديل البيانات', 'Modifier')}</button>
+      <button class="btn btn--primary" id="qmd-pay">${L('＋ تسجيل دفعة', '＋ Nouveau paiement')}</button>
+    </div>
+  `, { wide: true });
+
+  document.getElementById('qmd-edit').addEventListener('click', () => memberForm(m));
+  document.getElementById('qmd-pay').addEventListener('click', () => quranPaymentForm(m.id));
+  document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printQuranReceipt(b.dataset.print)));
+}
+function quranPaymentForm(memberId) {
+  const members = [...state.quranMembers].filter(m => m.status !== 'inactive').sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
+  if (members.length === 0) { toast(L('يرجى إضافة عضو أولًا', "Veuillez d'abord ajouter un membre"), 'error'); return; }
+  const preselect = memberId || members[0].id;
+
+  openModal(`
+    <div class="modal__header"><h3>${L('تسجيل دفعة', 'Nouveau paiement')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('التلميذ *', 'Élève *')}</label>
+        <select id="qpf-member">
+          ${members.map(m => `<option value="${m.id}" ${m.id === preselect ? 'selected' : ''}>${escapeHtml(m.name)} — ${escapeHtml(halaqaName(m.halaqaId))}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('نوع الدفعة *', 'Type de paiement *')}</label>
+          <select id="qpf-type">
+            <option value="combo">${L('رسوم تسجيل + الشهر الأول معًا', "Inscription + 1er mois ensemble")}</option>
+            <option value="registration">${L('رسوم تسجيل فقط', 'Inscription seulement')}</option>
+            <option value="monthly">${L('رسوم شهرية', 'Mensualité')}</option>
+          </select>
+        </div>
+        <div class="field" id="qpf-month-wrap">
+          <label>${L('الشهر الأول', '1er mois')}</label>
+          <input id="qpf-month" type="month" value="${currentMonth()}">
+        </div>
+      </div>
+      <div class="field-row" id="qpf-count-wrap" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('عدد الأشهر المدفوعة', 'Nombre de mois payés')}</label>
+          <select id="qpf-count">
+            <option value="1">${L('شهر واحد', '1 mois')}</option>
+            <option value="2">${L('شهران', '2 mois')}</option>
+            <option value="3">${L('3 أشهر', '3 mois')}</option>
+            <option value="4">${L('4 أشهر', '4 mois')}</option>
+            <option value="6">${L('6 أشهر', '6 mois')}</option>
+            <option value="9">${L('9 أشهر', '9 mois')}</option>
+            <option value="12">${L('12 شهرًا (سنة كاملة)', '12 mois (année complète)')}</option>
+            <option value="other">${L('عدد مخصص...', 'Nombre personnalisé...')}</option>
+          </select>
+        </div>
+        <div class="field" id="qpf-count-custom-wrap" hidden>
+          <label>${L('العدد المخصص', 'Nombre personnalisé')}</label>
+          <input id="qpf-count-custom" type="number" min="1" max="36" value="1">
+        </div>
+      </div>
+      <div class="field" id="qpf-months-preview-wrap" style="margin-bottom:14px">
+        <small id="qpf-months-preview" style="color:var(--color-text-muted)"></small>
+      </div>
+      <div class="field-row" id="qpf-amount-single-wrap" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('المبلغ الإجمالي', 'Montant total')} (${escapeHtml(state.settings.currency)}) *</label>
+          <input id="qpf-amount" type="number" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>${L('تاريخ الدفع', 'Date de paiement')}</label>
+          <input id="qpf-date" type="date" value="${todayISO()}">
+        </div>
+      </div>
+      <div class="field-row" id="qpf-amount-combo-wrap" style="margin-bottom:14px" hidden>
+        <div class="field">
+          <label>${L('مبلغ رسوم التسجيل', "Montant de l'inscription")} (${escapeHtml(state.settings.currency)})</label>
+          <input id="qpf-combo-reg" type="number" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>${L('مبلغ الشهر الأول', 'Montant du 1er mois')} (${escapeHtml(state.settings.currency)})</label>
+          <input id="qpf-combo-month" type="number" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="field" id="qpf-combo-total-wrap" style="margin-bottom:14px" hidden>
+        <small id="qpf-combo-total" style="color:var(--color-text-muted)"></small>
+      </div>
+      <div class="field" id="qpf-combo-date-wrap" style="margin-bottom:14px" hidden>
+        <label>${L('تاريخ الدفع', 'Date de paiement')}</label>
+        <input id="qpf-combo-date" type="date" value="${todayISO()}">
+      </div>
+      <div class="field">
+        <label>${L('ملاحظة (اختياري)', 'Remarque (optionnel)')}</label>
+        <input id="qpf-note" placeholder="${L('مثال: دفعة نقدية', 'Ex : paiement en espèces')}">
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="qpf-save">${L('تسجيل الدفعة', 'Enregistrer le paiement')}</button>
+    </div>
+  `);
+
+  const typeSel = document.getElementById('qpf-type');
+  const monthWrap = document.getElementById('qpf-month-wrap');
+  const countWrap = document.getElementById('qpf-count-wrap');
+  const countSel = document.getElementById('qpf-count');
+  const countCustomWrap = document.getElementById('qpf-count-custom-wrap');
+  const countCustomInput = document.getElementById('qpf-count-custom');
+  const previewWrap = document.getElementById('qpf-months-preview-wrap');
+  const previewEl = document.getElementById('qpf-months-preview');
+  const singleAmountWrap = document.getElementById('qpf-amount-single-wrap');
+  const amountInput = document.getElementById('qpf-amount');
+  const comboAmountWrap = document.getElementById('qpf-amount-combo-wrap');
+  const comboTotalWrap = document.getElementById('qpf-combo-total-wrap');
+  const comboTotalEl = document.getElementById('qpf-combo-total');
+  const comboDateWrap = document.getElementById('qpf-combo-date-wrap');
+  const comboRegInput = document.getElementById('qpf-combo-reg');
+  const comboMonthInput = document.getElementById('qpf-combo-month');
+  const monthInput = document.getElementById('qpf-month');
+  const memberSel = document.getElementById('qpf-member');
+
+  function monthsCount() {
+    return countSel.value === 'other' ? Math.max(1, Number(countCustomInput.value) || 1) : Number(countSel.value);
+  }
+  function selectedMonths() {
+    return monthRange(monthInput.value || currentMonth(), monthsCount());
+  }
+  function updateVisibility() {
+    const type = typeSel.value;
+    const isMonthly = type === 'monthly';
+    const isCombo = type === 'combo';
+    monthWrap.style.display = (isMonthly || isCombo) ? '' : 'none';
+    countWrap.style.display = isMonthly ? '' : 'none';
+    previewWrap.style.display = isMonthly ? '' : 'none';
+    countCustomWrap.hidden = !(isMonthly && countSel.value === 'other');
+    singleAmountWrap.style.display = isCombo ? 'none' : '';
+    comboAmountWrap.hidden = !isCombo;
+    comboTotalWrap.hidden = !isCombo;
+    comboDateWrap.hidden = !isCombo;
+  }
+  function refresh() {
+    updateVisibility();
+    const mem = getMember(memberSel.value);
+    if (!mem) return;
+    const type = typeSel.value;
+    if (type === 'registration') {
+      amountInput.value = quranRegistrationBalance(mem) || '';
+      previewEl.textContent = '';
+    } else if (type === 'combo') {
+      const month = monthInput.value || currentMonth();
+      comboRegInput.value = quranRegistrationBalance(mem) || '';
+      comboMonthInput.value = Math.max(0, quranMonthlyFeeFor(mem) - quranMonthPaid(mem, month)) || '';
+      updateComboTotal();
+    } else {
+      const months = selectedMonths();
+      amountInput.value = quranTotalDueForMonths(mem, months) || '';
+      previewEl.textContent = months.length > 1
+        ? `${L('سيتم تغطية:', 'Mois couverts :')} ${months.map(monthLabel).join(L('، ', ', '))}`
+        : '';
+    }
+  }
+  function updateComboTotal() {
+    const total = (Number(comboRegInput.value) || 0) + (Number(comboMonthInput.value) || 0);
+    comboTotalEl.textContent = `${L('الإجمالي:', 'Total :')} ${fmtMoney(total)}`;
+  }
+  typeSel.addEventListener('change', refresh);
+  memberSel.addEventListener('change', refresh);
+  monthInput.addEventListener('change', refresh);
+  countSel.addEventListener('change', refresh);
+  countCustomInput.addEventListener('input', refresh);
+  comboRegInput.addEventListener('input', updateComboTotal);
+  comboMonthInput.addEventListener('input', updateComboTotal);
+  refresh();
+
+  document.getElementById('qpf-save').addEventListener('click', () => {
+    const mem = getMember(memberSel.value);
+    const type = typeSel.value;
+
+    if (type === 'combo') {
+      const regAmt = Number(comboRegInput.value) || 0;
+      const monAmt = Number(comboMonthInput.value) || 0;
+      if (regAmt <= 0 && monAmt <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
+      const month = monthInput.value || currentMonth();
+      const payment = {
+        id: uid('qpay'),
+        memberId: memberSel.value,
+        type: 'combo',
+        registrationAmount: regAmt,
+        months: [month],
+        allocations: { [month]: monAmt },
+        amount: regAmt + monAmt,
+        date: document.getElementById('qpf-combo-date').value || todayISO(),
+        note: document.getElementById('qpf-note').value.trim(),
+        receiptNo: nextReceiptNumber()
+      };
+      state.quranPayments.push(payment);
+      save();
+      closeModal();
+      toast(L('تم تسجيل الدفعة بنجاح', 'Paiement enregistré avec succès'), 'success');
+      refreshCurrentSection();
+      printQuranReceipt(payment.id);
+      return;
+    }
+
+    const amount = Number(amountInput.value);
+    if (!amount || amount <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
+    const isMonthly = type === 'monthly';
+    const months = isMonthly ? selectedMonths() : [];
+    const payment = {
+      id: uid('qpay'),
+      memberId: memberSel.value,
+      type,
+      months: isMonthly ? months : null,
+      allocations: isMonthly ? quranDistributeAmountOverMonths(mem, months, amount) : null,
+      amount,
+      date: document.getElementById('qpf-date').value || todayISO(),
+      note: document.getElementById('qpf-note').value.trim(),
+      receiptNo: nextReceiptNumber()
+    };
+    state.quranPayments.push(payment);
+    save();
+    closeModal();
+    toast(L('تم تسجيل الدفعة بنجاح', 'Paiement enregistré avec succès'), 'success');
+    refreshCurrentSection();
+    printQuranReceipt(payment.id);
+  });
+}
+function printQuranReceipt(paymentId) {
+  const p = state.quranPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  const m = getMember(p.memberId);
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="receipt">
+      ${quranLogoHtml()}
+      <h2>${escapeHtml(displayedQuranSchoolName())}</h2>
+      <div class="sub">${escapeHtml(state.settings.address || '')} ${state.settings.phone ? ' — ' + escapeHtml(state.settings.phone) : ''}</div>
+      <hr>
+      <table>
+        <tr><td>${L('رقم الإيصال', 'N° reçu')}</td><td>${escapeHtml(p.receiptNo || '—')}</td></tr>
+        <tr><td>${L('اسم التلميذ', "Nom de l'élève")}</td><td>${escapeHtml(m ? m.name : '—')}</td></tr>
+        <tr><td>${L('الحلقة', 'Cercle')}</td><td>${escapeHtml(m ? halaqaName(m.halaqaId) : '—')}</td></tr>
+        <tr><td>${L('نوع الرسوم', 'Type de frais')}</td><td>${quranPaymentLabel(p)}</td></tr>
+        <tr><td>${L('تاريخ الدفع', 'Date de paiement')}</td><td>${fmtDate(p.date)}</td></tr>
+        ${p.type === 'combo' ? `
+        <tr><td>${L('رسوم التسجيل', "Frais d'inscription")}</td><td>${fmtMoney(p.registrationAmount || 0)}</td></tr>
+        <tr><td>${L('رسوم الشهر الأول', 'Frais du 1er mois')}</td><td>${fmtMoney((p.allocations && p.allocations[paymentMonths(p)[0]]) || 0)}</td></tr>
+        ` : ''}
+        ${p.note ? `<tr><td>${L('ملاحظة', 'Remarque')}</td><td>${escapeHtml(p.note)}</td></tr>` : ''}
+        <tr class="total-row"><td>${L('المبلغ المدفوع', 'Montant payé')}</td><td>${fmtMoney(p.amount)}</td></tr>
+      </table>
+      <div class="sign">
+        <span>${L('توقيع المستلم: ..............................', 'Signature : ..............................')}</span>
+        <span>${fmtDate(todayISO())}</span>
+      </div>
+    </div>
+  `;
+  window.print();
+}
+
+/* ================= التقرير الشهري لتحفيظ القرآن ================= */
+let quranReportMonth = currentMonth();
+function renderQuranReport() {
+  const el = document.getElementById('quran-subview');
+  const members = state.quranMembers.filter(m => m.status !== 'inactive' && quranIsEnrolledInMonth(m, quranReportMonth));
+
+  let paid = 0, partial = 0, unpaid = 0, totalCollected = 0, totalDue = 0;
+  const rows = members.map(m => {
+    const fee = quranMonthlyFeeFor(m);
+    const amountPaid = quranMonthPaid(m, quranReportMonth);
+    const status = quranMonthStatus(m, quranReportMonth);
+    if (status === 'paid') paid++; else if (status === 'partial') partial++; else unpaid++;
+    totalCollected += amountPaid;
+    totalDue += fee;
+    return { m, fee, amountPaid, status };
+  }).sort((a, b) => a.m.name.localeCompare(b.m.name, sortLocale()));
+
+  const monthOptions = lastNMonths(18);
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field">
+        <label>${L('اختر الشهر', 'Choisir le mois')}</label>
+        <select id="qrp-month">
+          ${monthOptions.map(mo => `<option value="${mo}" ${mo === quranReportMonth ? 'selected' : ''}>${monthLabel(mo)}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn--outline" id="qrp-export">${L('⬇️ تصدير CSV', '⬇️ Exporter en CSV')}</button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card stat-card--accent"><div class="stat-card__label">${L('مسدد بالكامل', 'Payé intégralement')}</div><div class="stat-card__value">${paid}</div></div>
+      <div class="stat-card stat-card--warn"><div class="stat-card__label">${L('سداد جزئي', 'Paiement partiel')}</div><div class="stat-card__value">${partial}</div></div>
+      <div class="stat-card stat-card--danger"><div class="stat-card__label">${L('غير مسدد', 'Impayé')}</div><div class="stat-card__value">${unpaid}</div></div>
+      <div class="stat-card stat-card--primary"><div class="stat-card__label">${L('المحصّل / المستحق', 'Encaissé / Dû')}</div><div class="stat-card__value">${fmtMoney(totalCollected)} / ${fmtMoney(totalDue)}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card__header"><h3>${L('تفاصيل شهر', 'Détails de')} ${monthLabel(quranReportMonth)}</h3></div>
+      <div class="card__body" style="padding:0">
+        ${rows.length === 0 ? emptyState('📅', L('لا يوجد تلاميذ مسجّلون لهذا الشهر', 'Aucun élève inscrit pour ce mois')) : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>${L('التلميذ', 'Élève')}</th><th>${L('الحلقة', 'Cercle')}</th><th>${L('الرسم الشهري', 'Frais mensuel')}</th><th>${L('المدفوع', 'Payé')}</th><th>${L('الحالة', 'Statut')}</th><th></th></tr></thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr>
+                <td>${escapeHtml(r.m.name)}</td>
+                <td>${escapeHtml(halaqaName(r.m.halaqaId))}</td>
+                <td>${fmtMoney(r.fee)}</td>
+                <td>${fmtMoney(r.amountPaid)}</td>
+                <td>${statusBadge(r.status)}</td>
+                <td>${r.status !== 'paid' ? `<button class="btn btn--primary btn--sm" data-pay="${r.m.id}">${L('تحصيل', 'Encaisser')}</button>` : ''}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('qrp-month').addEventListener('change', e => { quranReportMonth = e.target.value; renderQuranReport(); });
+  document.getElementById('qrp-export').addEventListener('click', () => exportQuranReportCSV(rows));
+  el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => {
+    const memberId = b.dataset.pay;
+    quranPaymentForm(memberId);
+    setTimeout(() => {
+      const typeSel = document.getElementById('qpf-type');
+      const monthInput = document.getElementById('qpf-month');
+      if (typeSel) { typeSel.value = 'monthly'; typeSel.dispatchEvent(new Event('change')); }
+      if (monthInput) { monthInput.value = quranReportMonth; monthInput.dispatchEvent(new Event('change')); }
+    }, 0);
+  }));
+}
+function exportQuranReportCSV(rows) {
+  const header = [L('اسم التلميذ', "Nom de l'élève"), L('الحلقة', 'Cercle'), L('الرسم الشهري', 'Frais mensuel'), L('المدفوع', 'Payé'), L('الحالة', 'Statut')];
+  const statusLabel = { paid: L('مسدد', 'Payé'), partial: L('جزئي', 'Partiel'), unpaid: L('غير مسدد', 'Impayé') };
+  const lines = [header.join(',')];
+  rows.forEach(r => {
+    lines.push([r.m.name, halaqaName(r.m.halaqaId), r.fee, r.amountPaid, statusLabel[r.status]]
+      .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+  });
+  downloadFile(`${L('تقرير-تحفيظ', 'rapport-coran')}-${quranReportMonth}.csv`, '﻿' + lines.join('\n'), 'text/csv;charset=utf-8');
+}
+
+/* ================= مصروفات تحفيظ القرآن ================= */
+let quranExpenseFilters = { month: currentMonth() };
+function renderQuranExpenses() {
+  const el = document.getElementById('quran-subview');
+  const list = state.quranExpenses
+    .filter(e => !quranExpenseFilters.month || (e.date || '').slice(0, 7) === quranExpenseFilters.month)
+    .sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+  const total = list.reduce((s, e) => s + Number(e.amount), 0);
+  const monthOptions = lastNMonths(18);
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field">
+        <label>${L('الشهر', 'Mois')}</label>
+        <select id="qex-month">
+          <option value="" ${!quranExpenseFilters.month ? 'selected' : ''}>${L('كل الأشهر', 'Tous les mois')}</option>
+          ${monthOptions.map(mo => `<option value="${mo}" ${mo === quranExpenseFilters.month ? 'selected' : ''}>${monthLabel(mo)}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn--primary" id="add-qexpense-btn" style="align-self:flex-end">${L('＋ إضافة مصروف', '＋ Ajouter une dépense')}</button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card stat-card--danger">
+        <div class="stat-card__label">${L('إجمالي المصروفات', 'Total des dépenses')}</div>
+        <div class="stat-card__value">${fmtMoney(total)}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${list.length === 0 ? emptyState('💸', L('لا توجد مصروفات مسجّلة', 'Aucune dépense enregistrée')) : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>${L('التاريخ', 'Date')}</th><th>${L('الفئة', 'Catégorie')}</th><th>${L('الوصف', 'Description')}</th><th>${L('المبلغ', 'Montant')}</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(e => `<tr>
+              <td>${fmtDate(e.date)}</td>
+              <td>${escapeHtml(e.category || '—')}</td>
+              <td>${escapeHtml(e.note || '—')}</td>
+              <td>${fmtMoney(e.amount)}</td>
+              <td class="row-actions">
+                <button class="btn btn--outline btn--sm" data-edit="${e.id}">${L('تعديل', 'Modifier')}</button>
+                <button class="btn btn--danger btn--sm" data-del="${e.id}">${L('حذف', 'Supprimer')}</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  document.getElementById('qex-month').addEventListener('change', e => { quranExpenseFilters.month = e.target.value; renderQuranExpenses(); });
+  document.getElementById('add-qexpense-btn').addEventListener('click', () => quranExpenseForm());
+  el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => quranExpenseForm(state.quranExpenses.find(x => x.id === b.dataset.edit))));
+  el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    confirmAction(L('هل تريد حذف هذا المصروف؟', 'Voulez-vous supprimer cette dépense ?'), () => {
+      state.quranExpenses = state.quranExpenses.filter(x => x.id !== b.dataset.del);
+      save(); toast(L('تم الحذف', 'Supprimé'), 'success'); renderQuranExpenses();
+    });
+  }));
+}
+function quranExpenseForm(existing) {
+  const isEdit = !!existing;
+  openModal(`
+    <div class="modal__header"><h3>${isEdit ? L('تعديل مصروف', 'Modifier la dépense') : L('إضافة مصروف', 'Ajouter une dépense')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('الفئة', 'Catégorie')}</label>
+          <input id="qef-category" list="qef-category-list" value="${escapeHtml(existing ? existing.category || '' : '')}" placeholder="${L('مثال: إيجار', 'Ex : Loyer')}">
+          <datalist id="qef-category-list">
+            ${expenseCategorySuggestions().map(c => `<option value="${escapeHtml(c)}">`).join('')}
+          </datalist>
+        </div>
+        <div class="field">
+          <label>${L('المبلغ *', 'Montant *')} (${escapeHtml(state.settings.currency)})</label>
+          <input id="qef-amount" type="number" min="0" value="${existing ? existing.amount : ''}" placeholder="0">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('التاريخ', 'Date')}</label>
+        <input id="qef-date" type="date" value="${existing ? existing.date || todayISO() : todayISO()}">
+      </div>
+      <div class="field">
+        <label>${L('وصف / ملاحظة', 'Description / remarque')}</label>
+        <input id="qef-note" value="${escapeHtml(existing ? existing.note || '' : '')}">
+      </div>
+    </div>
+    <div class="modal__footer">
+      ${isEdit ? `<button class="btn btn--danger" id="qef-delete" style="margin-inline-end:auto">${L('حذف', 'Supprimer')}</button>` : ''}
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="qef-save">${isEdit ? L('حفظ التعديلات', 'Enregistrer') : L('إضافة', 'Ajouter')}</button>
+    </div>
+  `);
+  document.getElementById('qef-save').addEventListener('click', () => {
+    const amount = Number(document.getElementById('qef-amount').value);
+    if (!amount || amount <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
+    const data = {
+      category: document.getElementById('qef-category').value.trim(),
+      amount,
+      date: document.getElementById('qef-date').value || todayISO(),
+      note: document.getElementById('qef-note').value.trim()
+    };
+    if (isEdit) {
+      Object.assign(existing, data);
+    } else {
+      state.quranExpenses.push({ id: uid('qexp'), ...data });
+    }
+    save(); closeModal(); toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success'); refreshCurrentSection();
+  });
+  if (isEdit) {
+    document.getElementById('qef-delete').addEventListener('click', () => {
+      confirmAction(L('هل تريد حذف هذا المصروف؟', 'Voulez-vous supprimer cette dépense ?'), () => {
+        state.quranExpenses = state.quranExpenses.filter(x => x.id !== existing.id);
+        save(); closeModal(); toast(L('تم الحذف', 'Supprimé'), 'success'); refreshCurrentSection();
+      });
+    });
+  }
+}
+
+/* ================= أساتذة ورواتب تحفيظ القرآن ================= */
+function getQuranStaffMember(id) { return state.quranStaff.find(x => x.id === id); }
+function quranSalaryPaid(staff, month) {
+  return state.quranSalaryPayments.filter(p => p.staffId === staff.id && p.month === month).reduce((s, p) => s + Number(p.amount), 0);
+}
+function quranSalaryBalance(staff, month) {
+  return Math.max(0, (Number(staff.monthlySalary) || 0) - quranSalaryPaid(staff, month));
+}
+function quranSalaryStatus(staff, month) {
+  const fee = Number(staff.monthlySalary) || 0;
+  if (fee <= 0) return 'paid';
+  const paid = quranSalaryPaid(staff, month);
+  if (paid >= fee) return 'paid';
+  if (paid > 0) return 'partial';
+  return 'unpaid';
+}
+function renderQuranStaff() {
+  const el = document.getElementById('quran-subview');
+  const month = currentMonth();
+  const list = [...state.quranStaff].sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <button class="btn btn--primary" id="add-qstaff-btn">${L('＋ إضافة أستاذ/موظف', '＋ Ajouter un enseignant')}</button>
+    </div>
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${list.length === 0 ? emptyState('👥', L('لم تُضِف أي أستاذ بعد', "Aucun enseignant ajouté pour l'instant")) : `
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th>${L('الاسم', 'Nom')}</th><th>${L('الوظيفة', 'Poste')}</th><th>${L('الراتب الشهري', 'Salaire mensuel')}</th>
+            <th>${L('حالة', 'Statut')} ${monthLabel(month)}</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${list.map(st => `
+              <tr>
+                <td><strong>${escapeHtml(st.name)}</strong>${st.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
+                <td>${escapeHtml(st.role || '—')}</td>
+                <td>${fmtMoney(st.monthlySalary)}</td>
+                <td>${statusBadge(quranSalaryStatus(st, month))}</td>
+                <td class="row-actions">
+                  <button class="btn btn--outline btn--sm" data-view="${st.id}">${L('التفاصيل', 'Détails')}</button>
+                  <button class="btn btn--primary btn--sm" data-pay="${st.id}">${L('دفعة راتب', 'Payer salaire')}</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  document.getElementById('add-qstaff-btn').addEventListener('click', () => quranStaffForm());
+  el.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => quranStaffDetail(b.dataset.view)));
+  el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => quranSalaryPaymentForm(b.dataset.pay)));
+}
+function quranStaffForm(existing) {
+  const isEdit = !!existing;
+  openModal(`
+    <div class="modal__header"><h3>${isEdit ? L('تعديل بيانات الأستاذ', "Modifier les données de l'enseignant") : L('إضافة أستاذ/موظف جديد', 'Ajouter un nouvel enseignant')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('الاسم الكامل *', 'Nom complet *')}</label>
+        <input id="qstf-name" value="${escapeHtml(existing ? existing.name : '')}">
+      </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('الوظيفة', 'Poste')}</label>
+          <input id="qstf-role" value="${escapeHtml(existing ? existing.role || '' : '')}" placeholder="${L('مثال: أستاذ حلقة، مساعد إداري', 'Ex : enseignant, assistant administratif')}">
+        </div>
+        <div class="field">
+          <label>${L('رقم الهاتف', 'Téléphone')}</label>
+          <input id="qstf-phone" value="${escapeHtml(existing ? existing.phone || '' : '')}">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('الراتب الشهري *', 'Salaire mensuel *')} (${escapeHtml(state.settings.currency)})</label>
+        <input id="qstf-salary" type="number" min="0" value="${existing ? existing.monthlySalary : ''}" placeholder="0">
+      </div>
+      ${isEdit ? `
+      <div class="field">
+        <label>${L('الحالة', 'Statut')}</label>
+        <select id="qstf-status">
+          <option value="active" ${existing.status !== 'inactive' ? 'selected' : ''}>${L('نشط', 'Actif')}</option>
+          <option value="inactive" ${existing.status === 'inactive' ? 'selected' : ''}>${L('غير نشط (منتهي التعاقد)', 'Inactif (fin de contrat)')}</option>
+        </select>
+      </div>` : ''}
+    </div>
+    <div class="modal__footer">
+      ${isEdit ? `<button class="btn btn--danger" id="qstf-delete" style="margin-inline-end:auto">${L('حذف', 'Supprimer')}</button>` : ''}
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="qstf-save">${isEdit ? L('حفظ التعديلات', 'Enregistrer') : L('إضافة', 'Ajouter')}</button>
+    </div>
+  `, { wide: true });
+
+  document.getElementById('qstf-save').addEventListener('click', () => {
+    const name = document.getElementById('qstf-name').value.trim();
+    if (!name) { toast(L('يرجى إدخال الاسم', 'Veuillez saisir le nom'), 'error'); return; }
+    const data = {
+      name,
+      role: document.getElementById('qstf-role').value.trim(),
+      phone: document.getElementById('qstf-phone').value.trim(),
+      monthlySalary: Number(document.getElementById('qstf-salary').value) || 0
+    };
+    if (isEdit) {
+      Object.assign(existing, data);
+      existing.status = document.getElementById('qstf-status').value;
+    } else {
+      state.quranStaff.push({ id: uid('qstf'), status: 'active', ...data });
+    }
+    save(); closeModal(); toast(L('تم حفظ البيانات', 'Données enregistrées'), 'success'); refreshCurrentSection();
+  });
+  if (isEdit) {
+    document.getElementById('qstf-delete').addEventListener('click', () => {
+      confirmAction(
+        L(`هل تريد حذف "${existing.name}" وكل سجل رواتبه؟ لا يمكن التراجع عن هذا الإجراء.`, `Voulez-vous supprimer « ${existing.name} » et tout son historique de salaires ? Action irréversible.`),
+        () => {
+          state.quranStaff = state.quranStaff.filter(s => s.id !== existing.id);
+          state.quranSalaryPayments = state.quranSalaryPayments.filter(p => p.staffId !== existing.id);
+          save(); closeModal(); toast(L('تم الحذف', 'Supprimé'), 'success'); refreshCurrentSection();
+        }
+      );
+    });
+  }
+}
+function quranStaffDetail(id) {
+  const st = getQuranStaffMember(id);
+  if (!st) return;
+  const month = currentMonth();
+  const payments = state.quranSalaryPayments.filter(p => p.staffId === id).sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+
+  openModal(`
+    <div class="modal__header">
+      <h3>${escapeHtml(st.name)}</h3>
+      <button class="modal__close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:18px">
+        <div class="stat-card stat-card--primary">
+          <div class="stat-card__label">${L('الراتب الشهري', 'Salaire mensuel')}</div>
+          <div class="stat-card__value">${fmtMoney(st.monthlySalary)}</div>
+        </div>
+        <div class="stat-card stat-card--warn">
+          <div class="stat-card__label">${L('حالة شهر', 'Statut de')} ${monthLabel(month)}</div>
+          <div class="stat-card__value">${statusBadge(quranSalaryStatus(st, month))}</div>
+        </div>
+      </div>
+      <p><strong>${L('الوظيفة:', 'Poste :')}</strong> ${escapeHtml(st.role || '—')} &nbsp; | &nbsp; <strong>${L('الهاتف:', 'Téléphone :')}</strong> ${escapeHtml(st.phone || '—')}</p>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
+      <h4 style="margin-bottom:10px">${L('سجل الرواتب', 'Historique des salaires')}</h4>
+      ${payments.length === 0 ? emptyState('🧾', L('لا توجد دفعات مسجّلة', 'Aucun paiement enregistré')) : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>${L('الشهر', 'Mois')}</th><th>${L('المبلغ', 'Montant')}</th><th>${L('التاريخ', 'Date')}</th><th></th></tr></thead>
+        <tbody>
+          ${payments.map(p => `
+            <tr>
+              <td>${monthLabel(p.month)}</td>
+              <td>${fmtMoney(p.amount)}</td>
+              <td>${fmtDate(p.date)}</td>
+              <td class="row-actions">
+                <button class="btn btn--outline btn--sm" data-print="${p.id}">${L('🖨️ إيصال', '🖨️ Reçu')}</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="qstfd-edit">${L('تعديل البيانات', 'Modifier')}</button>
+      <button class="btn btn--primary" id="qstfd-pay">${L('＋ تسجيل دفعة راتب', '＋ Nouveau paiement')}</button>
+    </div>
+  `, { wide: true });
+
+  document.getElementById('qstfd-edit').addEventListener('click', () => quranStaffForm(st));
+  document.getElementById('qstfd-pay').addEventListener('click', () => quranSalaryPaymentForm(st.id));
+  document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printQuranSalaryReceipt(b.dataset.print)));
+}
+function quranSalaryPaymentForm(staffId) {
+  const st = getQuranStaffMember(staffId);
+  if (!st) return;
+  let month = currentMonth();
+  const monthOptions = lastNMonths(18);
+
+  openModal(`
+    <div class="modal__header"><h3>${L('تسجيل دفعة راتب', 'Enregistrer un paiement de salaire')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <p><strong>${L('الموظف:', 'Employé :')}</strong> ${escapeHtml(st.name)}</p>
+      <div class="field-row" style="margin:14px 0">
+        <div class="field">
+          <label>${L('الشهر', 'Mois')}</label>
+          <select id="qsp-month">
+            ${monthOptions.map(mo => `<option value="${mo}" ${mo === month ? 'selected' : ''}>${monthLabel(mo)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>${L('المبلغ *', 'Montant *')} (${escapeHtml(state.settings.currency)})</label>
+          <input id="qsp-amount" type="number" min="0" value="${quranSalaryBalance(st, month) || ''}">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('تاريخ الدفع', 'Date de paiement')}</label>
+        <input id="qsp-date" type="date" value="${todayISO()}">
+      </div>
+      <div class="field">
+        <label>${L('ملاحظة (اختياري)', 'Remarque (optionnel)')}</label>
+        <input id="qsp-note">
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="qsp-save">${L('تسجيل الدفعة', 'Enregistrer le paiement')}</button>
+    </div>
+  `);
+
+  document.getElementById('qsp-month').addEventListener('change', e => {
+    month = e.target.value;
+    document.getElementById('qsp-amount').value = quranSalaryBalance(st, month) || '';
+  });
+
+  document.getElementById('qsp-save').addEventListener('click', () => {
+    const amount = Number(document.getElementById('qsp-amount').value);
+    if (!amount || amount <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
+    const payment = {
+      id: uid('qsal'),
+      staffId: st.id,
+      month: document.getElementById('qsp-month').value,
+      amount,
+      date: document.getElementById('qsp-date').value || todayISO(),
+      note: document.getElementById('qsp-note').value.trim(),
+      receiptNo: nextReceiptNumber()
+    };
+    state.quranSalaryPayments.push(payment);
+    save(); closeModal(); toast(L('تم تسجيل الدفعة بنجاح', 'Paiement enregistré avec succès'), 'success');
+    refreshCurrentSection();
+    printQuranSalaryReceipt(payment.id);
+  });
+}
+function printQuranSalaryReceipt(paymentId) {
+  const p = state.quranSalaryPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  const st = getQuranStaffMember(p.staffId);
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="receipt">
+      ${quranLogoHtml()}
+      <h2>${escapeHtml(displayedQuranSchoolName())}</h2>
+      <div class="sub">${escapeHtml(state.settings.address || '')} ${state.settings.phone ? ' — ' + escapeHtml(state.settings.phone) : ''}</div>
+      <hr>
+      <table>
+        <tr><td>${L('رقم الإيصال', 'N° reçu')}</td><td>${escapeHtml(p.receiptNo || '—')}</td></tr>
+        <tr><td>${L('الاسم', 'Nom')}</td><td>${escapeHtml(st ? st.name : '—')}</td></tr>
+        <tr><td>${L('الوظيفة', 'Poste')}</td><td>${escapeHtml(st ? (st.role || '—') : '—')}</td></tr>
+        <tr><td>${L('شهر الراتب', 'Mois du salaire')}</td><td>${monthLabel(p.month)}</td></tr>
+        <tr><td>${L('تاريخ الدفع', 'Date de paiement')}</td><td>${fmtDate(p.date)}</td></tr>
+        ${p.note ? `<tr><td>${L('ملاحظة', 'Remarque')}</td><td>${escapeHtml(p.note)}</td></tr>` : ''}
+        <tr class="total-row"><td>${L('المبلغ المدفوع', 'Montant payé')}</td><td>${fmtMoney(p.amount)}</td></tr>
+      </table>
+      <div class="sign">
+        <span>${L('توقيع المستلم: ..............................', 'Signature : ..............................')}</span>
+        <span>${fmtDate(todayISO())}</span>
+      </div>
+    </div>
+  `;
+  window.print();
 }
 
 /* ================= النسخ الاحتياطي ================= */
