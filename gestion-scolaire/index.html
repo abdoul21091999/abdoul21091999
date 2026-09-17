@@ -507,7 +507,13 @@ function defaultState() {
       address: '',
       phone: '',
       language: 'ar',
-      logo: DEFAULT_LOGO
+      logo: DEFAULT_LOGO,
+      foundationNameAr: 'مؤسسة دار الاستقامة للتربية والتعليم',
+      foundationNameFr: "Fondation Dar Al-Istiqama pour l'Éducation et l'Enseignement",
+      foundationLogo: '',
+      quranSchoolNameAr: 'مدرسة عبد الله بن مسعود رضي الله عنه لتحفيظ القرآن الكريم',
+      quranSchoolNameFr: "École Abdoullah Ibn Massoud (qu'Allah l'agrée) pour la mémorisation du Saint Coran",
+      quranLogo: ''
     },
     classes: [],
     students: [],
@@ -656,6 +662,7 @@ function renderGate() {
     document.getElementById('mode-gate').hidden = true;
     appRoot.hidden = false;
     applyAppModeUI();
+    renderBrand();
     navigate(appMode === 'quran' ? 'quran' : 'dashboard');
   }
 }
@@ -664,19 +671,20 @@ function renderGate() {
 const APP_MODE_KEY = 'sfm_app_mode';
 let appMode = localStorage.getItem(APP_MODE_KEY) || '';
 function renderModeGate() {
+  const fLogo = foundationLogoSrc();
   document.getElementById('mode-gate-content').innerHTML = `
-    ${state.settings.logo ? `<img class="mode-gate__logo" src="${state.settings.logo}" alt="">` : ''}
-    <h2 style="text-align:center;margin-bottom:6px">${escapeHtml(displayedSchoolName())}</h2>
+    ${fLogo ? `<img class="mode-gate__logo" src="${fLogo}" alt="">` : ''}
+    <h2 style="text-align:center;margin-bottom:6px">${escapeHtml(displayedFoundationName())}</h2>
     <p style="text-align:center;color:var(--color-text-muted)">${L('اختر القسم الذي تريد العمل عليه', 'Choisissez la section à utiliser')}</p>
     <div class="mode-cards">
       <button type="button" class="mode-card" id="mode-institute">
         <span class="mode-card__icon">🏫</span>
-        <span class="mode-card__title">${L('المعهد الإسلامي', "L'institut islamique")}</span>
+        <span class="mode-card__title">${escapeHtml(displayedSchoolName())}</span>
         <span class="mode-card__desc">${L('الطلاب، الرسوم، الأقسام، الدفعات، المصروفات، الموظفون', 'Élèves, frais, classes, paiements, dépenses, personnel')}</span>
       </button>
       <button type="button" class="mode-card" id="mode-quran">
         <span class="mode-card__icon">🕌</span>
-        <span class="mode-card__title">${L('مدرسة تحفيظ القرآن', 'École de mémorisation du Coran')}</span>
+        <span class="mode-card__title">${escapeHtml(displayedQuranSchoolName())}</span>
         <span class="mode-card__desc">${L('الحلقات، الأعضاء، الدرس والمراجعة، الحضور، الخاتمون', 'Cercles, membres, leçon et révision, présence, khatimeen')}</span>
       </button>
     </div>
@@ -980,11 +988,25 @@ function refreshCurrentSection() {
 function displayedSchoolName() {
   return L(state.settings.schoolName, state.settings.schoolNameFr || state.settings.schoolName) || L('اسم المدرسة', "Nom de l'école");
 }
+function displayedFoundationName() {
+  return L(state.settings.foundationNameAr, state.settings.foundationNameFr || state.settings.foundationNameAr) || displayedSchoolName();
+}
+function foundationLogoSrc() { return state.settings.foundationLogo || state.settings.logo; }
+function displayedQuranSchoolName() {
+  return L(state.settings.quranSchoolNameAr, state.settings.quranSchoolNameFr || state.settings.quranSchoolNameAr) || L('مدرسة تحفيظ القرآن', 'École de mémorisation du Coran');
+}
+function quranLogoSrc() { return state.settings.quranLogo || state.settings.logo; }
+function quranLogoHtml() {
+  const src = quranLogoSrc();
+  return src ? `<img src="${src}" alt="" style="display:block;margin:0 auto 8px;max-height:70px;max-width:200px;object-fit:contain;">` : '';
+}
 function renderBrand() {
-  document.getElementById('brand-name').textContent = displayedSchoolName();
+  const name = appMode === 'quran' ? displayedQuranSchoolName() : displayedSchoolName();
+  const logo = appMode === 'quran' ? quranLogoSrc() : state.settings.logo;
+  document.getElementById('brand-name').textContent = name;
   document.getElementById('brand-year').textContent = state.settings.schoolYear || '';
   const logoEl = document.getElementById('brand-logo');
-  logoEl.innerHTML = state.settings.logo ? `<img src="${state.settings.logo}" alt="">` : '🎓';
+  logoEl.innerHTML = logo ? `<img src="${logo}" alt="">` : '🎓';
 }
 
 function renderStaticTexts() {
@@ -2881,8 +2903,8 @@ function printQuranWeekly(halaqaId, weekStart) {
   const area = document.getElementById('print-area');
   area.innerHTML = `
     <div class="sheet-print">
-      ${receiptLogoHtml()}
-      <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedSchoolName())}</h2>
+      ${quranLogoHtml()}
+      <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedQuranSchoolName())}</h2>
       <p style="text-align:center;margin:0 0 4px">${escapeHtml(h.name)}${h.teacherName ? ' — ' + escapeHtml(h.teacherName) : ''}</p>
       <p style="text-align:center;margin:0 0 16px;color:#555">${L('الأسبوع من', 'Semaine du')} ${fmtDate(weekStart)} ${L('إلى', 'au')} ${fmtDate(weekEnd)}</p>
       <table>
@@ -3037,8 +3059,8 @@ function printQuranKhatim(halaqaId, date) {
   const area = document.getElementById('print-area');
   area.innerHTML = `
     <div class="sheet-print">
-      ${receiptLogoHtml()}
-      <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedSchoolName())}</h2>
+      ${quranLogoHtml()}
+      <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedQuranSchoolName())}</h2>
       <p style="text-align:center;margin:0 0 4px">${L('جدول المتابعة اليومية للخاتمين', 'Fiche de suivi quotidien des khatimeen')} — ${escapeHtml(h.name)}</p>
       <p style="text-align:center;margin:0 0 16px;color:#555">${fmtDate(date)}</p>
       <table>
@@ -3184,6 +3206,40 @@ function downloadFile(filename, content, mime) {
 }
 
 /* ================= الإعدادات ================= */
+function bindLogoUpload(fileInputId, previewId, removeBtnId, setter) {
+  document.getElementById(fileInputId).addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 300;
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setter(canvas.toDataURL('image/png'));
+        save();
+        renderBrand();
+        renderSettings();
+        toast(L('تم تحديث الشعار', 'Logo mis à jour'), 'success');
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+  document.getElementById(removeBtnId).addEventListener('click', () => {
+    setter('');
+    save();
+    renderBrand();
+    renderSettings();
+    toast(L('تمت إزالة الشعار', 'Logo supprimé'), 'success');
+  });
+}
 function renderSettings() {
   const el = document.getElementById('section-settings');
   const s = state.settings;
@@ -3280,6 +3336,58 @@ function renderSettings() {
       </div>
     </div>
 
+    <div class="card" style="max-width:640px;margin-top:18px">
+      <div class="card__header"><h3>${L('هوية المؤسسة الأم ومدرسة التحفيظ', "Identité de la fondation et de l'école coranique")}</h3></div>
+      <div class="card__body">
+        <p style="color:var(--color-text-muted);margin-bottom:16px">${L('تظهر هذه البيانات أعلى شاشة اختيار القسم عند فتح التطبيق، وفي كشوف مدرسة التحفيظ المطبوعة.', "Ces informations apparaissent en haut de l'écran de choix de section à l'ouverture, et sur les fiches imprimées de l'école coranique.")}</p>
+
+        <div class="field" style="margin-bottom:16px">
+          <label>${L('شعار المؤسسة الأم (أعلى شاشة اختيار القسم)', "Logo de la fondation (haut de l'écran de choix)")}</label>
+          <div class="logo-upload-row">
+            <div class="logo-upload-preview" id="st-foundation-logo-preview">${s.foundationLogo ? `<img src="${s.foundationLogo}" alt="">` : (s.logo ? `<img src="${s.logo}" alt="">` : '🎓')}</div>
+            <div class="logo-upload-actions">
+              <input type="file" id="st-foundation-logo-file" accept="image/*">
+              <button type="button" class="btn btn--ghost btn--sm" id="st-foundation-logo-remove" ${s.foundationLogo ? '' : 'hidden'}>${L('🗑️ إزالة (استخدام شعار المعهد)', "🗑️ Supprimer (utiliser le logo de l'institut)")}</button>
+            </div>
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:22px">
+          <div class="field">
+            <label>${L('اسم المؤسسة الأم (عربي)', 'Nom de la fondation (arabe)')}</label>
+            <input id="st-foundation-name" value="${escapeHtml(s.foundationNameAr || '')}">
+          </div>
+          <div class="field">
+            <label>${L('اسم المؤسسة الأم (فرنسي)', 'Nom de la fondation (français)')}</label>
+            <input id="st-foundation-name-fr" value="${escapeHtml(s.foundationNameFr || '')}">
+          </div>
+        </div>
+
+        <hr style="margin:0 0 20px;border:none;border-top:1px solid var(--color-border)">
+
+        <div class="field" style="margin-bottom:16px">
+          <label>${L('شعار مدرسة التحفيظ', "Logo de l'école coranique")}</label>
+          <div class="logo-upload-row">
+            <div class="logo-upload-preview" id="st-quran-logo-preview">${s.quranLogo ? `<img src="${s.quranLogo}" alt="">` : (s.logo ? `<img src="${s.logo}" alt="">` : '🕌')}</div>
+            <div class="logo-upload-actions">
+              <input type="file" id="st-quran-logo-file" accept="image/*">
+              <button type="button" class="btn btn--ghost btn--sm" id="st-quran-logo-remove" ${s.quranLogo ? '' : 'hidden'}>${L('🗑️ إزالة (استخدام شعار المعهد)', "🗑️ Supprimer (utiliser le logo de l'institut)")}</button>
+            </div>
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:14px">
+          <div class="field">
+            <label>${L('اسم مدرسة التحفيظ (عربي)', "Nom de l'école coranique (arabe)")}</label>
+            <input id="st-quran-name" value="${escapeHtml(s.quranSchoolNameAr || '')}">
+          </div>
+          <div class="field">
+            <label>${L('اسم مدرسة التحفيظ (فرنسي)', "Nom de l'école coranique (français)")}</label>
+            <input id="st-quran-name-fr" value="${escapeHtml(s.quranSchoolNameFr || '')}">
+          </div>
+        </div>
+        <button class="btn btn--primary" id="st-save-identity">${L('حفظ', 'Enregistrer')}</button>
+      </div>
+    </div>
+
     <div class="card" style="max-width:640px;margin-top:18px;border-color:var(--color-danger)">
       <div class="card__header"><h3 style="color:var(--color-danger)">${L('منطقة الخطر', 'Zone de danger')}</h3></div>
       <div class="card__body">
@@ -3354,6 +3462,17 @@ function renderSettings() {
     save();
     renderBrand();
     toast(L('تم حفظ الإعدادات', 'Paramètres enregistrés'), 'success');
+  });
+  bindLogoUpload('st-foundation-logo-file', 'st-foundation-logo-preview', 'st-foundation-logo-remove', v => { s.foundationLogo = v; });
+  bindLogoUpload('st-quran-logo-file', 'st-quran-logo-preview', 'st-quran-logo-remove', v => { s.quranLogo = v; });
+  document.getElementById('st-save-identity').addEventListener('click', () => {
+    s.foundationNameAr = document.getElementById('st-foundation-name').value.trim();
+    s.foundationNameFr = document.getElementById('st-foundation-name-fr').value.trim();
+    s.quranSchoolNameAr = document.getElementById('st-quran-name').value.trim();
+    s.quranSchoolNameFr = document.getElementById('st-quran-name-fr').value.trim();
+    save();
+    renderBrand();
+    toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success');
   });
   document.getElementById('st-reset').addEventListener('click', () => {
     confirmAction(L('هل أنت متأكد من حذف كل البيانات نهائيًا؟ هذا الإجراء لا يمكن التراجع عنه.', 'Voulez-vous vraiment supprimer toutes les données définitivement ? Action irréversible.'), () => {
