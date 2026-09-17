@@ -2755,7 +2755,11 @@ function getWeeklyRecord(memberId, weekStart) {
 }
 function weeklyRecordFilled(rec) {
   if (!rec) return false;
-  const hasAttendance = rec.attendance && Object.values(rec.attendance).some(v => v);
+  const hasAttendance = rec.attendance && Object.values(rec.attendance).some(v => {
+    if (!v) return false;
+    if (typeof v === 'string') return true;
+    return v.absent || v.d || v.j || v.m;
+  });
   return !!(hasAttendance || rec.lessonAmount || rec.revisionAmount);
 }
 let quranWeeklyState = { halaqaId: '', date: todayISO() };
@@ -2843,7 +2847,27 @@ function weeklyRecordForm(memberId, weekStart) {
       <div class="field" style="margin-bottom:16px"><label>${L('المقدار', 'Quantité')}</label><input id="wf-rev-amount" value="${escapeHtml(rec.revisionAmount || '')}"></div>
       ` : ''}
 
-      <h4 style="margin-bottom:10px">${L('الحضور اليومي', 'Présence quotidienne')}</h4>
+      <h4 style="margin-bottom:4px">${L('المتابعة اليومية', 'Suivi quotidien')}</h4>
+      ${isStudent ? `
+      <p style="color:var(--color-text-muted);font-size:12.5px;margin-bottom:10px">${L('لكل يوم: علّم (✓) عند إنجاز د/ج/م أو اترك بدون علامة إن لم يُنجز، أو ضع "غياب" عند غياب الطالب أو عذره.', "Pour chaque jour : cochez (✓) pour د/ج/م accomplis, laissez décoché sinon, ou marquez « غياب » en cas d'absence ou d'excuse.")}</p>
+      <div class="field-row" style="flex-wrap:wrap">
+        ${days.map((d, i) => {
+          const dv = (attendance[d] && typeof attendance[d] === 'object') ? attendance[d] : {};
+          return `
+          <div class="field" style="min-width:150px;border:1px solid var(--color-border);border-radius:8px;padding:10px 12px">
+            <label style="font-weight:700;margin-bottom:8px;display:block">${L(QURAN_DAY_LABELS[i].ar, QURAN_DAY_LABELS[i].fr)}</label>
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;margin-bottom:8px">
+              <input type="checkbox" id="wf-absent-${i}" ${dv.absent ? 'checked' : ''}> ${L('غياب / عذر', 'Absent / excusé')}
+            </label>
+            <div id="wf-marks-${i}" style="display:${dv.absent ? 'none' : 'flex'};flex-direction:column;gap:6px">
+              <label style="display:flex;align-items:center;justify-content:space-between;font-weight:400">${L('د — الدرس', 'د — Leçon')} <input type="checkbox" id="wf-d-${i}" ${dv.d ? 'checked' : ''}></label>
+              <label style="display:flex;align-items:center;justify-content:space-between;font-weight:400">${L('ج — جنب الدرس', 'ج — Jamb (liaison)')} <input type="checkbox" id="wf-j-${i}" ${dv.j ? 'checked' : ''}></label>
+              <label style="display:flex;align-items:center;justify-content:space-between;font-weight:400">${L('م — المراجعة', 'م — Révision')} <input type="checkbox" id="wf-m-${i}" ${dv.m ? 'checked' : ''}></label>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      ` : `
       <div class="field-row" style="flex-wrap:wrap">
         ${days.map((d, i) => `
           <div class="field" style="min-width:110px">
@@ -2857,6 +2881,7 @@ function weeklyRecordForm(memberId, weekStart) {
           </div>
         `).join('')}
       </div>
+      `}
     </div>
     <div class="modal__footer">
       <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
@@ -2864,12 +2889,34 @@ function weeklyRecordForm(memberId, weekStart) {
     </div>
   `, { wide: true });
 
+  if (isStudent) {
+    days.forEach((d, i) => {
+      document.getElementById('wf-absent-' + i).addEventListener('change', e => {
+        document.getElementById('wf-marks-' + i).style.display = e.target.checked ? 'none' : 'flex';
+      });
+    });
+  }
+
   document.getElementById('wf-save').addEventListener('click', () => {
     const newAttendance = {};
-    days.forEach((d, i) => {
-      const v = document.getElementById('wf-att-' + i).value;
-      if (v) newAttendance[d] = v;
-    });
+    if (isStudent) {
+      days.forEach((d, i) => {
+        const absent = document.getElementById('wf-absent-' + i).checked;
+        if (absent) {
+          newAttendance[d] = { absent: true };
+        } else {
+          const dd = document.getElementById('wf-d-' + i).checked;
+          const jj = document.getElementById('wf-j-' + i).checked;
+          const mm = document.getElementById('wf-m-' + i).checked;
+          if (dd || jj || mm) newAttendance[d] = { absent: false, d: dd, j: jj, m: mm };
+        }
+      });
+    } else {
+      days.forEach((d, i) => {
+        const v = document.getElementById('wf-att-' + i).value;
+        if (v) newAttendance[d] = v;
+      });
+    }
     const data = { memberId, weekStart, attendance: newAttendance };
     if (isStudent) {
       data.lessonStartSurah = document.getElementById('wf-lesson-start-surah').value.trim();
@@ -2911,24 +2958,34 @@ function printQuranWeekly(halaqaId, weekStart) {
             <th rowspan="2">${L('الاسم', 'Nom')}</th>
             <th colspan="5">${L('الدرس', 'Leçon')}</th>
             <th colspan="3">${L('المراجعة', 'Révision')}</th>
-            ${days.map((d, i) => `<th rowspan="2">${L(QURAN_DAY_LABELS[i].ar, QURAN_DAY_LABELS[i].fr)}</th>`).join('')}
+            ${days.map((d, i) => `<th colspan="3">${L(QURAN_DAY_LABELS[i].ar, QURAN_DAY_LABELS[i].fr)}</th>`).join('')}
           </tr>
           <tr>
             <th>${L('من (سورة)', 'Deb. sourate')}</th><th>${L('آية', 'Verset')}</th><th>${L('إلى (سورة)', 'Fin sourate')}</th><th>${L('آية', 'Verset')}</th><th>${L('المقدار', 'Qté')}</th>
             <th>${L('من', 'De')}</th><th>${L('إلى', 'À')}</th><th>${L('المقدار', 'Qté')}</th>
+            ${days.map(() => `<th>${L('د', 'د')}</th><th>${L('ج', 'ج')}</th><th>${L('م', 'م')}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
           ${members.map(m => {
             const rec = getWeeklyRecord(m.id, weekStart) || {};
             const att = rec.attendance || {};
+            const isStudentRow = m.role === 'student';
             return `<tr>
               <td>${escapeHtml(m.name)}</td>
               <td>${escapeHtml(rec.lessonStartSurah || '')}</td><td>${escapeHtml(rec.lessonStartAyah || '')}</td>
               <td>${escapeHtml(rec.lessonEndSurah || '')}</td><td>${escapeHtml(rec.lessonEndAyah || '')}</td>
               <td>${escapeHtml(rec.lessonAmount || '')}</td>
               <td>${escapeHtml(rec.revisionStart || '')}</td><td>${escapeHtml(rec.revisionEnd || '')}</td><td>${escapeHtml(rec.revisionAmount || '')}</td>
-              ${days.map(d => `<td>${att[d] ? escapeHtml(attendanceLabel(att[d])) : ''}</td>`).join('')}
+              ${days.map(d => {
+                const dv = att[d];
+                if (isStudentRow) {
+                  if (!dv) return '<td></td><td></td><td></td>';
+                  if (dv.absent) return `<td colspan="3">${L('غياب', 'Absent')}</td>`;
+                  return `<td>${dv.d ? '✓' : '×'}</td><td>${dv.j ? '✓' : '×'}</td><td>${dv.m ? '✓' : '×'}</td>`;
+                }
+                return `<td colspan="3">${dv ? escapeHtml(attendanceLabel(dv)) : ''}</td>`;
+              }).join('')}
             </tr>`;
           }).join('')}
         </tbody>
