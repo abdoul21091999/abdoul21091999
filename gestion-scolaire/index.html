@@ -300,12 +300,38 @@ tbody tr:last-child td { border-bottom: none; }
   background: var(--color-primary-light); color: var(--color-primary);
   border-radius: var(--radius); padding: 16px; margin: 14px 0; direction: ltr;
 }
+
+/* ---------- بوابة اختيار القسم (معهد / تحفيظ) ---------- */
+.mode-gate {
+  position: fixed; inset: 0; background: var(--color-bg);
+  z-index: 480; display: flex; align-items: center; justify-content: center;
+  padding: 24px 16px; overflow-y: auto;
+}
+.mode-gate__inner { max-width: 740px; width: 100%; }
+.mode-gate__logo { display: block; margin: 0 auto 14px; max-height: 64px; max-width: 170px; object-fit: contain; }
+.mode-cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 26px; }
+.mode-card {
+  flex: 1; min-width: 230px; max-width: 300px;
+  background: var(--color-surface); border: 2px solid var(--color-border); border-radius: var(--radius);
+  padding: 34px 22px; text-align: center; cursor: pointer; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+  font-family: inherit;
+}
+.mode-card:hover, .mode-card:focus-visible { border-color: var(--color-primary); transform: translateY(-3px); box-shadow: var(--shadow-lg); outline: none; }
+.mode-card__icon { font-size: 44px; line-height: 1; }
+.mode-card__title { font-size: 17px; font-weight: 800; color: var(--color-text); }
+.mode-card__desc { font-size: 13px; color: var(--color-text-muted); line-height: 1.7; }
 </style>
 </head>
 <body>
 
 <div class="connect-gate" id="connect-gate" hidden>
   <div class="gate-card" id="gate-content"></div>
+</div>
+
+<div class="mode-gate" id="mode-gate" hidden>
+  <div class="mode-gate__inner" id="mode-gate-content"></div>
 </div>
 
 <div class="app" id="app-root">
@@ -330,6 +356,7 @@ tbody tr:last-child td { border-bottom: none; }
       <button class="nav-link" data-section="backup"><span>🗄️</span> <span class="nav-label"></span></button>
       <button class="nav-link" data-section="settings"><span>⚙️</span> <span class="nav-label"></span></button>
     </nav>
+    <button type="button" class="btn btn--outline btn--sm" id="mode-switch-btn" style="width:100%;margin:0 0 10px"></button>
     <div class="lang-switch" id="lang-switch">
       <button type="button" class="lang-btn" data-lang="ar">العربية</button>
       <button type="button" class="lang-btn" data-lang="fr">Français</button>
@@ -620,7 +647,67 @@ function renderGate() {
   if (gateCreatedCode) { renderGateCodeCreated(); gate.hidden = false; appRoot.hidden = true; return; }
   if (!cfg && !syncSkipped()) { renderGateFirebaseSetup(); gate.hidden = false; appRoot.hidden = true; return; }
   if (cfg && !schoolCode) { renderGateSchoolCode(); gate.hidden = false; appRoot.hidden = true; return; }
-  gate.hidden = true; appRoot.hidden = false;
+  gate.hidden = true;
+  if (!appMode) {
+    appRoot.hidden = true;
+    document.getElementById('mode-gate').hidden = false;
+    renderModeGate();
+  } else {
+    document.getElementById('mode-gate').hidden = true;
+    appRoot.hidden = false;
+    applyAppModeUI();
+    navigate(appMode === 'quran' ? 'quran' : 'dashboard');
+  }
+}
+
+/* ---------------- اختيار القسم (المعهد / التحفيظ) ---------------- */
+const APP_MODE_KEY = 'sfm_app_mode';
+let appMode = localStorage.getItem(APP_MODE_KEY) || '';
+function renderModeGate() {
+  document.getElementById('mode-gate-content').innerHTML = `
+    ${state.settings.logo ? `<img class="mode-gate__logo" src="${state.settings.logo}" alt="">` : ''}
+    <h2 style="text-align:center;margin-bottom:6px">${escapeHtml(displayedSchoolName())}</h2>
+    <p style="text-align:center;color:var(--color-text-muted)">${L('اختر القسم الذي تريد العمل عليه', 'Choisissez la section à utiliser')}</p>
+    <div class="mode-cards">
+      <button type="button" class="mode-card" id="mode-institute">
+        <span class="mode-card__icon">🏫</span>
+        <span class="mode-card__title">${L('المعهد الإسلامي', "L'institut islamique")}</span>
+        <span class="mode-card__desc">${L('الطلاب، الرسوم، الأقسام، الدفعات، المصروفات، الموظفون', 'Élèves, frais, classes, paiements, dépenses, personnel')}</span>
+      </button>
+      <button type="button" class="mode-card" id="mode-quran">
+        <span class="mode-card__icon">🕌</span>
+        <span class="mode-card__title">${L('مدرسة تحفيظ القرآن', 'École de mémorisation du Coran')}</span>
+        <span class="mode-card__desc">${L('الحلقات، الأعضاء، الدرس والمراجعة، الحضور، الخاتمون', 'Cercles, membres, leçon et révision, présence, khatimeen')}</span>
+      </button>
+    </div>
+  `;
+  document.getElementById('mode-institute').addEventListener('click', () => selectAppMode('institute'));
+  document.getElementById('mode-quran').addEventListener('click', () => selectAppMode('quran'));
+}
+function selectAppMode(mode) {
+  localStorage.setItem(APP_MODE_KEY, mode);
+  appMode = mode;
+  renderGate();
+}
+function switchAppMode() {
+  localStorage.removeItem(APP_MODE_KEY);
+  appMode = '';
+  renderGate();
+}
+function applyAppModeUI() {
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const key = link.dataset.section;
+    const mode = sections[key] ? sections[key].mode : 'shared';
+    link.hidden = !(mode === 'shared' || mode === appMode);
+  });
+  const quickActions = document.querySelector('.topbar__actions');
+  if (quickActions) quickActions.style.display = appMode === 'quran' ? 'none' : '';
+  const switchBtn = document.getElementById('mode-switch-btn');
+  if (switchBtn) {
+    switchBtn.textContent = appMode === 'quran'
+      ? L("🔄 الانتقال إلى المعهد", "🔄 Aller à l'institut")
+      : L('🔄 الانتقال إلى التحفيظ', '🔄 Aller à la mémorisation');
+  }
 }
 
 function renderGateFirebaseSetup() {
@@ -858,16 +945,16 @@ function nextReceiptNumber() {
 
 /* ---------------- تنقّل بين الأقسام ---------------- */
 const sections = {
-  dashboard: { ar: 'لوحة التحكم', fr: 'Tableau de bord', render: renderDashboard },
-  students: { ar: 'الطلاب', fr: 'Élèves', render: renderStudents },
-  classes: { ar: 'الأقسام الدراسية', fr: 'Classes', render: renderClasses },
-  payments: { ar: 'سجل الدفعات', fr: 'Paiements', render: renderPayments },
-  report: { ar: 'التقرير الشهري', fr: 'Rapport mensuel', render: renderReport },
-  expenses: { ar: 'المصروفات', fr: 'Dépenses', render: renderExpenses },
-  staff: { ar: 'الموظفون والرواتب', fr: 'Personnel & salaires', render: renderStaff },
-  quran: { ar: 'تحفيظ القرآن', fr: 'Mémorisation du Coran', render: renderQuran },
-  backup: { ar: 'النسخ الاحتياطي', fr: 'Sauvegarde', render: renderBackup },
-  settings: { ar: 'الإعدادات', fr: 'Paramètres', render: renderSettings }
+  dashboard: { ar: 'لوحة التحكم', fr: 'Tableau de bord', render: renderDashboard, mode: 'institute' },
+  students: { ar: 'الطلاب', fr: 'Élèves', render: renderStudents, mode: 'institute' },
+  classes: { ar: 'الأقسام الدراسية', fr: 'Classes', render: renderClasses, mode: 'institute' },
+  payments: { ar: 'سجل الدفعات', fr: 'Paiements', render: renderPayments, mode: 'institute' },
+  report: { ar: 'التقرير الشهري', fr: 'Rapport mensuel', render: renderReport, mode: 'institute' },
+  expenses: { ar: 'المصروفات', fr: 'Dépenses', render: renderExpenses, mode: 'institute' },
+  staff: { ar: 'الموظفون والرواتب', fr: 'Personnel & salaires', render: renderStaff, mode: 'institute' },
+  quran: { ar: 'تحفيظ القرآن', fr: 'Mémorisation du Coran', render: renderQuran, mode: 'quran' },
+  backup: { ar: 'النسخ الاحتياطي', fr: 'Sauvegarde', render: renderBackup, mode: 'shared' },
+  settings: { ar: 'الإعدادات', fr: 'Paramètres', render: renderSettings, mode: 'shared' }
 };
 function sectionTitle(key) { return L(sections[key].ar, sections[key].fr); }
 function currentSectionKey() {
@@ -3309,6 +3396,7 @@ async function init() {
   document.getElementById('sidebar-backdrop').addEventListener('click', closeSidebar);
   document.getElementById('quick-payment-btn').addEventListener('click', () => paymentForm());
   document.getElementById('quick-student-btn').addEventListener('click', () => studentForm());
+  document.getElementById('mode-switch-btn').addEventListener('click', switchAppMode);
   document.getElementById('modal-overlay').addEventListener('click', e => {
     if (e.target.id === 'modal-overlay') closeModal();
   });
