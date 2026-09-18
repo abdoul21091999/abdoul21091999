@@ -251,6 +251,13 @@ tbody tr:last-child td { border-bottom: none; }
 .subtabs button { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-weight: 600; font-size: 13px; cursor: pointer; }
 .subtabs button.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 
+/* ---------- شبكة أقسام لوحة التحكم ---------- */
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.hub-tile { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 16px 8px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.hub-tile:hover, .hub-tile:focus-visible { border-color: var(--color-primary); box-shadow: var(--shadow); outline: none; }
+.hub-tile__icon { font-size: 26px; line-height: 1; }
+.hub-tile__label { font-size: 13px; font-weight: 700; color: var(--color-text); line-height: 1.4; }
+
 /* ---------- الرسوم البيانية (تقييم الأداء) ---------- */
 .chart-bars { display: flex; flex-direction: column; gap: 12px; direction: ltr; }
 .chart-bar-row { display: flex; align-items: center; gap: 10px; cursor: default; }
@@ -2530,30 +2537,36 @@ function printSalaryReceipt(paymentId) {
 }
 
 /* ================= تحفيظ القرآن ================= */
+const QURAN_SECTIONS = [
+  { key: 'halaqat', icon: '🕌', ar: 'الحلقات', fr: 'Cercles' },
+  { key: 'members', icon: '👨‍🎓', ar: 'الأعضاء', fr: 'Membres' },
+  { key: 'weekly', icon: '📋', ar: 'الكشف الأسبوعي', fr: 'Fiche hebdomadaire' },
+  { key: 'khatim', icon: '🏅', ar: 'كشف الخاتمين', fr: 'Fiche des khatimeen' },
+  { key: 'performance', icon: '📊', ar: 'الأداء', fr: 'Performance' },
+  { key: 'report', icon: '📅', ar: 'التقرير الشهري', fr: 'Rapport mensuel' },
+  { key: 'expenses', icon: '💸', ar: 'المصروفات', fr: 'Dépenses' },
+  { key: 'staff', icon: '👥', ar: 'الأساتذة والرواتب', fr: 'Enseignants & salaires' },
+];
 let quranView = 'dashboard';
 function renderQuran() {
   const el = document.getElementById('section-quran');
-  el.innerHTML = `
-    <div class="subtabs" id="quran-subtabs">
-      <button data-view="dashboard" class="${quranView === 'dashboard' ? 'active' : ''}">${L('📊 لوحة التحكم', '📊 Tableau de bord')}</button>
-      <button data-view="halaqat" class="${quranView === 'halaqat' ? 'active' : ''}">${L('الحلقات', 'Cercles')}</button>
-      <button data-view="members" class="${quranView === 'members' ? 'active' : ''}">${L('الأعضاء', 'Membres')}</button>
-      <button data-view="weekly" class="${quranView === 'weekly' ? 'active' : ''}">${L('الكشف الأسبوعي', 'Fiche hebdomadaire')}</button>
-      <button data-view="khatim" class="${quranView === 'khatim' ? 'active' : ''}">${L('كشف الخاتمين', 'Fiche des khatimeen')}</button>
-      <button data-view="performance" class="${quranView === 'performance' ? 'active' : ''}">${L('📊 الأداء', '📊 Performance')}</button>
-      <button data-view="report" class="${quranView === 'report' ? 'active' : ''}">${L('📅 التقرير الشهري', '📅 Rapport mensuel')}</button>
-      <button data-view="expenses" class="${quranView === 'expenses' ? 'active' : ''}">${L('💸 المصروفات', '💸 Dépenses')}</button>
-      <button data-view="staff" class="${quranView === 'staff' ? 'active' : ''}">${L('👥 الأساتذة والرواتب', '👥 Enseignants & salaires')}</button>
-    </div>
-    <div id="quran-subview"></div>
-  `;
-  el.querySelectorAll('#quran-subtabs button').forEach(b => b.addEventListener('click', () => { quranView = b.dataset.view; renderQuran(); }));
+  el.innerHTML = quranView === 'dashboard'
+    ? `<div id="quran-subview"></div>`
+    : `
+      <div class="toolbar" style="margin-bottom:18px">
+        <button class="btn btn--outline btn--sm" id="quran-home-btn">${L('🏠 لوحة التحكم', '🏠 Tableau de bord')}</button>
+      </div>
+      <div id="quran-subview"></div>
+    `;
+  const homeBtn = document.getElementById('quran-home-btn');
+  if (homeBtn) homeBtn.addEventListener('click', () => { quranView = 'dashboard'; renderQuran(); });
   const renderers = {
     dashboard: renderQuranDashboard, halaqat: renderQuranHalaqat, members: renderQuranMembers, weekly: renderQuranWeekly, khatim: renderQuranKhatim,
     performance: renderQuranPerformance, report: renderQuranReport, expenses: renderQuranExpenses, staff: renderQuranStaff
   };
   renderers[quranView]();
 }
+function goQuranView(key) { quranView = key; renderQuran(); }
 
 /* ================= لوحة تحكم تحفيظ القرآن ================= */
 function renderQuranDashboard() {
@@ -2587,6 +2600,15 @@ function renderQuranDashboard() {
   const recent = [...state.quranPayments].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 8);
 
   el.innerHTML = `
+    <div class="hub-grid">
+      ${QURAN_SECTIONS.map(s => `
+        <div class="hub-tile" data-qnav="${s.key}" tabindex="0" role="button">
+          <span class="hub-tile__icon">${s.icon}</span>
+          <span class="hub-tile__label">${L(s.ar, s.fr)}</span>
+        </div>
+      `).join('')}
+    </div>
+
     <div class="stat-grid">
       <div class="stat-card stat-card--primary">
         <span class="stat-card__icon">👨‍🎓</span>
@@ -2660,7 +2682,10 @@ function renderQuranDashboard() {
       </div>
     </div>
   `;
-  el.querySelectorAll('[data-qnav]').forEach(b => b.addEventListener('click', () => { quranView = b.dataset.qnav; renderQuran(); }));
+  el.querySelectorAll('[data-qnav]').forEach(b => {
+    b.addEventListener('click', () => goQuranView(b.dataset.qnav));
+    b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goQuranView(b.dataset.qnav); } });
+  });
 }
 
 function getHalaqa(id) { return state.quranHalaqat.find(h => h.id === id); }
