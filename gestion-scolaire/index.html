@@ -2530,11 +2530,12 @@ function printSalaryReceipt(paymentId) {
 }
 
 /* ================= تحفيظ القرآن ================= */
-let quranView = 'halaqat';
+let quranView = 'dashboard';
 function renderQuran() {
   const el = document.getElementById('section-quran');
   el.innerHTML = `
     <div class="subtabs" id="quran-subtabs">
+      <button data-view="dashboard" class="${quranView === 'dashboard' ? 'active' : ''}">${L('📊 لوحة التحكم', '📊 Tableau de bord')}</button>
       <button data-view="halaqat" class="${quranView === 'halaqat' ? 'active' : ''}">${L('الحلقات', 'Cercles')}</button>
       <button data-view="members" class="${quranView === 'members' ? 'active' : ''}">${L('الأعضاء', 'Membres')}</button>
       <button data-view="weekly" class="${quranView === 'weekly' ? 'active' : ''}">${L('الكشف الأسبوعي', 'Fiche hebdomadaire')}</button>
@@ -2548,10 +2549,118 @@ function renderQuran() {
   `;
   el.querySelectorAll('#quran-subtabs button').forEach(b => b.addEventListener('click', () => { quranView = b.dataset.view; renderQuran(); }));
   const renderers = {
-    halaqat: renderQuranHalaqat, members: renderQuranMembers, weekly: renderQuranWeekly, khatim: renderQuranKhatim,
+    dashboard: renderQuranDashboard, halaqat: renderQuranHalaqat, members: renderQuranMembers, weekly: renderQuranWeekly, khatim: renderQuranKhatim,
     performance: renderQuranPerformance, report: renderQuranReport, expenses: renderQuranExpenses, staff: renderQuranStaff
   };
   renderers[quranView]();
+}
+
+/* ================= لوحة تحكم تحفيظ القرآن ================= */
+function renderQuranDashboard() {
+  const el = document.getElementById('quran-subview');
+  const month = currentMonth();
+  const activeMembers = state.quranMembers.filter(m => m.status !== 'inactive');
+
+  const totalCollectedAll = state.quranPayments.reduce((s, p) => s + Number(p.amount), 0);
+  const collectedThisMonth = state.quranPayments
+    .filter(p => (p.date || '').slice(0, 7) === month)
+    .reduce((s, p) => s + Number(p.amount), 0);
+
+  const outstandingRegistration = activeMembers.reduce((s, m) => s + quranRegistrationBalance(m), 0);
+
+  const enrolledThisMonth = activeMembers.filter(m => quranIsEnrolledInMonth(m, month));
+  const outstandingMonthly = enrolledThisMonth.reduce((s, m) => {
+    const fee = quranMonthlyFeeFor(m);
+    const paid = quranMonthPaid(m, month);
+    return s + Math.max(0, fee - paid);
+  }, 0);
+
+  const unpaidThisMonthCount = enrolledThisMonth.filter(m => quranMonthStatus(m, month) === 'unpaid').length;
+
+  const expensesThisMonth = state.quranExpenses
+    .filter(e => (e.date || '').slice(0, 7) === month)
+    .reduce((s, e) => s + Number(e.amount), 0);
+  const salariesThisMonth = state.quranSalaryPayments
+    .filter(p => p.month === month)
+    .reduce((s, p) => s + Number(p.amount), 0);
+
+  const recent = [...state.quranPayments].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 8);
+
+  el.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card stat-card--primary">
+        <span class="stat-card__icon">👨‍🎓</span>
+        <div class="stat-card__label">${L('عدد الأعضاء النشطين', 'Membres actifs')}</div>
+        <div class="stat-card__value">${activeMembers.length}</div>
+      </div>
+      <div class="stat-card stat-card--accent">
+        <span class="stat-card__icon">💰</span>
+        <div class="stat-card__label">${L('إجمالي المحصّل', 'Total encaissé')} (${monthLabel(month)})</div>
+        <div class="stat-card__value">${fmtMoney(collectedThisMonth)}</div>
+      </div>
+      <div class="stat-card stat-card--warn">
+        <span class="stat-card__icon">📌</span>
+        <div class="stat-card__label">${L('متبقٍ من رسوم التسجيل', "Solde restant — inscription")}</div>
+        <div class="stat-card__value">${fmtMoney(outstandingRegistration)}</div>
+      </div>
+      <div class="stat-card stat-card--danger">
+        <span class="stat-card__icon">⏰</span>
+        <div class="stat-card__label">${L('متبقٍ من الرسوم الشهرية (هذا الشهر)', 'Solde restant — mensualité (ce mois)')}</div>
+        <div class="stat-card__value">${fmtMoney(outstandingMonthly)}</div>
+      </div>
+      <div class="stat-card stat-card--warn">
+        <span class="stat-card__icon">💸</span>
+        <div class="stat-card__label">${L('المصروفات', 'Dépenses')} (${monthLabel(month)})</div>
+        <div class="stat-card__value">${fmtMoney(expensesThisMonth)}</div>
+      </div>
+      <div class="stat-card stat-card--warn">
+        <span class="stat-card__icon">🧾</span>
+        <div class="stat-card__label">${L('الرواتب المدفوعة', 'Salaires payés')} (${monthLabel(month)})</div>
+        <div class="stat-card__value">${fmtMoney(salariesThisMonth)}</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card__header">
+          <h3>${L('آخر الدفعات', 'Derniers paiements')}</h3>
+          <button class="btn btn--outline btn--sm" data-qnav="members">${L('عرض الأعضاء', 'Voir les membres')}</button>
+        </div>
+        <div class="card__body">
+          ${recent.length === 0 ? emptyState('💳', L('لا توجد دفعات مسجّلة بعد', "Aucun paiement enregistré pour l'instant")) : `
+          <div class="table-wrap"><table>
+            <thead><tr><th>${L('العضو', 'Membre')}</th><th>${L('النوع', 'Type')}</th><th>${L('المبلغ', 'Montant')}</th><th>${L('التاريخ', 'Date')}</th></tr></thead>
+            <tbody>
+              ${recent.map(p => {
+                const m = getMember(p.memberId);
+                return `<tr>
+                  <td>${escapeHtml(m ? m.name : L('محذوف', 'Supprimé'))}</td>
+                  <td>${quranPaymentLabel(p)}</td>
+                  <td>${fmtMoney(p.amount)}</td>
+                  <td>${fmtDate(p.date)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table></div>`}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__header"><h3>${L('تنبيهات سريعة', 'Alertes rapides')}</h3></div>
+        <div class="card__body">
+          <p style="margin-bottom:12px">${L('عدد الأعضاء الذين لم يسددوا رسوم شهر', "Membres n'ayant pas payé le mois de")} <strong>${monthLabel(month)}</strong>:</p>
+          <div class="stat-card stat-card--danger" style="margin-bottom:14px">
+            <div class="stat-card__value">${unpaidThisMonthCount}</div>
+          </div>
+          <button class="btn btn--outline" style="width:100%" data-qnav="report">${L('فتح التقرير الشهري', 'Ouvrir le rapport mensuel')}</button>
+          <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
+          <p style="margin-bottom:10px">${L('إجمالي المحصّل منذ البداية:', 'Total encaissé depuis le début :')}</p>
+          <strong style="font-size:18px">${fmtMoney(totalCollectedAll)}</strong>
+        </div>
+      </div>
+    </div>
+  `;
+  el.querySelectorAll('[data-qnav]').forEach(b => b.addEventListener('click', () => { quranView = b.dataset.qnav; renderQuran(); }));
 }
 
 function getHalaqa(id) { return state.quranHalaqat.find(h => h.id === id); }
