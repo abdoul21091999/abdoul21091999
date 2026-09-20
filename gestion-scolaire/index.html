@@ -181,6 +181,7 @@ tbody tr:last-child td { border-bottom: none; }
 .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+button.badge { border: none; cursor: pointer; font-family: inherit; }
 .badge--paid { background: var(--color-accent-light); color: var(--color-accent); }
 .badge--partial { background: var(--color-warning-light); color: var(--color-warning); }
 .badge--unpaid { background: var(--color-danger-light); color: var(--color-danger); }
@@ -1006,9 +1007,15 @@ function shortMonthLabel(m) {
   const [y, mm] = m.split('-');
   return `${mm}/${y.slice(2)}`;
 }
-function isNewStudent(student) {
-  const regMonth = (student.registrationDate || '').slice(0, 7);
-  return !!regMonth && schoolYearMonths().includes(regMonth);
+function studentTypeBadgeHtml(person) {
+  if (person.studentType === 'new') return `<button type="button" class="badge badge--new" data-toggle-status="${person.id}">${L('🆕 جديد', '🆕 Nouveau')}</button>`;
+  if (person.studentType === 'old') return `<button type="button" class="badge badge--paid" data-toggle-status="${person.id}">${L('📗 قديم', '📗 Ancien')}</button>`;
+  return `<button type="button" class="badge badge--muted" data-toggle-status="${person.id}">${L('＋ الحالة', '＋ Statut')}</button>`;
+}
+function nextStudentType(current) {
+  if (current === 'new') return 'old';
+  if (current === 'old') return '';
+  return 'new';
 }
 function totalDueForMonths(student, months) {
   const fee = monthlyFeeFor(student);
@@ -1438,7 +1445,7 @@ function renderStudents() {
           <tbody>
             ${list.map(s => `
               <tr>
-                <td><strong>${escapeHtml(displayStudentName(s))}</strong>${s.nameAr && s.nameAr.trim() ? `<div style="font-size:11px;color:var(--color-text-muted)">${escapeHtml(s.name)}</div>` : ''}${isNewStudent(s) ? ` <span class="badge badge--new">${L('🆕 جديد', '🆕 Nouveau')}</span>` : ''}${s.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
+                <td><strong>${escapeHtml(displayStudentName(s))}</strong>${s.nameAr && s.nameAr.trim() ? `<div style="font-size:11px;color:var(--color-text-muted)">${escapeHtml(s.name)}</div>` : ''} ${studentTypeBadgeHtml(s)}${s.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
                 <td>${escapeHtml(className(s.classId))}</td>
                 <td>${escapeHtml(s.phone || '—')}</td>
                 <td>${statusBadge(registrationStatus(s))}</td>
@@ -1462,6 +1469,12 @@ function renderStudents() {
   document.getElementById('print-annual-btn').addEventListener('click', () => printAnnualFeeSheet(list));
   el.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => studentDetail(b.dataset.view)));
   el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => paymentForm(b.dataset.pay)));
+  el.querySelectorAll('[data-toggle-status]').forEach(b => b.addEventListener('click', () => {
+    const st = getStudent(b.dataset.toggleStatus);
+    st.studentType = nextStudentType(st.studentType);
+    save();
+    renderStudents();
+  }));
 }
 function printStudentsList(list, month) {
   const statusLabel = { paid: L('مسدد', 'Payé'), partial: L('جزئي', 'Partiel'), unpaid: L('غير مسدد', 'Impayé') };
@@ -1715,7 +1728,7 @@ function studentDetail(id) {
 
   openModal(`
     <div class="modal__header">
-      <h3>${escapeHtml(displayStudentName(s))}${s.nameAr && s.nameAr.trim() ? ` <span style="font-size:12px;color:var(--color-text-muted);font-weight:400">(${escapeHtml(s.name)})</span>` : ''}${isNewStudent(s) ? ` <span class="badge badge--new">${L('🆕 جديد', '🆕 Nouveau')}</span>` : ''}</h3>
+      <h3>${escapeHtml(displayStudentName(s))}${s.nameAr && s.nameAr.trim() ? ` <span style="font-size:12px;color:var(--color-text-muted);font-weight:400">(${escapeHtml(s.name)})</span>` : ''} ${studentTypeBadgeHtml(s)}</h3>
       <button class="modal__close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal__body">
@@ -1768,6 +1781,11 @@ function studentDetail(id) {
   if (invoiceBtn) invoiceBtn.addEventListener('click', () => familyInvoiceModal(s.phone));
   document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printReceipt(b.dataset.print)));
   document.querySelectorAll('[data-whatsapp]').forEach(b => b.addEventListener('click', () => sendReceiptWhatsApp(b.dataset.whatsapp)));
+  document.getElementById('modal-container').querySelectorAll('[data-toggle-status]').forEach(b => b.addEventListener('click', () => {
+    s.studentType = nextStudentType(s.studentType);
+    save();
+    studentDetail(s.id);
+  }));
 }
 
 /* ================= الفاتورة العائلية الموحّدة ================= */
@@ -3201,7 +3219,7 @@ function renderQuranMembers() {
           </tr></thead>
           <tbody>
             ${list.map(m => `<tr>
-              <td><strong>${escapeHtml(m.name)}</strong>${isNewStudent(m) ? ` <span class="badge badge--new">${L('🆕 جديد', '🆕 Nouveau')}</span>` : ''}${m.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
+              <td><strong>${escapeHtml(m.name)}</strong> ${studentTypeBadgeHtml(m)}${m.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
               <td>${escapeHtml(halaqaName(m.halaqaId))}</td>
               <td><span class="badge ${memberRoleBadgeClass(m.role)}">${memberRoleLabel(m.role)}</span></td>
               <td>${escapeHtml(m.level || '—')}</td>
@@ -3228,6 +3246,12 @@ function renderQuranMembers() {
   el.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => quranMemberDetail(b.dataset.view)));
   el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => quranPaymentForm(b.dataset.pay)));
   el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => memberForm(getMember(b.dataset.edit))));
+  el.querySelectorAll('[data-toggle-status]').forEach(b => b.addEventListener('click', () => {
+    const mem = getMember(b.dataset.toggleStatus);
+    mem.studentType = nextStudentType(mem.studentType);
+    save();
+    renderQuranMembers();
+  }));
   el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
     const m = getMember(b.dataset.del);
     confirmAction(L(`هل تريد حذف "${m.name}" وكل سجلاته؟`, `Voulez-vous supprimer « ${m.name} » et tous ses registres ?`), () => {
@@ -4001,7 +4025,7 @@ function quranMemberDetail(id) {
 
   openModal(`
     <div class="modal__header">
-      <h3>${escapeHtml(m.name)}${isNewStudent(m) ? ` <span class="badge badge--new">${L('🆕 جديد', '🆕 Nouveau')}</span>` : ''}</h3>
+      <h3>${escapeHtml(m.name)} ${studentTypeBadgeHtml(m)}</h3>
       <button class="modal__close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal__body">
@@ -4044,6 +4068,11 @@ function quranMemberDetail(id) {
   document.getElementById('qmd-edit').addEventListener('click', () => memberForm(m));
   document.getElementById('qmd-pay').addEventListener('click', () => quranPaymentForm(m.id));
   document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printQuranReceipt(b.dataset.print)));
+  document.getElementById('modal-container').querySelectorAll('[data-toggle-status]').forEach(b => b.addEventListener('click', () => {
+    m.studentType = nextStudentType(m.studentType);
+    save();
+    quranMemberDetail(m.id);
+  }));
 }
 function quranPaymentForm(memberId) {
   const members = [...state.quranMembers].filter(m => m.status !== 'inactive').sort((a, b) => a.name.localeCompare(b.name, sortLocale()));
