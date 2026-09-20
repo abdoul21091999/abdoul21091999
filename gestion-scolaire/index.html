@@ -1453,6 +1453,8 @@ function printStudentsList(list, month) {
       <td>${statusLabel[monthStatus(s, month)]}</td>
     </tr>`;
   }).join('');
+  const totalRegPaid = list.reduce((sum, s) => sum + registrationPaid(s), 0);
+  const totalMonthPaid = list.reduce((sum, s) => sum + monthPaid(s, month), 0);
   area.innerHTML = `
     <div class="sheet-print">
       ${receiptLogoHtml()}
@@ -1469,6 +1471,11 @@ function printStudentsList(list, month) {
         </thead>
         <tbody>
           ${rowsHtml}
+          <tr style="font-weight:800">
+            <td colspan="5">${L(`مجموع المحصَّل — ${monthLabel(month)}`, `Total encaissé — ${monthLabel(month)}`)}</td>
+            <td>${fmtMoney(totalRegPaid)}</td>
+            <td>${fmtMoney(totalMonthPaid)}</td>
+          </tr>
         </tbody>
       </table>
     </div>
