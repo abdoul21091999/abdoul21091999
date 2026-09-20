@@ -185,6 +185,7 @@ tbody tr:last-child td { border-bottom: none; }
 .badge--partial { background: var(--color-warning-light); color: var(--color-warning); }
 .badge--unpaid { background: var(--color-danger-light); color: var(--color-danger); }
 .badge--muted { background: #f1f5f9; color: var(--color-text-muted); }
+.badge--new { background: var(--color-primary-light); color: var(--color-primary); }
 
 .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 .toolbar .field { min-width: 160px; }
@@ -1005,6 +1006,10 @@ function shortMonthLabel(m) {
   const [y, mm] = m.split('-');
   return `${mm}/${y.slice(2)}`;
 }
+function isNewStudent(student) {
+  const regMonth = (student.registrationDate || '').slice(0, 7);
+  return !!regMonth && schoolYearMonths().includes(regMonth);
+}
 function totalDueForMonths(student, months) {
   const fee = monthlyFeeFor(student);
   return months.reduce((s, m) => s + Math.max(0, fee - monthPaid(student, m)), 0);
@@ -1433,7 +1438,7 @@ function renderStudents() {
           <tbody>
             ${list.map(s => `
               <tr>
-                <td><strong>${escapeHtml(displayStudentName(s))}</strong>${s.nameAr && s.nameAr.trim() ? `<div style="font-size:11px;color:var(--color-text-muted)">${escapeHtml(s.name)}</div>` : ''}${s.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
+                <td><strong>${escapeHtml(displayStudentName(s))}</strong>${s.nameAr && s.nameAr.trim() ? `<div style="font-size:11px;color:var(--color-text-muted)">${escapeHtml(s.name)}</div>` : ''}${isNewStudent(s) ? ` <span class="badge badge--new">${L('🆕 جديد', '🆕 Nouveau')}</span>` : ''}${s.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
                 <td>${escapeHtml(className(s.classId))}</td>
                 <td>${escapeHtml(s.phone || '—')}</td>
                 <td>${statusBadge(registrationStatus(s))}</td>
@@ -1710,7 +1715,7 @@ function studentDetail(id) {
 
   openModal(`
     <div class="modal__header">
-      <h3>${escapeHtml(displayStudentName(s))}${s.nameAr && s.nameAr.trim() ? ` <span style="font-size:12px;color:var(--color-text-muted);font-weight:400">(${escapeHtml(s.name)})</span>` : ''}</h3>
+      <h3>${escapeHtml(displayStudentName(s))}${s.nameAr && s.nameAr.trim() ? ` <span style="font-size:12px;color:var(--color-text-muted);font-weight:400">(${escapeHtml(s.name)})</span>` : ''}${isNewStudent(s) ? ` <span class="badge badge--new">${L('🆕 جديد', '🆕 Nouveau')}</span>` : ''}</h3>
       <button class="modal__close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal__body">
@@ -3196,7 +3201,7 @@ function renderQuranMembers() {
           </tr></thead>
           <tbody>
             ${list.map(m => `<tr>
-              <td><strong>${escapeHtml(m.name)}</strong>${m.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
+              <td><strong>${escapeHtml(m.name)}</strong>${isNewStudent(m) ? ` <span class="badge badge--new">${L('🆕 جديد', '🆕 Nouveau')}</span>` : ''}${m.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
               <td>${escapeHtml(halaqaName(m.halaqaId))}</td>
               <td><span class="badge ${memberRoleBadgeClass(m.role)}">${memberRoleLabel(m.role)}</span></td>
               <td>${escapeHtml(m.level || '—')}</td>
@@ -3996,7 +4001,7 @@ function quranMemberDetail(id) {
 
   openModal(`
     <div class="modal__header">
-      <h3>${escapeHtml(m.name)}</h3>
+      <h3>${escapeHtml(m.name)}${isNewStudent(m) ? ` <span class="badge badge--new">${L('🆕 جديد', '🆕 Nouveau')}</span>` : ''}</h3>
       <button class="modal__close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal__body">
