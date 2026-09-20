@@ -94,6 +94,14 @@
     right:0;
     top:0.45em;
   }
+  .skills-list.one-col{grid-template-columns:1fr;}
+  .skill-cat{
+    font-weight:700;
+    color:var(--navy);
+    font-size:0.88rem;
+    margin:1.1rem 0 0.6rem;
+  }
+  .skill-cat:first-child{margin-top:0;}
   .edu-item{
     display:flex;
     gap:1.25rem;
@@ -184,8 +192,8 @@
             <h3>ليسانس في هندسة البرمجيات / المعلوماتية — (L1 إلى L3، غير مكتملة)</h3>
             <p>
               <span class="placeholder">[اسم المدرسة الخاصة]</span>، دكار، السنغال — أتمّ بنجاح السنتين الأولى والثانية (L1، L2)
-              وجزءًا من السنة الثالثة (L3)، قبل انقطاع مؤقت عن الدراسة لظروف صحية. اكتسب خلال هذه الفترة أسس البرمجة،
-              هياكل البيانات، وقواعد البيانات.
+              وجزءًا من السنة الثالثة (L3)، قبل انقطاع مؤقت عن الدراسة لظروف صحية. اكتسب خلال هذه الفترة مواد أساسية منها
+              البيروتيك، HTML وCSS، أساسيات JavaScript وPython، SQL، وUML، إضافة إلى مواد أخرى.
             </p>
           </div>
         </div>
@@ -193,9 +201,24 @@
 
       <section class="cv-section">
         <h2>المهارات</h2>
+
+        <p class="skill-cat">البرمجة والتقنيات</p>
         <ul class="skills-list">
-          <li>أساسيات البرمجة (خوارزميات، هياكل البيانات)</li>
-          <li>استخدام حزمة Microsoft Office (Word، Excel، PowerPoint)</li>
+          <li>HTML &amp; CSS</li>
+          <li>أساسيات JavaScript</li>
+          <li>أساسيات Python</li>
+          <li>SQL (قواعد البيانات)</li>
+          <li>UML (نمذجة الأنظمة)</li>
+          <li>البيروتيك (Word، Excel، PowerPoint)</li>
+        </ul>
+
+        <p class="skill-cat">الذكاء الاصطناعي</p>
+        <ul class="skills-list one-col">
+          <li>تطوير مواقع ويب متكاملة باستخدام أدوات الذكاء الاصطناعي التوليدي (Claude وغيرها)</li>
+        </ul>
+
+        <p class="skill-cat">مهارات شخصية</p>
+        <ul class="skills-list">
           <li>التحليل المنطقي وحل المشكلات</li>
           <li>التنظيم الذاتي والانضباط في الدراسة</li>
           <li>العمل الجماعي والتواصل</li>

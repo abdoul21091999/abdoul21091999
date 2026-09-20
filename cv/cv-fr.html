@@ -92,6 +92,14 @@
     left:0;
     top:0.45em;
   }
+  .skills-list.one-col{grid-template-columns:1fr;}
+  .skill-cat{
+    font-weight:700;
+    color:var(--navy);
+    font-size:0.88rem;
+    margin:1.1rem 0 0.6rem;
+  }
+  .skill-cat:first-child{margin-top:0;}
   .edu-item{
     display:flex;
     gap:1.25rem;
@@ -177,7 +185,8 @@
             <p>
               <span class="placeholder">[Nom de l'établissement]</span>, Dakar, Sénégal — Validation des deux premières
               années (L1, L2) et d'une partie de la troisième année (L3), avant une interruption temporaire des études
-              pour raisons de santé. Formation acquise en algorithmique, structures de données et bases de données.
+              pour raisons de santé. Matières suivies : bureautique, HTML et CSS, bases de JavaScript et Python, SQL,
+              UML, ainsi que d'autres matières.
             </p>
           </div>
         </div>
@@ -192,9 +201,24 @@
 
       <section class="cv-section">
         <h2>Compétences</h2>
+
+        <p class="skill-cat">Programmation &amp; technologies</p>
         <ul class="skills-list">
-          <li>Bases de la programmation (algorithmique, structures de données)</li>
-          <li>Suite Microsoft Office (Word, Excel, PowerPoint)</li>
+          <li>HTML &amp; CSS</li>
+          <li>Bases de JavaScript</li>
+          <li>Bases de Python</li>
+          <li>SQL (bases de données)</li>
+          <li>UML (modélisation)</li>
+          <li>Bureautique (Word, Excel, PowerPoint)</li>
+        </ul>
+
+        <p class="skill-cat">Intelligence artificielle</p>
+        <ul class="skills-list one-col">
+          <li>Développement de sites web complets à l'aide d'outils d'IA générative (Claude, entre autres)</li>
+        </ul>
+
+        <p class="skill-cat">Compétences personnelles</p>
+        <ul class="skills-list">
           <li>Analyse logique et résolution de problèmes</li>
           <li>Organisation personnelle et rigueur dans le travail</li>
           <li>Travail en équipe et communication</li>
