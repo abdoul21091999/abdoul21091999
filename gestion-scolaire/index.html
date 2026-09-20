@@ -1435,6 +1435,24 @@ function renderStudents() {
 function printStudentsList(list, month) {
   const statusLabel = { paid: L('مسدد', 'Payé'), partial: L('جزئي', 'Partiel'), unpaid: L('غير مسدد', 'Impayé') };
   const area = document.getElementById('print-area');
+  const familyKey = s => (s.phone || '').trim() || displayParentName(s) || '';
+  const rowsHtml = list.map((s, i) => {
+    const key = familyKey(s);
+    const sameAsPrev = i > 0 && key !== '' && familyKey(list[i - 1]) === key;
+    let span = 1;
+    if (!sameAsPrev && key !== '') {
+      while (i + span < list.length && familyKey(list[i + span]) === key) span++;
+    }
+    return `<tr>
+      <td>${escapeHtml(displayStudentName(s))}</td>
+      <td>${escapeHtml(className(s.classId))}</td>
+      ${sameAsPrev ? '' : `<td rowspan="${span}">${escapeHtml(displayParentName(s) || '—')}</td>`}
+      ${sameAsPrev ? '' : `<td rowspan="${span}">${escapeHtml(s.phone || '—')}</td>`}
+      <td>${fmtDate(s.registrationDate)}</td>
+      <td>${statusLabel[registrationStatus(s)]}</td>
+      <td>${statusLabel[monthStatus(s, month)]}</td>
+    </tr>`;
+  }).join('');
   area.innerHTML = `
     <div class="sheet-print">
       ${receiptLogoHtml()}
@@ -1450,15 +1468,7 @@ function printStudentsList(list, month) {
           </tr>
         </thead>
         <tbody>
-          ${list.map(s => `<tr>
-            <td>${escapeHtml(displayStudentName(s))}</td>
-            <td>${escapeHtml(className(s.classId))}</td>
-            <td>${escapeHtml(displayParentName(s) || '—')}</td>
-            <td>${escapeHtml(s.phone || '—')}</td>
-            <td>${fmtDate(s.registrationDate)}</td>
-            <td>${statusLabel[registrationStatus(s)]}</td>
-            <td>${statusLabel[monthStatus(s, month)]}</td>
-          </tr>`).join('')}
+          ${rowsHtml}
         </tbody>
       </table>
     </div>
