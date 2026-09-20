@@ -2039,8 +2039,9 @@ function paymentForm(studentId) {
           <input id="pf-combo-reg" type="number" min="0" placeholder="0">
         </div>
         <div class="field">
-          <label>${L('مبلغ الرسوم الشهرية', 'Montant des mensualités')} (${escapeHtml(state.settings.currency)})</label>
+          <label>${L('مبلغ الرسوم الشهرية (لكل الأشهر المختارة معًا)', 'Montant des mensualités (pour tous les mois choisis)')} (${escapeHtml(state.settings.currency)})</label>
           <input id="pf-combo-month" type="number" min="0" placeholder="0">
+          <small id="pf-combo-month-hint" style="color:var(--color-text-muted);display:block;margin-top:4px"></small>
         </div>
       </div>
       <div class="field" id="pf-combo-total-wrap" style="margin-bottom:14px" hidden>
@@ -2077,6 +2078,7 @@ function paymentForm(studentId) {
   const comboDateWrap = document.getElementById('pf-combo-date-wrap');
   const comboRegInput = document.getElementById('pf-combo-reg');
   const comboMonthInput = document.getElementById('pf-combo-month');
+  const comboMonthHint = document.getElementById('pf-combo-month-hint');
   const monthInput = document.getElementById('pf-month');
   const studentSel = document.getElementById('pf-student');
 
@@ -2109,8 +2111,10 @@ function paymentForm(studentId) {
       previewEl.textContent = '';
     } else if (type === 'combo') {
       const months = selectedMonths();
+      const fee = monthlyFeeFor(st);
       comboRegInput.value = registrationBalance(st) || '';
       comboMonthInput.value = totalDueForMonths(st, months) || '';
+      comboMonthHint.textContent = `${fmtMoney(fee)} ${L('×', '×')} ${months.length} ${L(months.length > 1 ? 'أشهر' : 'شهر', months.length > 1 ? 'mois' : 'mois')} = ${fmtMoney(fee * months.length)}`;
       previewEl.textContent = months.length > 1
         ? `${L('سيتم تغطية:', 'Mois couverts :')} ${months.map(monthLabel).join(L('، ', ', '))}`
         : '';
@@ -4102,8 +4106,9 @@ function quranPaymentForm(memberId) {
           <input id="qpf-combo-reg" type="number" min="0" placeholder="0">
         </div>
         <div class="field">
-          <label>${L('مبلغ الرسوم الشهرية', 'Montant des mensualités')} (${escapeHtml(state.settings.currency)})</label>
+          <label>${L('مبلغ الرسوم الشهرية (لكل الأشهر المختارة معًا)', 'Montant des mensualités (pour tous les mois choisis)')} (${escapeHtml(state.settings.currency)})</label>
           <input id="qpf-combo-month" type="number" min="0" placeholder="0">
+          <small id="qpf-combo-month-hint" style="color:var(--color-text-muted);display:block;margin-top:4px"></small>
         </div>
       </div>
       <div class="field" id="qpf-combo-total-wrap" style="margin-bottom:14px" hidden>
@@ -4140,6 +4145,7 @@ function quranPaymentForm(memberId) {
   const comboDateWrap = document.getElementById('qpf-combo-date-wrap');
   const comboRegInput = document.getElementById('qpf-combo-reg');
   const comboMonthInput = document.getElementById('qpf-combo-month');
+  const comboMonthHint = document.getElementById('qpf-combo-month-hint');
   const monthInput = document.getElementById('qpf-month');
   const memberSel = document.getElementById('qpf-member');
 
@@ -4172,8 +4178,10 @@ function quranPaymentForm(memberId) {
       previewEl.textContent = '';
     } else if (type === 'combo') {
       const months = selectedMonths();
+      const fee = quranMonthlyFeeFor(mem);
       comboRegInput.value = quranRegistrationBalance(mem) || '';
       comboMonthInput.value = quranTotalDueForMonths(mem, months) || '';
+      comboMonthHint.textContent = `${fmtMoney(fee)} ${L('×', '×')} ${months.length} ${L(months.length > 1 ? 'أشهر' : 'شهر', months.length > 1 ? 'mois' : 'mois')} = ${fmtMoney(fee * months.length)}`;
       previewEl.textContent = months.length > 1
         ? `${L('سيتم تغطية:', 'Mois couverts :')} ${months.map(monthLabel).join(L('، ', ', '))}`
         : '';
