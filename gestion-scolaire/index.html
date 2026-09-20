@@ -282,6 +282,17 @@ tbody tr:last-child td { border-bottom: none; }
 .sheet-print th, .sheet-print td { border: 1px solid #999; padding: 4px 6px; text-align: center; }
 .sheet-print th { background: #f1f1f1; }
 
+/* ---------- الكشف السنوي للرسوم ---------- */
+.sheet-print--annual table { font-size: 10px; }
+.sheet-print--annual .afs-name { text-align: start; }
+.afs-cell { width: 30px; font-weight: 700; }
+.afs-cell--paid { color: #1a7a3a; }
+.afs-cell--unpaid { color: #b5271e; }
+.afs-cell--partial { color: #b06a00; font-size: 9px; font-weight: 600; }
+.afs-cell--na { color: #999; }
+.afs-legend { margin-top: 12px; font-size: 11px; color: #333; }
+.afs-legend .afs-cell { width: auto; border: none; padding: 0; }
+
 /* ---------- استجابة الشاشات الصغيرة ---------- */
 @media (max-width: 900px) {
   .sidebar { transform: translateX(var(--hide-x, 100%)); }
@@ -985,6 +996,15 @@ function monthRange(start, count) {
   for (let i = 0; i < count; i++) out.push(addMonths(start, i));
   return out;
 }
+function schoolYearMonths() {
+  const m = /^(\d{4})-(\d{4})$/.exec((state.settings.schoolYear || '').trim());
+  const startYear = m ? Number(m[1]) : (new Date().getMonth() >= 8 ? new Date().getFullYear() : new Date().getFullYear() - 1);
+  return monthRange(`${startYear}-09`, 12);
+}
+function shortMonthLabel(m) {
+  const [y, mm] = m.split('-');
+  return `${mm}/${y.slice(2)}`;
+}
 function totalDueForMonths(student, months) {
   const fee = monthlyFeeFor(student);
   return months.reduce((s, m) => s + Math.max(0, fee - monthPaid(student, m)), 0);
@@ -1395,6 +1415,7 @@ function renderStudents() {
       </div>
       <button class="btn btn--primary" id="add-student-btn" style="align-self:flex-end">${L('＋ طالب جديد', '＋ Nouvel élève')}</button>
       <button class="btn btn--outline" id="print-students-btn" style="align-self:flex-end">${L('🖨️ طباعة القائمة', '🖨️ Imprimer la liste')}</button>
+      <button class="btn btn--outline" id="print-annual-btn" style="align-self:flex-end">${L('🖨️ الكشف السنوي', '🖨️ Fiche annuelle')}</button>
     </div>
 
     <div class="card">
@@ -1429,6 +1450,7 @@ function renderStudents() {
   document.getElementById('sf-status').addEventListener('change', e => { studentFilters.status = e.target.value; renderStudents(); });
   document.getElementById('add-student-btn').addEventListener('click', () => studentForm());
   document.getElementById('print-students-btn').addEventListener('click', () => printStudentsList(list, month));
+  document.getElementById('print-annual-btn').addEventListener('click', () => printAnnualFeeSheet(list));
   el.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => studentDetail(b.dataset.view)));
   el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => paymentForm(b.dataset.pay)));
 }
@@ -1478,6 +1500,67 @@ function printStudentsList(list, month) {
           </tr>
         </tbody>
       </table>
+    </div>
+  `;
+  window.print();
+}
+
+function printAnnualFeeSheet(list) {
+  const area = document.getElementById('print-area');
+  const months = schoolYearMonths();
+  const today = currentMonth();
+  const familyKey = s => (s.phone || '').trim() || displayParentName(s) || '';
+
+  const cellHtml = (s, m) => {
+    if (!isEnrolledInMonth(s, m)) return `<td class="afs-cell afs-cell--na">–</td>`;
+    const status = monthStatus(s, m);
+    if (status === 'paid') return `<td class="afs-cell afs-cell--paid">✓</td>`;
+    if (status === 'partial') return `<td class="afs-cell afs-cell--partial">${fmtMoney(monthPaid(s, m)).replace(' ' + state.settings.currency, '')}</td>`;
+    if (m > today) return `<td class="afs-cell"></td>`;
+    return `<td class="afs-cell afs-cell--unpaid">✗</td>`;
+  };
+
+  const rowsHtml = list.map((s, i) => {
+    const key = familyKey(s);
+    const sameAsPrev = i > 0 && key !== '' && familyKey(list[i - 1]) === key;
+    let span = 1;
+    if (!sameAsPrev && key !== '') {
+      while (i + span < list.length && familyKey(list[i + span]) === key) span++;
+    }
+    return `<tr>
+      <td>${i + 1}</td>
+      <td class="afs-name">${escapeHtml(displayStudentName(s))}</td>
+      ${sameAsPrev ? '' : `<td rowspan="${span}">${escapeHtml(displayParentName(s) || '—')}</td>`}
+      ${sameAsPrev ? '' : `<td rowspan="${span}">${escapeHtml(s.phone || '—')}</td>`}
+      <td>${fmtMoney(monthlyFeeFor(s))}</td>
+      ${months.map(m => cellHtml(s, m)).join('')}
+    </tr>`;
+  }).join('');
+
+  area.innerHTML = `
+    <style>@page { size: landscape; }</style>
+    <div class="sheet-print sheet-print--annual">
+      ${receiptLogoHtml()}
+      <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedSchoolName())}</h2>
+      <p style="text-align:center;margin:0 0 16px">${L('الكشف السنوي للرسوم الشهرية', 'Fiche annuelle des mensualités')} — ${L('السنة الدراسية:', 'Année scolaire :')} ${escapeHtml(state.settings.schoolYear)}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>${L('ت', 'N°')}</th><th>${L('الطالب', 'Élève')}</th><th>${L('ولي الأمر', 'Tuteur')}</th>
+            <th>${L('الهاتف', 'Téléphone')}</th><th>${L('الرسم الشهري', 'Frais mensuel')}</th>
+            ${months.map(m => `<th>${shortMonthLabel(m)}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+      <p class="afs-legend">
+        <span class="afs-cell afs-cell--paid" style="display:inline-block">✓</span> ${L('مسدد بالكامل', 'Payé intégralement')}
+        &nbsp;&nbsp; <span class="afs-cell afs-cell--partial" style="display:inline-block">15,000</span> ${L('سداد جزئي (المبلغ المدفوع)', 'Paiement partiel (montant payé)')}
+        &nbsp;&nbsp; <span class="afs-cell afs-cell--unpaid" style="display:inline-block">✗</span> ${L('غير مسدد', 'Impayé')}
+        &nbsp;&nbsp; <span class="afs-cell afs-cell--na" style="display:inline-block">–</span> ${L('قبل التسجيل / بعد الانسحاب', "Avant l'inscription / après le départ")}
+      </p>
     </div>
   `;
   window.print();
