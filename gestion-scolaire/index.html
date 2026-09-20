@@ -872,6 +872,20 @@ function className(id) { const c = getClass(id); return c ? c.name : '—'; }
 /* ---------------- الأسماء بالعربية (لأجل الطباعة والقراءة) ---------------- */
 function displayStudentName(s) { return (s && s.nameAr && s.nameAr.trim()) ? s.nameAr.trim() : (s ? s.name : ''); }
 function displayParentName(s) { return (s && s.parentNameAr && s.parentNameAr.trim()) ? s.parentNameAr.trim() : (s ? s.parentName : ''); }
+function sortStudentsGroupedByFamily(list) {
+  return [...list].sort((a, b) => {
+    const keyA = (a.phone || '').trim() || displayParentName(a) || '';
+    const keyB = (b.phone || '').trim() || displayParentName(b) || '';
+    if (keyA !== keyB) {
+      const pa = displayParentName(a) || '';
+      const pb = displayParentName(b) || '';
+      const cmp = pa.localeCompare(pb, sortLocale());
+      if (cmp !== 0) return cmp;
+      return keyA.localeCompare(keyB, sortLocale());
+    }
+    return (a.name || '').localeCompare(b.name || '', sortLocale());
+  });
+}
 const FR_AR_NAME_DICT = {
   'mohamed': 'محمد', 'mohammed': 'محمد', 'muhamadou': 'محمد', 'mouhamadou': 'محمد', 'mouhamed': 'محمد',
   'mamadou': 'محمد', 'modou': 'محمد',
@@ -1355,7 +1369,7 @@ function renderStudents() {
   if (studentFilters.classId) list = list.filter(s => s.classId === studentFilters.classId);
   if (studentFilters.status) list = list.filter(s => registrationStatus(s) === studentFilters.status || monthStatus(s, month) === studentFilters.status);
 
-  list.sort((a, b) => (a.name || '').localeCompare(b.name || '', sortLocale()));
+  list = sortStudentsGroupedByFamily(list);
 
   el.innerHTML = `
     <div class="toolbar">
