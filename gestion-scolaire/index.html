@@ -1028,7 +1028,11 @@ function paymentLabel(p) {
   if (p.type === 'registration') return L('رسوم تسجيل', "Frais d'inscription");
   if (p.type === 'combo') {
     const months = paymentMonths(p);
-    return L(`رسوم تسجيل + رسوم شهرية (${monthLabel(months[0])})`, `Inscription + mensualité (${monthLabel(months[0])})`);
+    if (months.length <= 1) return L(`رسوم تسجيل + رسوم شهرية (${monthLabel(months[0])})`, `Inscription + mensualité (${monthLabel(months[0])})`);
+    return L(
+      `رسوم تسجيل + رسوم شهرية — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} أشهر)`,
+      `Inscription + mensualités — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} mois)`
+    );
   }
   const months = paymentMonths(p);
   if (months.length <= 1) return L('رسوم شهرية — ', 'Mensualité — ') + monthLabel(months[0]);
@@ -1987,7 +1991,7 @@ function paymentForm(studentId) {
         <div class="field">
           <label>${L('نوع الدفعة *', 'Type de paiement *')}</label>
           <select id="pf-type">
-            <option value="combo">${L('رسوم تسجيل + الشهر الأول معًا', "Inscription + 1er mois ensemble")}</option>
+            <option value="combo">${L('رسوم تسجيل + رسوم شهرية معًا', "Inscription + mensualité(s) ensemble")}</option>
             <option value="registration">${L('رسوم تسجيل فقط', 'Inscription seulement')}</option>
             <option value="monthly">${L('رسوم شهرية', 'Mensualité')}</option>
           </select>
@@ -2035,7 +2039,7 @@ function paymentForm(studentId) {
           <input id="pf-combo-reg" type="number" min="0" placeholder="0">
         </div>
         <div class="field">
-          <label>${L('مبلغ الشهر الأول', 'Montant du 1er mois')} (${escapeHtml(state.settings.currency)})</label>
+          <label>${L('مبلغ الرسوم الشهرية', 'Montant des mensualités')} (${escapeHtml(state.settings.currency)})</label>
           <input id="pf-combo-month" type="number" min="0" placeholder="0">
         </div>
       </div>
@@ -2087,9 +2091,9 @@ function paymentForm(studentId) {
     const isMonthly = type === 'monthly';
     const isCombo = type === 'combo';
     monthWrap.style.display = (isMonthly || isCombo) ? '' : 'none';
-    countWrap.style.display = isMonthly ? '' : 'none';
-    previewWrap.style.display = isMonthly ? '' : 'none';
-    countCustomWrap.hidden = !(isMonthly && countSel.value === 'other');
+    countWrap.style.display = (isMonthly || isCombo) ? '' : 'none';
+    previewWrap.style.display = (isMonthly || isCombo) ? '' : 'none';
+    countCustomWrap.hidden = !((isMonthly || isCombo) && countSel.value === 'other');
     singleAmountWrap.style.display = isCombo ? 'none' : '';
     comboAmountWrap.hidden = !isCombo;
     comboTotalWrap.hidden = !isCombo;
@@ -2104,9 +2108,12 @@ function paymentForm(studentId) {
       amountInput.value = registrationBalance(st) || '';
       previewEl.textContent = '';
     } else if (type === 'combo') {
-      const month = monthInput.value || currentMonth();
+      const months = selectedMonths();
       comboRegInput.value = registrationBalance(st) || '';
-      comboMonthInput.value = Math.max(0, monthlyFeeFor(st) - monthPaid(st, month)) || '';
+      comboMonthInput.value = totalDueForMonths(st, months) || '';
+      previewEl.textContent = months.length > 1
+        ? `${L('سيتم تغطية:', 'Mois couverts :')} ${months.map(monthLabel).join(L('، ', ', '))}`
+        : '';
       updateComboTotal();
     } else {
       const months = selectedMonths();
@@ -2137,14 +2144,14 @@ function paymentForm(studentId) {
       const regAmt = Number(comboRegInput.value) || 0;
       const monAmt = Number(comboMonthInput.value) || 0;
       if (regAmt <= 0 && monAmt <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
-      const month = monthInput.value || currentMonth();
+      const months = selectedMonths();
       const payment = {
         id: uid('pay'),
         studentId: studentSel.value,
         type: 'combo',
         registrationAmount: regAmt,
-        months: [month],
-        allocations: { [month]: monAmt },
+        months,
+        allocations: distributeAmountOverMonths(st, months, monAmt),
         amount: regAmt + monAmt,
         date: document.getElementById('pf-combo-date').value || todayISO(),
         note: document.getElementById('pf-note').value.trim(),
@@ -2208,7 +2215,7 @@ function renderPayments() {
         <label>${L('نوع الدفعة', 'Type de paiement')}</label>
         <select id="pyf-type">
           <option value="">${L('الكل', 'Tous')}</option>
-          <option value="combo" ${paymentFilters.type === 'combo' ? 'selected' : ''}>${L('تسجيل + الشهر الأول', 'Inscription + 1er mois')}</option>
+          <option value="combo" ${paymentFilters.type === 'combo' ? 'selected' : ''}>${L('تسجيل + رسوم شهرية', 'Inscription + mensualité(s)')}</option>
           <option value="registration" ${paymentFilters.type === 'registration' ? 'selected' : ''}>${L('رسوم تسجيل', 'Inscription')}</option>
           <option value="monthly" ${paymentFilters.type === 'monthly' ? 'selected' : ''}>${L('رسوم شهرية', 'Mensualité')}</option>
         </select>
@@ -2276,7 +2283,7 @@ function printReceipt(paymentId) {
         <tr><td>${L('تاريخ الدفع', 'Date de paiement')}</td><td>${fmtDate(p.date)}</td></tr>
         ${p.type === 'combo' ? `
         <tr><td>${L('رسوم التسجيل', "Frais d'inscription")}</td><td>${fmtMoney(p.registrationAmount || 0)}</td></tr>
-        <tr><td>${L('رسوم الشهر الأول', 'Frais du 1er mois')}</td><td>${fmtMoney((p.allocations && p.allocations[paymentMonths(p)[0]]) || 0)}</td></tr>
+        <tr><td>${L('رسوم الأشهر', 'Frais mensuels')}</td><td>${fmtMoney((p.amount || 0) - (p.registrationAmount || 0))}</td></tr>
         ` : ''}
         ${p.note ? `<tr><td>${L('ملاحظة', 'Remarque')}</td><td>${escapeHtml(p.note)}</td></tr>` : ''}
         <tr class="total-row"><td>${L('المبلغ المدفوع', 'Montant payé')}</td><td>${fmtMoney(p.amount)}</td></tr>
@@ -3032,7 +3039,11 @@ function quranPaymentLabel(p) {
   if (p.type === 'registration') return L('رسوم تسجيل', "Frais d'inscription");
   if (p.type === 'combo') {
     const months = paymentMonths(p);
-    return L(`رسوم تسجيل + رسوم شهرية (${monthLabel(months[0])})`, `Inscription + mensualité (${monthLabel(months[0])})`);
+    if (months.length <= 1) return L(`رسوم تسجيل + رسوم شهرية (${monthLabel(months[0])})`, `Inscription + mensualité (${monthLabel(months[0])})`);
+    return L(
+      `رسوم تسجيل + رسوم شهرية — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} أشهر)`,
+      `Inscription + mensualités — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} mois)`
+    );
   }
   const months = paymentMonths(p);
   if (months.length <= 1) return L('رسوم شهرية — ', 'Mensualité — ') + monthLabel(months[0]);
@@ -4043,7 +4054,7 @@ function quranPaymentForm(memberId) {
         <div class="field">
           <label>${L('نوع الدفعة *', 'Type de paiement *')}</label>
           <select id="qpf-type">
-            <option value="combo">${L('رسوم تسجيل + الشهر الأول معًا', "Inscription + 1er mois ensemble")}</option>
+            <option value="combo">${L('رسوم تسجيل + رسوم شهرية معًا', "Inscription + mensualité(s) ensemble")}</option>
             <option value="registration">${L('رسوم تسجيل فقط', 'Inscription seulement')}</option>
             <option value="monthly">${L('رسوم شهرية', 'Mensualité')}</option>
           </select>
@@ -4091,7 +4102,7 @@ function quranPaymentForm(memberId) {
           <input id="qpf-combo-reg" type="number" min="0" placeholder="0">
         </div>
         <div class="field">
-          <label>${L('مبلغ الشهر الأول', 'Montant du 1er mois')} (${escapeHtml(state.settings.currency)})</label>
+          <label>${L('مبلغ الرسوم الشهرية', 'Montant des mensualités')} (${escapeHtml(state.settings.currency)})</label>
           <input id="qpf-combo-month" type="number" min="0" placeholder="0">
         </div>
       </div>
@@ -4143,9 +4154,9 @@ function quranPaymentForm(memberId) {
     const isMonthly = type === 'monthly';
     const isCombo = type === 'combo';
     monthWrap.style.display = (isMonthly || isCombo) ? '' : 'none';
-    countWrap.style.display = isMonthly ? '' : 'none';
-    previewWrap.style.display = isMonthly ? '' : 'none';
-    countCustomWrap.hidden = !(isMonthly && countSel.value === 'other');
+    countWrap.style.display = (isMonthly || isCombo) ? '' : 'none';
+    previewWrap.style.display = (isMonthly || isCombo) ? '' : 'none';
+    countCustomWrap.hidden = !((isMonthly || isCombo) && countSel.value === 'other');
     singleAmountWrap.style.display = isCombo ? 'none' : '';
     comboAmountWrap.hidden = !isCombo;
     comboTotalWrap.hidden = !isCombo;
@@ -4160,9 +4171,12 @@ function quranPaymentForm(memberId) {
       amountInput.value = quranRegistrationBalance(mem) || '';
       previewEl.textContent = '';
     } else if (type === 'combo') {
-      const month = monthInput.value || currentMonth();
+      const months = selectedMonths();
       comboRegInput.value = quranRegistrationBalance(mem) || '';
-      comboMonthInput.value = Math.max(0, quranMonthlyFeeFor(mem) - quranMonthPaid(mem, month)) || '';
+      comboMonthInput.value = quranTotalDueForMonths(mem, months) || '';
+      previewEl.textContent = months.length > 1
+        ? `${L('سيتم تغطية:', 'Mois couverts :')} ${months.map(monthLabel).join(L('، ', ', '))}`
+        : '';
       updateComboTotal();
     } else {
       const months = selectedMonths();
@@ -4193,14 +4207,14 @@ function quranPaymentForm(memberId) {
       const regAmt = Number(comboRegInput.value) || 0;
       const monAmt = Number(comboMonthInput.value) || 0;
       if (regAmt <= 0 && monAmt <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
-      const month = monthInput.value || currentMonth();
+      const months = selectedMonths();
       const payment = {
         id: uid('qpay'),
         memberId: memberSel.value,
         type: 'combo',
         registrationAmount: regAmt,
-        months: [month],
-        allocations: { [month]: monAmt },
+        months,
+        allocations: quranDistributeAmountOverMonths(mem, months, monAmt),
         amount: regAmt + monAmt,
         date: document.getElementById('qpf-combo-date').value || todayISO(),
         note: document.getElementById('qpf-note').value.trim(),
@@ -4257,7 +4271,7 @@ function printQuranReceipt(paymentId) {
         <tr><td>${L('تاريخ الدفع', 'Date de paiement')}</td><td>${fmtDate(p.date)}</td></tr>
         ${p.type === 'combo' ? `
         <tr><td>${L('رسوم التسجيل', "Frais d'inscription")}</td><td>${fmtMoney(p.registrationAmount || 0)}</td></tr>
-        <tr><td>${L('رسوم الشهر الأول', 'Frais du 1er mois')}</td><td>${fmtMoney((p.allocations && p.allocations[paymentMonths(p)[0]]) || 0)}</td></tr>
+        <tr><td>${L('رسوم الأشهر', 'Frais mensuels')}</td><td>${fmtMoney((p.amount || 0) - (p.registrationAmount || 0))}</td></tr>
         ` : ''}
         ${p.note ? `<tr><td>${L('ملاحظة', 'Remarque')}</td><td>${escapeHtml(p.note)}</td></tr>` : ''}
         <tr class="total-row"><td>${L('المبلغ المدفوع', 'Montant payé')}</td><td>${fmtMoney(p.amount)}</td></tr>
@@ -4812,7 +4826,7 @@ function renderBackup() {
     state.payments.forEach(p => {
       const st = getStudent(p.studentId);
       const months = paymentMonths(p);
-      const typeLabel = p.type === 'registration' ? L('تسجيل', 'Inscription') : p.type === 'combo' ? L('تسجيل + الشهر الأول', '1er mois + inscription') : L('شهرية', 'Mensualité');
+      const typeLabel = p.type === 'registration' ? L('تسجيل', 'Inscription') : p.type === 'combo' ? L('تسجيل + رسوم شهرية', 'Inscription + mensualité(s)') : L('شهرية', 'Mensualité');
       lines.push([p.receiptNo || '', st ? st.name : L('محذوف', 'Supprimé'), typeLabel,
         months.length ? months.map(monthLabel).join(' / ') : '', p.amount, p.date, p.note || '']
         .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
