@@ -869,6 +869,57 @@ function getClass(id) { return state.classes.find(c => c.id === id); }
 function getStudent(id) { return state.students.find(s => s.id === id); }
 function className(id) { const c = getClass(id); return c ? c.name : '—'; }
 
+/* ---------------- الأسماء بالعربية (لأجل الطباعة والقراءة) ---------------- */
+function displayStudentName(s) { return (s && s.nameAr && s.nameAr.trim()) ? s.nameAr.trim() : (s ? s.name : ''); }
+function displayParentName(s) { return (s && s.parentNameAr && s.parentNameAr.trim()) ? s.parentNameAr.trim() : (s ? s.parentName : ''); }
+const FR_AR_NAME_DICT = {
+  'mohamed': 'محمد', 'mohammed': 'محمد', 'muhamadou': 'محمد', 'mouhamadou': 'محمد', 'mouhamed': 'محمد',
+  'mamadou': 'محمد', 'modou': 'محمد',
+  'ousmane': 'عثمان', 'usman': 'عثمان',
+  'omar': 'عمر', 'oumar': 'عمر', 'omer': 'عمر', 'momar': 'عمر',
+  'ibrahima': 'إبراهيم', 'ibrahim': 'إبراهيم',
+  'cheikh': 'الشيخ', 'cheikhou': 'الشيخ',
+  'abdou': 'عبدو', 'abdoulaye': 'عبد الله', 'abdallah': 'عبد الله', 'abdoulahad': 'عبد الله',
+  'abdourahmane': 'عبد الرحمن', 'abdramane': 'عبد الرحمن', 'abderrahmane': 'عبد الرحمن',
+  'abdoulaziz': 'عبد العزيز',
+  'moussa': 'موسى',
+  'assane': 'حسن', 'hassane': 'حسن', 'alassane': 'حسن',
+  'souleymane': 'سليمان', 'suleiman': 'سليمان',
+  'amadou': 'أحمد', 'ahmadou': 'أحمد',
+  'boubacar': 'أبو بكر', 'bocar': 'أبو بكر', 'boubou': 'أبو بكر',
+  'aliou': 'علي', 'ali': 'علي',
+  'habib': 'حبيب', 'habibou': 'حبيب',
+  'idrissa': 'إدريس', 'idris': 'إدريس',
+  'youssou': 'يوسف', 'youssouf': 'يوسف', 'yusuf': 'يوسف',
+  'malick': 'مالك', 'malik': 'مالك',
+  'lamine': 'الأمين', 'elamine': 'الأمين',
+  'djibril': 'جبريل', 'jibril': 'جبريل',
+  'saliou': 'صالح', 'salif': 'صالح',
+  'adama': 'آدم', 'adam': 'آدم',
+  'yaya': 'يحيى', 'yahya': 'يحيى',
+  'bassirou': 'بصير', 'bachir': 'بشير',
+  'sidy': 'سيدي', 'sidi': 'سيدي',
+  'elhadj': 'الحاج', 'elhadji': 'الحاج', 'alhadji': 'الحاج',
+  'fatou': 'فاطمة', 'fatoumata': 'فاطمة', 'fatima': 'فاطمة',
+  'aissatou': 'عائشة', 'aicha': 'عائشة', 'aissata': 'عائشة',
+  'mariama': 'مريم', 'mariame': 'مريم', 'mareme': 'مريم', 'marieme': 'مريم', 'mariam': 'مريم',
+  'khady': 'خديجة', 'khadija': 'خديجة', 'khadidiatou': 'خديجة',
+  'awa': 'حواء', 'hawa': 'حواء',
+  'bineta': 'زينب', 'dieynaba': 'زينب', 'zeinab': 'زينب', 'zeynabou': 'زينب',
+  'aminata': 'آمنة', 'amina': 'آمنة',
+  'rokhaya': 'رقية', 'rokhiatou': 'رقية',
+  'yacine': 'ياسين',
+  'safietou': 'صفية', 'safiatou': 'صفية',
+};
+function guessArabicName(latin) {
+  if (!latin) return '';
+  const words = latin.trim().split(/\s+/);
+  return words.map(w => {
+    const key = w.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, '');
+    return FR_AR_NAME_DICT[key] || w;
+  }).join(' ');
+}
+
 function studentPayments(studentId, type) {
   return state.payments.filter(p => p.studentId === studentId && (!type || p.type === type));
 }
@@ -1299,7 +1350,7 @@ function renderStudents() {
   let list = [...state.students];
   if (studentFilters.q) {
     const q = studentFilters.q.toLowerCase();
-    list = list.filter(s => (s.name || '').toLowerCase().includes(q) || (s.phone || '').includes(q));
+    list = list.filter(s => (s.name || '').toLowerCase().includes(q) || (s.nameAr || '').includes(studentFilters.q) || (s.phone || '').includes(q));
   }
   if (studentFilters.classId) list = list.filter(s => s.classId === studentFilters.classId);
   if (studentFilters.status) list = list.filter(s => registrationStatus(s) === studentFilters.status || monthStatus(s, month) === studentFilters.status);
@@ -1329,6 +1380,7 @@ function renderStudents() {
         </select>
       </div>
       <button class="btn btn--primary" id="add-student-btn" style="align-self:flex-end">${L('＋ طالب جديد', '＋ Nouvel élève')}</button>
+      <button class="btn btn--outline" id="print-students-btn" style="align-self:flex-end">${L('🖨️ طباعة القائمة', '🖨️ Imprimer la liste')}</button>
     </div>
 
     <div class="card">
@@ -1342,7 +1394,7 @@ function renderStudents() {
           <tbody>
             ${list.map(s => `
               <tr>
-                <td><strong>${escapeHtml(s.name)}</strong>${s.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
+                <td><strong>${escapeHtml(displayStudentName(s))}</strong>${s.nameAr && s.nameAr.trim() ? `<div style="font-size:11px;color:var(--color-text-muted)">${escapeHtml(s.name)}</div>` : ''}${s.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
                 <td>${escapeHtml(className(s.classId))}</td>
                 <td>${escapeHtml(s.phone || '—')}</td>
                 <td>${statusBadge(registrationStatus(s))}</td>
@@ -1362,8 +1414,42 @@ function renderStudents() {
   document.getElementById('sf-class').addEventListener('change', e => { studentFilters.classId = e.target.value; renderStudents(); });
   document.getElementById('sf-status').addEventListener('change', e => { studentFilters.status = e.target.value; renderStudents(); });
   document.getElementById('add-student-btn').addEventListener('click', () => studentForm());
+  document.getElementById('print-students-btn').addEventListener('click', () => printStudentsList(list, month));
   el.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => studentDetail(b.dataset.view)));
   el.querySelectorAll('[data-pay]').forEach(b => b.addEventListener('click', () => paymentForm(b.dataset.pay)));
+}
+function printStudentsList(list, month) {
+  const statusLabel = { paid: L('مسدد', 'Payé'), partial: L('جزئي', 'Partiel'), unpaid: L('غير مسدد', 'Impayé') };
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="sheet-print">
+      ${receiptLogoHtml()}
+      <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedSchoolName())}</h2>
+      <p style="text-align:center;margin:0 0 4px">${L('قائمة الطلاب', 'Liste des élèves')} — ${L('السنة الدراسية:', 'Année scolaire :')} ${escapeHtml(state.settings.schoolYear)}</p>
+      <p style="text-align:center;margin:0 0 16px;color:#555">${L('بتاريخ', 'Le')} ${fmtDate(todayISO())} — ${L('عدد الطلاب:', "Nombre d'élèves :")} ${list.length}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>${L('الطالب', 'Élève')}</th><th>${L('القسم', 'Classe')}</th><th>${L('ولي الأمر', 'Tuteur')}</th>
+            <th>${L('الهاتف', 'Téléphone')}</th><th>${L('تاريخ التسجيل', "Date d'inscription")}</th>
+            <th>${L('رسوم التسجيل', 'Inscription')}</th><th>${L('الشهر الحالي', 'Ce mois')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(s => `<tr>
+            <td>${escapeHtml(displayStudentName(s))}</td>
+            <td>${escapeHtml(className(s.classId))}</td>
+            <td>${escapeHtml(displayParentName(s) || '—')}</td>
+            <td>${escapeHtml(s.phone || '—')}</td>
+            <td>${fmtDate(s.registrationDate)}</td>
+            <td>${statusLabel[registrationStatus(s)]}</td>
+            <td>${statusLabel[monthStatus(s, month)]}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  window.print();
 }
 
 function studentForm(existing, prefill) {
@@ -1377,6 +1463,13 @@ function studentForm(existing, prefill) {
       <div class="field" style="margin-bottom:14px">
         <label>${L('الاسم الكامل *', 'Nom complet *')}</label>
         <input id="sf-name" value="${escapeHtml(existing ? existing.name : '')}" placeholder="${L('اسم الطالب', "Nom de l'élève")}">
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('الاسم بالعربية (اختياري، للطباعة)', "Nom en arabe (optionnel, pour l'impression)")}</label>
+        <div style="display:flex;gap:6px">
+          <input id="sf-name-ar" style="flex:1" dir="rtl" value="${escapeHtml(existing ? existing.nameAr || '' : '')}" placeholder="${L('الاسم بالعربية', 'Nom en arabe')}">
+          <button type="button" class="btn btn--outline btn--sm" id="sf-name-ar-suggest">${L('🔤 اقتراح', '🔤 Suggérer')}</button>
+        </div>
       </div>
       <div class="field-row" style="margin-bottom:14px">
         <div class="field">
@@ -1399,6 +1492,13 @@ function studentForm(existing, prefill) {
         <div class="field">
           <label>${L('تاريخ التسجيل', "Date d'inscription")}</label>
           <input id="sf-regdate" type="date" value="${existing ? existing.registrationDate || todayISO() : todayISO()}">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('اسم ولي الأمر بالعربية (اختياري، للطباعة)', "Nom du tuteur en arabe (optionnel, pour l'impression)")}</label>
+        <div style="display:flex;gap:6px">
+          <input id="sf-parent-ar" style="flex:1" dir="rtl" value="${escapeHtml(existing ? existing.parentNameAr || '' : (prefill ? prefill.parentNameAr || '' : ''))}" placeholder="${L('اسم ولي الأمر بالعربية', 'Nom du tuteur en arabe')}">
+          <button type="button" class="btn btn--outline btn--sm" id="sf-parent-ar-suggest">${L('🔤 اقتراح', '🔤 Suggérer')}</button>
         </div>
       </div>
       <div class="field-row" style="margin-bottom:14px">
@@ -1427,14 +1527,29 @@ function studentForm(existing, prefill) {
     </div>
   `, { wide: true });
 
+  document.getElementById('sf-name-ar-suggest').addEventListener('click', () => {
+    const latin = document.getElementById('sf-name').value.trim();
+    if (!latin) { toast(L('يرجى إدخال الاسم أولًا', "Veuillez d'abord saisir le nom"), 'error'); return; }
+    document.getElementById('sf-name-ar').value = guessArabicName(latin);
+    toast(L('هذا اقتراح تلقائي — راجعه وعدّله عند الحاجة قبل الحفظ', "Ceci est une suggestion automatique — vérifiez-la avant d'enregistrer"), 'success');
+  });
+  document.getElementById('sf-parent-ar-suggest').addEventListener('click', () => {
+    const latin = document.getElementById('sf-parent').value.trim();
+    if (!latin) { toast(L('يرجى إدخال اسم ولي الأمر أولًا', "Veuillez d'abord saisir le nom du tuteur"), 'error'); return; }
+    document.getElementById('sf-parent-ar').value = guessArabicName(latin);
+    toast(L('هذا اقتراح تلقائي — راجعه وعدّله عند الحاجة قبل الحفظ', "Ceci est une suggestion automatique — vérifiez-la avant d'enregistrer"), 'success');
+  });
+
   document.getElementById('sf-save').addEventListener('click', () => {
     const name = document.getElementById('sf-name').value.trim();
     if (!name) { toast(L('يرجى إدخال اسم الطالب', "Veuillez saisir le nom de l'élève"), 'error'); return; }
     const data = {
       name,
+      nameAr: document.getElementById('sf-name-ar').value.trim(),
       classId: document.getElementById('sf-class-id').value,
       phone: document.getElementById('sf-phone').value.trim(),
       parentName: document.getElementById('sf-parent').value.trim(),
+      parentNameAr: document.getElementById('sf-parent-ar').value.trim(),
       registrationDate: document.getElementById('sf-regdate').value || todayISO(),
       registrationFee: Number(document.getElementById('sf-regfee').value) || 0,
       monthlyFeeOverride: document.getElementById('sf-monthlyfee').value === '' ? null : Number(document.getElementById('sf-monthlyfee').value)
@@ -1477,7 +1592,7 @@ function studentDetail(id) {
 
   openModal(`
     <div class="modal__header">
-      <h3>${escapeHtml(s.name)}</h3>
+      <h3>${escapeHtml(displayStudentName(s))}${s.nameAr && s.nameAr.trim() ? ` <span style="font-size:12px;color:var(--color-text-muted);font-weight:400">(${escapeHtml(s.name)})</span>` : ''}</h3>
       <button class="modal__close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal__body">
@@ -1492,7 +1607,7 @@ function studentDetail(id) {
         </div>
       </div>
       <p><strong>${L('القسم:', 'Classe :')}</strong> ${escapeHtml(className(s.classId))} &nbsp; | &nbsp; <strong>${L('الهاتف:', 'Téléphone :')}</strong> ${escapeHtml(s.phone || '—')}</p>
-      <p><strong>${L('ولي الأمر:', 'Tuteur :')}</strong> ${escapeHtml(s.parentName || '—')} &nbsp; | &nbsp; <strong>${L('تاريخ التسجيل:', "Date d'inscription :")}</strong> ${fmtDate(s.registrationDate)}</p>
+      <p><strong>${L('ولي الأمر:', 'Tuteur :')}</strong> ${escapeHtml(displayParentName(s) || '—')}${s.parentNameAr && s.parentNameAr.trim() ? ` <span style="color:var(--color-text-muted)">(${escapeHtml(s.parentName)})</span>` : ''} &nbsp; | &nbsp; <strong>${L('تاريخ التسجيل:', "Date d'inscription :")}</strong> ${fmtDate(s.registrationDate)}</p>
       ${siblings.length ? `<p style="color:var(--color-text-muted)">👨‍👩‍👧‍👦 ${L(`لولي الأمر هذا ${siblings.length + 1} أبناء مسجّلون:`, `Ce tuteur a ${siblings.length + 1} enfant(s) inscrit(s) :`)} ${escapeHtml([s.name, ...siblings.map(x => x.name)].join(L('، ', ', ')))}</p>` : ''}
       <div class="row-actions" style="margin:10px 0 16px">
         <button class="btn btn--outline btn--sm" id="sd-add-sibling">${L('＋ إضافة ابن آخر لنفس ولي الأمر', '＋ Ajouter un autre enfant')}</button>
@@ -1525,7 +1640,7 @@ function studentDetail(id) {
 
   document.getElementById('sd-edit').addEventListener('click', () => studentForm(s));
   document.getElementById('sd-pay').addEventListener('click', () => paymentForm(s.id));
-  document.getElementById('sd-add-sibling').addEventListener('click', () => studentForm(null, { parentName: s.parentName, phone: s.phone, classId: s.classId }));
+  document.getElementById('sd-add-sibling').addEventListener('click', () => studentForm(null, { parentName: s.parentName, parentNameAr: s.parentNameAr, phone: s.phone, classId: s.classId }));
   const invoiceBtn = document.getElementById('sd-family-invoice');
   if (invoiceBtn) invoiceBtn.addEventListener('click', () => familyInvoiceModal(s.phone));
   document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printReceipt(b.dataset.print)));
@@ -1664,7 +1779,7 @@ function sendWhatsApp(phone, text) {
 function buildReceiptWhatsAppText(p) {
   const st = getStudent(p.studentId);
   const schoolName = displayedSchoolName();
-  const name = st ? st.name : '—';
+  const name = st ? displayStudentName(st) : '—';
   const lines = L(
     [
       `*${schoolName}*`, 'إيصال دفع', '——————————',
@@ -1689,8 +1804,8 @@ function sendReceiptWhatsApp(paymentId) {
 }
 function buildFamilyInvoiceWhatsAppText(rows, grandTotal, month) {
   const schoolName = displayedSchoolName();
-  const parentName = rows[0].s.parentName || '—';
-  const childLines = rows.map(r => `${r.s.name}: ${fmtMoney(r.total)}`);
+  const parentName = displayParentName(rows[0].s) || '—';
+  const childLines = rows.map(r => `${displayStudentName(r.s)}: ${fmtMoney(r.total)}`);
   const lines = L(
     [
       `*${schoolName}*`, `فاتورة عائلية — ولي الأمر: ${parentName}`,
@@ -1721,13 +1836,13 @@ function printFamilyInvoice(phone, month, rows, grandTotal) {
       <div class="sub">${L('فاتورة عائلية موحّدة', 'Facture familiale groupée')} — ${L('السنة الدراسية:', 'Année scolaire :')} ${escapeHtml(state.settings.schoolYear)}</div>
       <hr>
       <table>
-        <tr><td>${L('ولي الأمر', 'Tuteur')}</td><td>${escapeHtml(rows[0].s.parentName || '—')}</td></tr>
+        <tr><td>${L('ولي الأمر', 'Tuteur')}</td><td>${escapeHtml(displayParentName(rows[0].s) || '—')}</td></tr>
         <tr><td>${L('الهاتف', 'Téléphone')}</td><td>${escapeHtml(phone)}</td></tr>
         <tr><td>${L('شهر الاستحقاق', 'Mois concerné')}</td><td>${monthLabel(month)}</td></tr>
       </table>
       <table style="margin-top:10px">
         <tr><td><strong>${L('الابن/الابنة', 'Enfant')}</strong></td><td><strong>${L('القسم', 'Classe')}</strong></td><td><strong>${L('المستحق', 'Dû')}</strong></td></tr>
-        ${rows.map(r => `<tr><td>${escapeHtml(r.s.name)}</td><td>${escapeHtml(className(r.s.classId))}</td><td>${fmtMoney(r.total)}</td></tr>`).join('')}
+        ${rows.map(r => `<tr><td>${escapeHtml(displayStudentName(r.s))}</td><td>${escapeHtml(className(r.s.classId))}</td><td>${fmtMoney(r.total)}</td></tr>`).join('')}
         <tr class="total-row"><td colspan="2">${L('الإجمالي الكلي المستحق', 'Total général dû')}</td><td>${fmtMoney(grandTotal)}</td></tr>
       </table>
       <div class="sign">
@@ -2041,7 +2156,7 @@ function printReceipt(paymentId) {
       <hr>
       <table>
         <tr><td>${L('رقم الإيصال', 'N° reçu')}</td><td>${escapeHtml(p.receiptNo || '—')}</td></tr>
-        <tr><td>${L('اسم الطالب', "Nom de l'élève")}</td><td>${escapeHtml(st ? st.name : '—')}</td></tr>
+        <tr><td>${L('اسم الطالب', "Nom de l'élève")}</td><td>${escapeHtml(st ? displayStudentName(st) : '—')}</td></tr>
         <tr><td>${L('القسم الدراسي', 'Classe')}</td><td>${escapeHtml(st ? className(st.classId) : '—')}</td></tr>
         <tr><td>${L('نوع الرسوم', 'Type de frais')}</td><td>${paymentLabel(p)}</td></tr>
         <tr><td>${L('تاريخ الدفع', 'Date de paiement')}</td><td>${fmtDate(p.date)}</td></tr>
@@ -2172,6 +2287,7 @@ function renderExpenses() {
         </select>
       </div>
       <button class="btn btn--primary" id="add-expense-btn" style="align-self:flex-end">${L('＋ إضافة مصروف', '＋ Ajouter une dépense')}</button>
+      <button class="btn btn--outline" id="print-expenses-btn" style="align-self:flex-end">${L('🖨️ طباعة السجل', '🖨️ Imprimer le registre')}</button>
     </div>
 
     <div class="stat-grid">
@@ -2204,6 +2320,7 @@ function renderExpenses() {
   `;
   document.getElementById('ex-month').addEventListener('change', e => { expenseFilters.month = e.target.value; renderExpenses(); });
   document.getElementById('add-expense-btn').addEventListener('click', () => expenseForm());
+  document.getElementById('print-expenses-btn').addEventListener('click', () => printExpensesList(list, total, expenseFilters.month));
   el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => expenseForm(state.expenses.find(x => x.id === b.dataset.edit))));
   el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
     confirmAction(L('هل تريد حذف هذا المصروف؟', 'Voulez-vous supprimer cette dépense ?'), () => {
@@ -2211,6 +2328,32 @@ function renderExpenses() {
       save(); toast(L('تم الحذف', 'Supprimé'), 'success'); renderExpenses();
     });
   }));
+}
+function printExpensesList(list, total, month) {
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="sheet-print">
+      ${receiptLogoHtml()}
+      <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedSchoolName())}</h2>
+      <p style="text-align:center;margin:0 0 4px">${L('سجل المصروفات', 'Registre des dépenses')} — ${month ? monthLabel(month) : L('كل الأشهر', 'Tous les mois')}</p>
+      <p style="text-align:center;margin:0 0 16px;color:#555">${L('بتاريخ', 'Le')} ${fmtDate(todayISO())} — ${L('عدد المصروفات:', 'Nombre de dépenses :')} ${list.length}</p>
+      <table>
+        <thead>
+          <tr><th>${L('التاريخ', 'Date')}</th><th>${L('الفئة', 'Catégorie')}</th><th>${L('الوصف', 'Description')}</th><th>${L('المبلغ', 'Montant')}</th></tr>
+        </thead>
+        <tbody>
+          ${list.map(e => `<tr>
+            <td>${fmtDate(e.date)}</td>
+            <td>${escapeHtml(e.category || '—')}</td>
+            <td>${escapeHtml(e.note || '—')}</td>
+            <td>${fmtMoney(e.amount)}</td>
+          </tr>`).join('')}
+          <tr style="font-weight:800"><td colspan="3">${L('الإجمالي', 'Total')}</td><td>${fmtMoney(total)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+  window.print();
 }
 function expenseForm(existing) {
   const isEdit = !!existing;
@@ -4539,11 +4682,11 @@ function renderBackup() {
     reader.readAsText(file);
   });
   document.getElementById('bk-export-students').addEventListener('click', () => {
-    const header = [L('الاسم', 'Nom'), L('القسم', 'Classe'), L('الهاتف', 'Téléphone'), L('ولي الأمر', 'Tuteur'), L('تاريخ التسجيل', "Date d'inscription"), L('رسوم التسجيل', "Frais d'inscription"), L('المدفوع', 'Payé'), L('المتبقي', 'Restant'), L('الحالة', 'Statut')];
+    const header = [L('الاسم', 'Nom'), L('الاسم بالعربية', 'Nom en arabe'), L('القسم', 'Classe'), L('الهاتف', 'Téléphone'), L('ولي الأمر', 'Tuteur'), L('ولي الأمر بالعربية', 'Tuteur en arabe'), L('تاريخ التسجيل', "Date d'inscription"), L('رسوم التسجيل', "Frais d'inscription"), L('المدفوع', 'Payé'), L('المتبقي', 'Restant'), L('الحالة', 'Statut')];
     const statusLabel = { paid: L('مسدد', 'Payé'), partial: L('جزئي', 'Partiel'), unpaid: L('غير مسدد', 'Impayé') };
     const lines = [header.join(',')];
     state.students.forEach(s => {
-      lines.push([s.name, className(s.classId), s.phone || '', s.parentName || '', s.registrationDate || '',
+      lines.push([s.name, s.nameAr || '', className(s.classId), s.phone || '', s.parentName || '', s.parentNameAr || '', s.registrationDate || '',
         registrationFee(s), registrationPaid(s), registrationBalance(s), statusLabel[registrationStatus(s)]]
         .map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
     });
