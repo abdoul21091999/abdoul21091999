@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CV — Abdou Khadir Lo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#1a2744;
+    --navy-light:#28395e;
+    --gold:#c9a84c;
+    --text:#2b2f38;
+    --text-muted:#5c6270;
+    --bg:#f4f5f7;
+    --white:#ffffff;
+    --border:#e3e5ea;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter', sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.7;
+  }
+  .page{
+    max-width:210mm;
+    min-height:297mm;
+    margin:24px auto;
+    background:var(--white);
+    box-shadow:0 8px 30px rgba(0,0,0,0.08);
+  }
+  .cv-header{
+    background:linear-gradient(135deg, var(--navy), var(--navy-light));
+    color:#fff;
+    padding:2.5rem 3rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:1.5rem;
+    flex-wrap:wrap;
+    border-bottom:5px solid var(--gold);
+  }
+  .cv-header__name{font-family:'Playfair Display', serif;font-size:2.2rem;font-weight:800;margin:0 0 0.35rem;}
+  .cv-header__title{font-size:1.05rem;font-weight:600;color:var(--gold);margin:0;}
+  .cv-header__contact{font-size:0.92rem;color:rgba(255,255,255,0.92);}
+  .cv-header__contact p{margin:0.3rem 0;}
+  .cv-body{padding:2.25rem 3rem 2.75rem;}
+  .cv-section{margin-bottom:1.85rem;}
+  .cv-section h2{
+    font-family:'Playfair Display', serif;
+    font-size:1.2rem;
+    font-weight:700;
+    color:var(--navy);
+    margin:0 0 0.9rem;
+    padding-bottom:0.5rem;
+    border-bottom:2px solid var(--border);
+    position:relative;
+  }
+  .cv-section h2::after{
+    content:'';
+    position:absolute;
+    left:0;
+    bottom:-2px;
+    width:52px;
+    height:2px;
+    background:var(--gold);
+  }
+  .cv-section p{color:var(--text-muted);margin:0;}
+  .skills-list{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0.6rem 1.5rem;
+    padding:0;
+    margin:0;
+    list-style:none;
+  }
+  .skills-list li{
+    color:var(--text);
+    font-size:0.95rem;
+    padding-left:1.1rem;
+    position:relative;
+  }
+  .skills-list li::before{
+    content:'◆';
+    color:var(--gold);
+    font-size:0.6rem;
+    position:absolute;
+    left:0;
+    top:0.45em;
+  }
+  .edu-item{
+    display:flex;
+    gap:1.25rem;
+    margin-bottom:1.4rem;
+  }
+  .edu-item:last-child{margin-bottom:0;}
+  .edu-item__year{
+    flex:0 0 140px;
+    font-weight:700;
+    color:var(--gold);
+    font-size:0.85rem;
+    background:#faf6ea;
+    border:1px solid #ecdfb8;
+    border-radius:6px;
+    padding:0.35rem 0.6rem;
+    text-align:center;
+    height:fit-content;
+  }
+  .edu-item__body h3{margin:0 0 0.35rem;font-size:1.02rem;color:var(--navy);}
+  .edu-item__body p{font-size:0.93rem;}
+  .lang-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:1rem;
+  }
+  .lang-grid > div{
+    background:#f8f9fb;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:0.75rem 1rem;
+    font-size:0.9rem;
+  }
+  .lang-grid strong{display:block;color:var(--navy);margin-bottom:0.2rem;}
+  .placeholder{color:#b3541e;font-weight:600;}
+  .note-box{
+    background:#f8f9fb;
+    border-left:4px solid var(--gold);
+    border-radius:6px;
+    padding:0.9rem 1.1rem;
+    font-size:0.9rem;
+    color:var(--text-muted);
+  }
+  @media print{
+    body{background:var(--white);}
+    .page{margin:0;box-shadow:none;max-width:none;}
+  }
+  @page{size:A4;margin:0;}
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="cv-header">
+      <div>
+        <p class="cv-header__name">Abdou Khadir Lo</p>
+        <p class="cv-header__title">Candidat en Génie Industriel et Management</p>
+      </div>
+      <div class="cv-header__contact">
+        <p>📧 elmoustaphambacke@gmail.com</p>
+        <p>📱 +221 77 194 67 73</p>
+        <p>🔗 LinkedIn : <span class="placeholder">[à compléter]</span></p>
+        <p>💻 GitHub : <span class="placeholder">[à compléter]</span></p>
+        <p>📍 Dakar, Sénégal</p>
+      </div>
+    </header>
+
+    <div class="cv-body">
+      <section class="cv-section">
+        <h2>Objectif académique</h2>
+        <p>
+          Étudiant sénégalais parfaitement bilingue arabe-français, titulaire d'un baccalauréat littéraire et d'une
+          première formation universitaire en génie logiciel. Je souhaite poursuivre mes études en
+          <strong>Génie Industriel et Management</strong> au sein d'une université suisse, afin d'acquérir une formation
+          rigoureuse alliant fondamentaux techniques et compétences managériales, dans un environnement académique
+          exigeant et reconnu internationalement.
+        </p>
+      </section>
+
+      <section class="cv-section">
+        <h2>Formation</h2>
+        <div class="edu-item">
+          <div class="edu-item__year"><span class="placeholder">[Années]</span></div>
+          <div class="edu-item__body">
+            <h3>Licence en Génie Logiciel / Informatique — L1 à L3 (non achevée)</h3>
+            <p>
+              <span class="placeholder">[Nom de l'établissement]</span>, Dakar, Sénégal — Validation des deux premières
+              années (L1, L2) et d'une partie de la troisième année (L3), avant une interruption temporaire des études
+              pour raisons de santé. Formation acquise en algorithmique, structures de données et bases de données.
+            </p>
+          </div>
+        </div>
+        <div class="edu-item">
+          <div class="edu-item__year"><span class="placeholder">[Année]</span></div>
+          <div class="edu-item__body">
+            <h3>Baccalauréat — Série Littéraire, option Arabe (L-AR)</h3>
+            <p><span class="placeholder">[Nom de l'établissement]</span>, Sénégal — Cursus bilingue arabe-français, avec une proportion plus importante de matières arabes.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cv-section">
+        <h2>Compétences</h2>
+        <ul class="skills-list">
+          <li>Bases de la programmation (algorithmique, structures de données)</li>
+          <li>Suite Microsoft Office (Word, Excel, PowerPoint)</li>
+          <li>Analyse logique et résolution de problèmes</li>
+          <li>Organisation personnelle et rigueur dans le travail</li>
+          <li>Travail en équipe et communication</li>
+          <li>Persévérance et capacité d'adaptation</li>
+        </ul>
+      </section>
+
+      <section class="cv-section">
+        <h2>Langues</h2>
+        <div class="lang-grid">
+          <div><strong>Arabe</strong>Langue maternelle</div>
+          <div><strong>Français</strong>Langue d'études — niveau avancé</div>
+          <div><strong>Anglais</strong><span class="placeholder">[niveau à préciser]</span></div>
+        </div>
+      </section>
+
+      <section class="cv-section">
+        <h2>Note personnelle</h2>
+        <div class="note-box">
+          Après une interruption temporaire de mes études universitaires pour raisons de santé, je suis aujourd'hui
+          entièrement rétabli et pleinement déterminé à reprendre mon parcours académique dans un cadre exigeant.
+          Je souhaite mettre à profit ma double culture linguistique ainsi que les bases techniques acquises durant
+          ma formation précédente pour réussir mes études de Génie Industriel et Management en Suisse.
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>السيرة الذاتية — عبدو خضر لو (Abdou Khadir Lo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#1a2744;
+    --navy-light:#28395e;
+    --gold:#c9a84c;
+    --text:#2b2f38;
+    --text-muted:#5c6270;
+    --bg:#f4f5f7;
+    --white:#ffffff;
+    --border:#e3e5ea;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Cairo', sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.75;
+  }
+  .page{
+    max-width:210mm;
+    min-height:297mm;
+    margin:24px auto;
+    background:var(--white);
+    box-shadow:0 8px 30px rgba(0,0,0,0.08);
+    padding:0;
+    overflow:hidden;
+  }
+  .cv-header{
+    background:linear-gradient(135deg, var(--navy), var(--navy-light));
+    color:var(--white);
+    padding:2.5rem 3rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:1.5rem;
+    flex-wrap:wrap;
+    border-bottom:5px solid var(--gold);
+  }
+  .cv-header__name{font-size:2.1rem;font-weight:800;margin:0 0 0.15rem;}
+  .cv-header__latin{font-size:1rem;font-weight:400;letter-spacing:0.04em;color:rgba(255,255,255,0.75);margin:0 0 0.6rem;direction:ltr;text-align:right;}
+  .cv-header__title{font-size:1.05rem;font-weight:600;color:var(--gold);margin:0;}
+  .cv-header__contact{font-size:0.92rem;color:rgba(255,255,255,0.92);text-align:left;direction:ltr;}
+  .cv-header__contact p{margin:0.3rem 0;display:flex;align-items:center;gap:0.5rem;justify-content:flex-start;}
+  .cv-body{padding:2.25rem 3rem 2.75rem;}
+  .cv-section{margin-bottom:1.85rem;}
+  .cv-section h2{
+    font-size:1.15rem;
+    font-weight:700;
+    color:var(--navy);
+    margin:0 0 0.9rem;
+    padding-bottom:0.5rem;
+    border-bottom:2px solid var(--border);
+    position:relative;
+  }
+  .cv-section h2::after{
+    content:'';
+    position:absolute;
+    right:0;
+    bottom:-2px;
+    width:52px;
+    height:2px;
+    background:var(--gold);
+  }
+  .cv-section p{color:var(--text-muted);margin:0;}
+  .skills-list{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0.6rem 1.5rem;
+    padding:0;
+    margin:0;
+    list-style:none;
+  }
+  .skills-list li{
+    color:var(--text);
+    font-size:0.95rem;
+    padding-right:1.1rem;
+    position:relative;
+  }
+  .skills-list li::before{
+    content:'◆';
+    color:var(--gold);
+    font-size:0.6rem;
+    position:absolute;
+    right:0;
+    top:0.45em;
+  }
+  .edu-item{
+    display:flex;
+    gap:1.25rem;
+    margin-bottom:1.4rem;
+  }
+  .edu-item:last-child{margin-bottom:0;}
+  .edu-item__year{
+    flex:0 0 140px;
+    font-weight:700;
+    color:var(--gold);
+    font-size:0.88rem;
+    background:#faf6ea;
+    border:1px solid #ecdfb8;
+    border-radius:6px;
+    padding:0.35rem 0.6rem;
+    text-align:center;
+    height:fit-content;
+  }
+  .edu-item__body h3{margin:0 0 0.35rem;font-size:1.02rem;color:var(--navy);}
+  .edu-item__body p{font-size:0.93rem;}
+  .lang-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:1rem;
+  }
+  .lang-grid > div{
+    background:#f8f9fb;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:0.75rem 1rem;
+    font-size:0.9rem;
+  }
+  .lang-grid strong{display:block;color:var(--navy);margin-bottom:0.2rem;}
+  .placeholder{color:#b3541e;font-weight:600;}
+  .note-box{
+    background:#f8f9fb;
+    border-right:4px solid var(--gold);
+    border-radius:6px;
+    padding:0.9rem 1.1rem;
+    font-size:0.9rem;
+    color:var(--text-muted);
+  }
+  @media print{
+    body{background:var(--white);}
+    .page{margin:0;box-shadow:none;max-width:none;}
+  }
+  @page{size:A4;margin:0;}
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="cv-header">
+      <div>
+        <p class="cv-header__name">عبدو خضر لو</p>
+        <p class="cv-header__latin">Abdou Khadir Lo</p>
+        <p class="cv-header__title">مرشّح لدراسة الهندسة والإدارة الصناعية</p>
+      </div>
+      <div class="cv-header__contact">
+        <p>📧 elmoustaphambacke@gmail.com</p>
+        <p>📱 +221 77 194 67 73</p>
+        <p>🔗 LinkedIn: <span class="placeholder">[أدخل رابط حسابك]</span></p>
+        <p>💻 GitHub: <span class="placeholder">[أدخل رابط حسابك]</span></p>
+        <p>📍 دكار، السنغال</p>
+      </div>
+    </header>
+
+    <div class="cv-body">
+      <section class="cv-section">
+        <h2>الهدف الأكاديمي</h2>
+        <p>
+          طالب سنغالي متمكّن من اللغتين العربية والفرنسية، حاصل على تكوين ثانوي أدبي وتكوين جامعي أولي في هندسة البرمجيات.
+          يسعى إلى مواصلة مسيرته الجامعية في تخصص <strong>الهندسة والإدارة الصناعية</strong> ضمن جامعة سويسرية ذات مستوى أكاديمي مرموق،
+          بهدف اكتساب تكوين متين يجمع بين الأسس الهندسية والمهارات الإدارية.
+        </p>
+      </section>
+
+      <section class="cv-section">
+        <h2>المسار التعليمي</h2>
+        <div class="edu-item">
+          <div class="edu-item__year"><span class="placeholder">[السنة]</span></div>
+          <div class="edu-item__body">
+            <h3>شهادة البكالوريا — شعبة أدبية (خيار اللغة العربية L-AR)</h3>
+            <p><span class="placeholder">[اسم المدرسة]</span>، السنغال — مسار تعليمي عربي-فرنسي مع تركيز أكبر على المواد العربية.</p>
+          </div>
+        </div>
+        <div class="edu-item">
+          <div class="edu-item__year"><span class="placeholder">[السنوات]</span></div>
+          <div class="edu-item__body">
+            <h3>ليسانس في هندسة البرمجيات / المعلوماتية — (L1 إلى L3، غير مكتملة)</h3>
+            <p>
+              <span class="placeholder">[اسم المدرسة الخاصة]</span>، دكار، السنغال — أتمّ بنجاح السنتين الأولى والثانية (L1، L2)
+              وجزءًا من السنة الثالثة (L3)، قبل انقطاع مؤقت عن الدراسة لظروف صحية. اكتسب خلال هذه الفترة أسس البرمجة،
+              هياكل البيانات، وقواعد البيانات.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cv-section">
+        <h2>المهارات</h2>
+        <ul class="skills-list">
+          <li>أساسيات البرمجة (خوارزميات، هياكل البيانات)</li>
+          <li>استخدام حزمة Microsoft Office (Word، Excel، PowerPoint)</li>
+          <li>التحليل المنطقي وحل المشكلات</li>
+          <li>التنظيم الذاتي والانضباط في الدراسة</li>
+          <li>العمل الجماعي والتواصل</li>
+          <li>المثابرة والتكيّف مع الظروف</li>
+        </ul>
+      </section>
+
+      <section class="cv-section">
+        <h2>اللغات</h2>
+        <div class="lang-grid">
+          <div><strong>العربية</strong>اللغة الأم</div>
+          <div><strong>الفرنسية</strong>لغة الدراسة — مستوى متقدم</div>
+          <div><strong>الإنجليزية</strong><span class="placeholder">[حدّد المستوى]</span></div>
+        </div>
+      </section>
+
+      <section class="cv-section">
+        <h2>ملاحظة شخصية</h2>
+        <div class="note-box">
+          بعد انقطاع مؤقت عن الدراسة الجامعية لأسباب صحية، تعافى المترشح تمامًا ويسعى بعزيمة قوية لاستكمال مسيرته
+          الأكاديمية ضمن بيئة تعليمية ذات مستوى عالٍ، مستفيدًا من التكوين الثنائي اللغة والخلفية التقنية التي اكتسبها
+          خلال دراسته السابقة.
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
