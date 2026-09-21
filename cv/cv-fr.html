@@ -6,15 +6,15 @@
 <title>CV — Abdou Khadir Lo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root{
     --navy:#1a2744;
-    --navy-light:#28395e;
+    --navy-dark:#121b30;
     --gold:#c9a84c;
     --text:#2b2f38;
     --text-muted:#5c6270;
-    --bg:#f4f5f7;
+    --bg:#eef0f3;
     --white:#ffffff;
     --border:#e3e5ea;
   }
@@ -24,7 +24,7 @@
     font-family:'Inter', sans-serif;
     background:var(--bg);
     color:var(--text);
-    line-height:1.7;
+    line-height:1.75;
   }
   .page{
     max-width:210mm;
@@ -32,108 +32,91 @@
     margin:24px auto;
     background:var(--white);
     box-shadow:0 8px 30px rgba(0,0,0,0.08);
+    display:grid;
+    grid-template-columns:1fr 2.05fr;
   }
-  .cv-header{
-    background:linear-gradient(135deg, var(--navy), var(--navy-light));
+  .sidebar{
+    background:linear-gradient(160deg, var(--navy-dark), var(--navy));
     color:#fff;
-    padding:2.5rem 3rem;
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:1.5rem;
-    flex-wrap:wrap;
-    border-bottom:5px solid var(--gold);
+    padding:2.5rem 1.8rem;
   }
-  .cv-header__name{font-family:'Playfair Display', serif;font-size:2.2rem;font-weight:800;margin:0 0 0.35rem;}
-  .cv-header__title{font-size:1.05rem;font-weight:600;color:var(--gold);margin:0;}
-  .cv-header__contact{font-size:0.92rem;color:rgba(255,255,255,0.92);}
-  .cv-header__contact p{margin:0.3rem 0;}
-  .cv-body{padding:2.25rem 3rem 2.75rem;}
-  .cv-section{margin-bottom:1.85rem;}
-  .cv-section h2{
-    font-family:'Playfair Display', serif;
-    font-size:1.2rem;
-    font-weight:700;
+  .avatar{
+    width:96px;height:96px;border-radius:50%;
+    background:var(--gold);
+    color:var(--navy-dark);
+    display:flex;align-items:center;justify-content:center;
+    font-size:2.1rem;font-weight:800;
+    margin:0 auto 1.25rem;
+  }
+  .sidebar__name{text-align:center;font-size:1.35rem;font-weight:800;margin:0 0 0.35rem;}
+  .sidebar__role{text-align:center;font-size:0.85rem;color:var(--gold);font-weight:700;margin:0 0 1.75rem;}
+  .sidebar h3{
+    font-size:0.78rem;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--gold);
+    border-bottom:1px solid rgba(255,255,255,0.18);
+    padding-bottom:0.4rem;
+    margin:1.6rem 0 0.9rem;
+  }
+  .sidebar h3:first-of-type{margin-top:0;}
+  .contact-list{list-style:none;padding:0;margin:0;font-size:0.85rem;}
+  .contact-list li{display:flex;gap:0.5rem;align-items:flex-start;margin-bottom:0.65rem;color:rgba(255,255,255,0.9);}
+  .skill-bar{margin-bottom:0.85rem;}
+  .skill-bar__label{font-size:0.82rem;margin-bottom:0.3rem;color:rgba(255,255,255,0.9);}
+  .skill-bar__track{height:6px;border-radius:4px;background:rgba(255,255,255,0.18);overflow:hidden;}
+  .skill-bar__fill{height:100%;background:var(--gold);border-radius:4px;}
+  .lang-item{display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;margin-bottom:0.6rem;color:rgba(255,255,255,0.9);}
+  .dots{display:flex;gap:4px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.25);}
+  .dot.filled{background:var(--gold);}
+
+  .main{padding:2.5rem 2.5rem 2.75rem;}
+  .main h2{
+    font-size:1.05rem;
+    font-weight:800;
     color:var(--navy);
-    margin:0 0 0.9rem;
-    padding-bottom:0.5rem;
-    border-bottom:2px solid var(--border);
-    position:relative;
+    margin:0 0 1.1rem;
+    display:flex;
+    align-items:center;
+    gap:0.6rem;
   }
-  .cv-section h2::after{
+  .main h2::before{
+    content:'';
+    width:10px;height:10px;border-radius:50%;
+    background:var(--gold);
+    display:inline-block;
+  }
+  .main-section{margin-bottom:2rem;}
+  .main-section:last-child{margin-bottom:0;}
+  .main-section p{color:var(--text-muted);margin:0;font-size:0.94rem;}
+
+  .timeline{border-left:2px solid var(--border);padding-left:1.4rem;}
+  .timeline-item{position:relative;margin-bottom:1.5rem;}
+  .timeline-item:last-child{margin-bottom:0;}
+  .timeline-item::before{
     content:'';
     position:absolute;
-    left:0;
-    bottom:-2px;
-    width:52px;
-    height:2px;
-    background:var(--gold);
+    left:-1.62rem;
+    top:0.3rem;
+    width:12px;height:12px;
+    border-radius:50%;
+    background:var(--white);
+    border:3px solid var(--gold);
   }
-  .cv-section p{color:var(--text-muted);margin:0;}
-  .skills-list{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:0.6rem 1.5rem;
-    padding:0;
-    margin:0;
-    list-style:none;
-  }
-  .skills-list li{
-    color:var(--text);
-    font-size:0.95rem;
-    padding-left:1.1rem;
-    position:relative;
-  }
-  .skills-list li::before{
-    content:'◆';
-    color:var(--gold);
-    font-size:0.6rem;
-    position:absolute;
-    left:0;
-    top:0.45em;
-  }
-  .skills-list.one-col{grid-template-columns:1fr;}
-  .skill-cat{
-    font-weight:700;
-    color:var(--navy);
-    font-size:0.88rem;
-    margin:1.1rem 0 0.6rem;
-  }
-  .skill-cat:first-child{margin-top:0;}
-  .edu-item{
-    display:flex;
-    gap:1.25rem;
-    margin-bottom:1.4rem;
-  }
-  .edu-item:last-child{margin-bottom:0;}
-  .edu-item__year{
-    flex:0 0 140px;
-    font-weight:700;
-    color:var(--gold);
-    font-size:0.85rem;
-    background:#faf6ea;
+  .timeline-item__year{font-size:0.8rem;font-weight:700;color:var(--gold);margin-bottom:0.2rem;}
+  .timeline-item h3{margin:0 0 0.35rem;font-size:1rem;color:var(--navy);}
+  .timeline-item p{font-size:0.92rem;color:var(--text-muted);margin:0;}
+
+  .tag-grid{display:flex;flex-wrap:wrap;gap:0.5rem;}
+  .tag{
+    background:#f8f4e8;
     border:1px solid #ecdfb8;
-    border-radius:6px;
-    padding:0.35rem 0.6rem;
-    text-align:center;
-    height:fit-content;
+    color:#7a5f1c;
+    font-size:0.83rem;
+    padding:0.35rem 0.8rem;
+    border-radius:999px;
   }
-  .edu-item__body h3{margin:0 0 0.35rem;font-size:1.02rem;color:var(--navy);}
-  .edu-item__body p{font-size:0.93rem;}
-  .lang-grid{
-    display:grid;
-    grid-template-columns:repeat(2, 1fr);
-    gap:1rem;
-  }
-  .lang-grid > div{
-    background:#f8f9fb;
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:0.75rem 1rem;
-    font-size:0.9rem;
-  }
-  .lang-grid strong{display:block;color:var(--navy);margin-bottom:0.2rem;}
-  .placeholder{color:#b3541e;font-weight:600;}
   .note-box{
     background:#f8f9fb;
     border-left:4px solid var(--gold);
@@ -142,6 +125,7 @@
     font-size:0.9rem;
     color:var(--text-muted);
   }
+
   @media print{
     body{background:var(--white);}
     .page{margin:0;box-shadow:none;max-width:none;}
@@ -151,101 +135,118 @@
 </head>
 <body>
   <div class="page">
-    <header class="cv-header">
-      <div>
-        <p class="cv-header__name">Abdou Khadir Lo</p>
-        <p class="cv-header__title">Candidat en Génie Industriel et Management</p>
-      </div>
-      <div class="cv-header__contact">
-        <p>📧 abdoulkhadir32@gmail.com</p>
-        <p>📱 +221 77 194 67 73</p>
-        <p>💻 github.com/abdoul21091999</p>
-        <p>📍 Dakar, Sénégal</p>
-      </div>
-    </header>
+    <aside class="sidebar">
+      <div class="avatar">AK</div>
+      <p class="sidebar__name">Abdou Khadir Lo</p>
+      <p class="sidebar__role">Candidat — Génie Industriel et Management</p>
 
-    <div class="cv-body">
-      <section class="cv-section">
-        <h2>Objectif académique</h2>
+      <h3>Contact</h3>
+      <ul class="contact-list">
+        <li>📧 abdoulkhadir32@gmail.com</li>
+        <li>📱 +221 77 194 67 73</li>
+        <li>💻 github.com/abdoul21091999</li>
+        <li>📍 Dakar, Sénégal</li>
+      </ul>
+
+      <h3>Compétences techniques</h3>
+      <div class="skill-bar">
+        <div class="skill-bar__label">HTML &amp; CSS</div>
+        <div class="skill-bar__track"><div class="skill-bar__fill" style="width:80%;"></div></div>
+      </div>
+      <div class="skill-bar">
+        <div class="skill-bar__label">JavaScript / Python (bases)</div>
+        <div class="skill-bar__track"><div class="skill-bar__fill" style="width:60%;"></div></div>
+      </div>
+      <div class="skill-bar">
+        <div class="skill-bar__label">SQL &amp; UML</div>
+        <div class="skill-bar__track"><div class="skill-bar__fill" style="width:65%;"></div></div>
+      </div>
+      <div class="skill-bar">
+        <div class="skill-bar__label">Bureautique (Office)</div>
+        <div class="skill-bar__track"><div class="skill-bar__fill" style="width:85%;"></div></div>
+      </div>
+
+      <h3>Langues</h3>
+      <div class="lang-item">
+        <span>Wolof</span>
+        <span class="dots"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span></span>
+      </div>
+      <div class="lang-item">
+        <span>Arabe</span>
+        <span class="dots"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot"></span></span>
+      </div>
+      <div class="lang-item">
+        <span>Français</span>
+        <span class="dots"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot"></span><span class="dot"></span></span>
+      </div>
+      <p style="font-size:0.72rem;color:rgba(255,255,255,0.6);margin:-0.35rem 0 0.6rem;">
+        Français : niveau avancé à l'écrit et à la lecture, niveau intermédiaire à l'oral
+      </p>
+      <div class="lang-item">
+        <span>Anglais</span>
+        <span class="dots"><span class="dot filled"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="main-section">
+        <h2>Profil</h2>
         <p>
           Étudiant sénégalais de langue maternelle wolof, ayant étudié en arabe et en français tout au long de mon
           parcours scolaire. Titulaire d'un baccalauréat littéraire et d'une formation universitaire en informatique
           et gestion (HEMI). Je souhaite poursuivre mes études en <strong>Génie Industriel et Management</strong> au
-          sein d'une université suisse, afin d'acquérir une formation rigoureuse alliant fondamentaux techniques et
-          compétences managériales, dans un environnement académique exigeant et reconnu internationalement.
+          sein d'une université suisse, porté par ma curiosité technique et ma volonté de développer des compétences
+          à la fois techniques et managériales.
         </p>
       </section>
 
-      <section class="cv-section">
+      <section class="main-section">
         <h2>Formation</h2>
-        <div class="edu-item">
-          <div class="edu-item__year">2021 – 2024</div>
-          <div class="edu-item__body">
-            <h3>Licence en Informatique et Gestion — HEMI, L1 à L3 (non achevée)</h3>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-item__year">2021 – 2024</div>
+            <h3>Licence en Informatique et Gestion — HEMI (L1 à L3, non achevée)</h3>
             <p>
               HEMI (Haute École de Management et de l'Informatique), Dakar, Sénégal — Validation des deux premières
-              années (L1, L2) et d'une partie de la troisième année (L3). Matières suivies : bureautique, HTML et CSS,
-              bases de JavaScript et Python, SQL, UML, ainsi que d'autres matières.
+              années et d'une partie de la troisième année. Matières suivies : bureautique, HTML et CSS, bases de
+              JavaScript et Python, SQL, UML, ainsi que d'autres matières.
             </p>
           </div>
-        </div>
-        <div class="edu-item">
-          <div class="edu-item__year">2018</div>
-          <div class="edu-item__body">
+          <div class="timeline-item">
+            <div class="timeline-item__year">2018</div>
             <h3>Baccalauréat — Série Littéraire, option Arabe (L-AR)</h3>
             <p>École Cheikh Mouhamadou Moustapha Mbacké, Sénégal — Cursus bilingue arabe-français, avec une proportion plus importante de matières arabes.</p>
           </div>
         </div>
       </section>
 
-      <section class="cv-section">
-        <h2>Compétences</h2>
-
-        <p class="skill-cat">Programmation &amp; technologies</p>
-        <ul class="skills-list">
-          <li>HTML &amp; CSS</li>
-          <li>Bases de JavaScript</li>
-          <li>Bases de Python</li>
-          <li>SQL (bases de données)</li>
-          <li>UML (modélisation)</li>
-          <li>Bureautique (Word, Excel, PowerPoint)</li>
-        </ul>
-
-        <p class="skill-cat">Intelligence artificielle</p>
-        <ul class="skills-list one-col">
-          <li>Développement de sites web complets à l'aide d'outils d'IA générative (Claude, entre autres)</li>
-        </ul>
-
-        <p class="skill-cat">Compétences personnelles</p>
-        <ul class="skills-list">
-          <li>Analyse logique et résolution de problèmes</li>
-          <li>Organisation personnelle et rigueur dans le travail</li>
-          <li>Travail en équipe et communication</li>
-          <li>Persévérance et capacité d'adaptation</li>
-        </ul>
-      </section>
-
-      <section class="cv-section">
-        <h2>Langues</h2>
-        <div class="lang-grid">
-          <div><strong>Wolof</strong>Langue maternelle</div>
-          <div><strong>Arabe</strong>Langue d'études</div>
-          <div><strong>Français</strong>Langue d'études — niveau avancé à l'écrit et à la lecture, niveau intermédiaire à l'oral</div>
-          <div><strong>Anglais</strong>Niveau très faible</div>
+      <section class="main-section">
+        <h2>Compétences clés</h2>
+        <div class="tag-grid">
+          <span class="tag">HTML &amp; CSS</span>
+          <span class="tag">JavaScript (bases)</span>
+          <span class="tag">Python (bases)</span>
+          <span class="tag">SQL</span>
+          <span class="tag">UML</span>
+          <span class="tag">Bureautique (Word / Excel / PowerPoint)</span>
+          <span class="tag">Développement web assisté par IA (Claude, entre autres)</span>
+          <span class="tag">Esprit d'analyse</span>
+          <span class="tag">Rigueur personnelle</span>
+          <span class="tag">Persévérance</span>
         </div>
       </section>
 
-      <section class="cv-section">
+      <section class="main-section">
         <h2>Note personnelle</h2>
         <div class="note-box">
           Mon parcours universitaire a connu un retard pour deux raisons principales : des raisons de santé ayant
           nécessité une interruption temporaire de mes études, et l'instabilité du calendrier scolaire au Sénégal due
           à la crise politique traversée par le pays durant cette période. J'ai surmonté ces difficultés et je suis
           aujourd'hui pleinement déterminé à reprendre mon parcours académique dans un cadre exigeant, en mettant à
-          profit mon parcours plurilingue et les bases techniques acquises durant ma formation précédente.
+          profit mon parcours plurilingue et ma culture technique.
         </div>
       </section>
-    </div>
+    </main>
   </div>
 </body>
 </html>
