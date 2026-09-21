@@ -1461,7 +1461,14 @@ function renderStudents() {
     </div>
   `;
 
-  document.getElementById('sf-q').addEventListener('input', e => { studentFilters.q = e.target.value; renderStudents(); });
+  document.getElementById('sf-q').addEventListener('input', e => {
+    const cursor = e.target.selectionStart;
+    studentFilters.q = e.target.value;
+    renderStudents();
+    const input = document.getElementById('sf-q');
+    input.focus();
+    input.setSelectionRange(cursor, cursor);
+  });
   document.getElementById('sf-class').addEventListener('change', e => { studentFilters.classId = e.target.value; renderStudents(); });
   document.getElementById('sf-status').addEventListener('change', e => { studentFilters.status = e.target.value; renderStudents(); });
   document.getElementById('add-student-btn').addEventListener('click', () => studentForm());
@@ -2275,7 +2282,14 @@ function renderPayments() {
       </div>
     </div>
   `;
-  document.getElementById('pyf-q').addEventListener('input', e => { paymentFilters.q = e.target.value; renderPayments(); });
+  document.getElementById('pyf-q').addEventListener('input', e => {
+    const cursor = e.target.selectionStart;
+    paymentFilters.q = e.target.value;
+    renderPayments();
+    const input = document.getElementById('pyf-q');
+    input.focus();
+    input.setSelectionRange(cursor, cursor);
+  });
   document.getElementById('pyf-type').addEventListener('change', e => { paymentFilters.type = e.target.value; renderPayments(); });
   document.getElementById('pyf-add').addEventListener('click', () => paymentForm());
   el.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printReceipt(b.dataset.print)));
