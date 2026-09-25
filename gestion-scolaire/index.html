@@ -187,6 +187,8 @@ button.badge { border: none; cursor: pointer; font-family: inherit; }
 .badge--unpaid { background: var(--color-danger-light); color: var(--color-danger); }
 .badge--muted { background: #f1f5f9; color: var(--color-text-muted); }
 .badge--new { background: var(--color-primary-light); color: var(--color-primary); }
+.badge--discount { background: var(--color-warning-light); color: var(--color-warning); }
+.badge--exempt { background: var(--color-primary-light); color: var(--color-primary); }
 
 .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 .toolbar .field { min-width: 160px; }
@@ -974,6 +976,23 @@ function monthlyFeeFor(student) {
   const cls = getClass(student.classId);
   return cls ? Number(cls.monthlyFee) || 0 : 0;
 }
+function feeCategory(student) {
+  const cls = getClass(student.classId);
+  const defaultReg = Number(state.settings.defaultRegistrationFee) || 0;
+  const defaultMonthly = cls ? Number(cls.monthlyFee) || 0 : 0;
+  const defaultTotal = defaultReg + defaultMonthly;
+  if (defaultTotal <= 0) return 'full';
+  const effectiveTotal = registrationFee(student) + monthlyFeeFor(student);
+  if (effectiveTotal <= 0) return 'exempt';
+  if (effectiveTotal < defaultTotal) return 'discount';
+  return 'full';
+}
+function feeCategoryBadgeHtml(student) {
+  const cat = feeCategory(student);
+  if (cat === 'exempt') return ` <span class="badge badge--exempt">${L('🎗️ إعفاء', '🎗️ Exonéré')}</span>`;
+  if (cat === 'discount') return ` <span class="badge badge--discount">${L('🏷️ خصم', '🏷️ Remise')}</span>`;
+  return '';
+}
 function paymentMonths(p) {
   if (Array.isArray(p.months) && p.months.length) return p.months;
   return p.month ? [p.month] : [];
@@ -1391,7 +1410,7 @@ function classForm(existing) {
 }
 
 /* ================= الطلاب ================= */
-let studentFilters = { q: '', classId: '', status: '' };
+let studentFilters = { q: '', classId: '', status: '', feeCategory: '' };
 
 function renderStudents() {
   const el = document.getElementById('section-students');
@@ -1404,6 +1423,7 @@ function renderStudents() {
   }
   if (studentFilters.classId) list = list.filter(s => s.classId === studentFilters.classId);
   if (studentFilters.status) list = list.filter(s => registrationStatus(s) === studentFilters.status || monthStatus(s, month) === studentFilters.status);
+  if (studentFilters.feeCategory) list = list.filter(s => feeCategory(s) === studentFilters.feeCategory);
 
   list = sortStudentsGroupedByFamily(list);
 
@@ -1429,6 +1449,15 @@ function renderStudents() {
           <option value="unpaid" ${studentFilters.status === 'unpaid' ? 'selected' : ''}>${L('غير مسدد', 'Impayé')}</option>
         </select>
       </div>
+      <div class="field">
+        <label>${L('فئة الرسوم', 'Catégorie de frais')}</label>
+        <select id="sf-fee-category">
+          <option value="">${L('الكل', 'Toutes')}</option>
+          <option value="full" ${studentFilters.feeCategory === 'full' ? 'selected' : ''}>${L('يسدد الرسوم كاملة', 'Paie les frais complets')}</option>
+          <option value="discount" ${studentFilters.feeCategory === 'discount' ? 'selected' : ''}>${L('🏷️ خصم', '🏷️ Remise')}</option>
+          <option value="exempt" ${studentFilters.feeCategory === 'exempt' ? 'selected' : ''}>${L('🎗️ إعفاء', '🎗️ Exonéré')}</option>
+        </select>
+      </div>
       <button class="btn btn--primary" id="add-student-btn" style="align-self:flex-end">${L('＋ طالب جديد', '＋ Nouvel élève')}</button>
       <button class="btn btn--outline" id="print-students-btn" style="align-self:flex-end">${L('🖨️ طباعة القائمة', '🖨️ Imprimer la liste')}</button>
       <button class="btn btn--outline" id="print-annual-btn" style="align-self:flex-end">${L('🖨️ الكشف السنوي', '🖨️ Fiche annuelle')}</button>
@@ -1445,7 +1474,7 @@ function renderStudents() {
           <tbody>
             ${list.map(s => `
               <tr>
-                <td><strong>${escapeHtml(displayStudentName(s))}</strong>${s.nameAr && s.nameAr.trim() ? `<div style="font-size:11px;color:var(--color-text-muted)">${escapeHtml(s.name)}</div>` : ''} ${studentTypeBadgeHtml(s)}${s.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
+                <td><strong>${escapeHtml(displayStudentName(s))}</strong>${s.nameAr && s.nameAr.trim() ? `<div style="font-size:11px;color:var(--color-text-muted)">${escapeHtml(s.name)}</div>` : ''} ${studentTypeBadgeHtml(s)}${feeCategoryBadgeHtml(s)}${s.status === 'inactive' ? ` <span class="badge badge--muted">${L('غير نشط', 'Inactif')}</span>` : ''}</td>
                 <td>${escapeHtml(className(s.classId))}</td>
                 <td>${escapeHtml(s.phone || '—')}</td>
                 <td>${statusBadge(registrationStatus(s))}</td>
@@ -1471,6 +1500,7 @@ function renderStudents() {
   });
   document.getElementById('sf-class').addEventListener('change', e => { studentFilters.classId = e.target.value; renderStudents(); });
   document.getElementById('sf-status').addEventListener('change', e => { studentFilters.status = e.target.value; renderStudents(); });
+  document.getElementById('sf-fee-category').addEventListener('change', e => { studentFilters.feeCategory = e.target.value; renderStudents(); });
   document.getElementById('add-student-btn').addEventListener('click', () => studentForm());
   document.getElementById('print-students-btn').addEventListener('click', () => printStudentsList(list, month));
   document.getElementById('print-annual-btn').addEventListener('click', () => printAnnualFeeSheet(list));
