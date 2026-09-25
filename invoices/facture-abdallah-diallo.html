@@ -137,7 +137,23 @@
       margin-top: 40px;
     }
     .sig { text-align: center; }
-    .sig .line { border-top: 1px solid var(--ink); margin-top: 56px; padding-top: 6px; font-size: 14px; color: var(--muted); }
+    .sig.official { position: relative; }
+    .sig .stamp-img {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      width: 120px;
+      transform: translateX(-62%) rotate(-8deg);
+      opacity: .92;
+    }
+    .sig .sign-img {
+      position: absolute;
+      left: 50%;
+      bottom: 30px;
+      width: 150px;
+      transform: translateX(-30%);
+    }
+    .sig .line { border-top: 1px solid var(--ink); margin-top: 110px; padding-top: 6px; font-size: 14px; color: var(--muted); }
     footer {
       text-align: center;
       font-size: 12px;
@@ -170,7 +186,7 @@
       .invoice { box-shadow: none; border-radius: 0; max-width: none; }
       .print-btn { display: none; }
       html, body { font-size: 13px; line-height: 1.45; }
-      .header-img { width: 78%; margin: 0 auto; }
+      .header-img { width: 70%; margin: 0 auto; }
       .title-bar { padding: 8px 24px; }
       .title-bar h1 { font-size: 19px; }
       .content { padding: 14px 24px 16px; }
@@ -181,7 +197,7 @@
       .totals div { padding: 6px 14px; }
       .paid-stamp { margin: 14px 0; padding: 10px 16px; }
       .signatures { margin-top: 16px; }
-      .sig .line { margin-top: 40px; }
+      .sig .line { margin-top: 92px; }
       footer { padding: 8px 24px; }
       .invoice { break-inside: avoid; }
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -268,7 +284,11 @@
 
       <div class="signatures">
         <div class="sig"><div class="line">توقيع ولي الأمر</div></div>
-        <div class="sig"><div class="line">ختم وتوقيع إدارة المعهد</div></div>
+        <div class="sig official">
+          <img class="stamp-img" src="images/stamp.png" alt="">
+          <img class="sign-img" src="images/signature.png" alt="">
+          <div class="line">ختم وتوقيع إدارة المعهد</div>
+        </div>
       </div>
     </div>
 
