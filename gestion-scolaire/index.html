@@ -977,14 +977,8 @@ function monthlyFeeFor(student) {
   return cls ? Number(cls.monthlyFee) || 0 : 0;
 }
 function feeCategory(student) {
-  const cls = getClass(student.classId);
-  const defaultReg = Number(state.settings.defaultRegistrationFee) || 0;
-  const defaultMonthly = cls ? Number(cls.monthlyFee) || 0 : 0;
-  const defaultTotal = defaultReg + defaultMonthly;
-  if (defaultTotal <= 0) return 'full';
-  const effectiveTotal = registrationFee(student) + monthlyFeeFor(student);
-  if (effectiveTotal <= 0) return 'exempt';
-  if (effectiveTotal < defaultTotal) return 'discount';
+  if (student.feeStatus === 'exempt') return 'exempt';
+  if (student.feeStatus === 'discount') return 'discount';
   return 'full';
 }
 function feeCategoryBadgeHtml(student) {
@@ -1629,6 +1623,7 @@ function studentForm(existing, prefill) {
   const isEdit = !!existing;
   const isSibling = !isEdit && !!prefill;
   const seed = existing || prefill || {};
+  const feeStatus = existing && existing.feeStatus ? existing.feeStatus : 'normal';
   openModal(`
     <div class="modal__header"><h3>${isEdit ? L('تعديل بيانات الطالب', "Modifier les données de l'élève") : isSibling ? L('إضافة ابن آخر لنفس ولي الأمر', 'Ajouter un autre enfant pour ce tuteur') : L('تسجيل طالب جديد', 'Inscrire un nouvel élève')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
     <div class="modal__body">
@@ -1684,6 +1679,20 @@ function studentForm(existing, prefill) {
           <input id="sf-monthlyfee" type="number" min="0" value="${existing && existing.monthlyFeeOverride != null ? existing.monthlyFeeOverride : ''}" placeholder="${L('يُستخدم رسم القسم إن ترك فارغًا', 'Frais de la classe utilisé si laissé vide')}">
         </div>
       </div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field">
+          <label>${L('حالة الرسوم', 'Statut des frais')}</label>
+          <select id="sf-fee-status">
+            <option value="normal" ${feeStatus === 'normal' ? 'selected' : ''}>${L('عادي — يسدد الرسوم كاملة', 'Normal — frais complets')}</option>
+            <option value="discount" ${feeStatus === 'discount' ? 'selected' : ''}>${L('🏷️ خصم', '🏷️ Remise')}</option>
+            <option value="exempt" ${feeStatus === 'exempt' ? 'selected' : ''}>${L('🎗️ إعفاء', '🎗️ Exonéré')}</option>
+          </select>
+        </div>
+        <div class="field" id="sf-fee-status-note-wrap">
+          <label>${L('سبب الخصم/الإعفاء (اختياري)', 'Motif de la remise/exonération (optionnel)')}</label>
+          <input id="sf-fee-status-note" value="${escapeHtml(existing ? existing.feeStatusNote || '' : '')}" placeholder="${L('مثال: حالة اجتماعية، منحة...', 'Ex : cas social, bourse...')}">
+        </div>
+      </div>
       ${isEdit ? `
       <div class="field">
         <label>${L('الحالة', 'Statut')}</label>
@@ -1713,6 +1722,14 @@ function studentForm(existing, prefill) {
     toast(L('هذا اقتراح تلقائي — راجعه وعدّله عند الحاجة قبل الحفظ', "Ceci est une suggestion automatique — vérifiez-la avant d'enregistrer"), 'success');
   });
 
+  const feeStatusSel = document.getElementById('sf-fee-status');
+  const feeStatusNoteWrap = document.getElementById('sf-fee-status-note-wrap');
+  function updateFeeStatusVisibility() {
+    feeStatusNoteWrap.style.display = feeStatusSel.value === 'normal' ? 'none' : '';
+  }
+  feeStatusSel.addEventListener('change', updateFeeStatusVisibility);
+  updateFeeStatusVisibility();
+
   document.getElementById('sf-save').addEventListener('click', () => {
     const name = document.getElementById('sf-name').value.trim();
     if (!name) { toast(L('يرجى إدخال اسم الطالب', "Veuillez saisir le nom de l'élève"), 'error'); return; }
@@ -1724,6 +1741,8 @@ function studentForm(existing, prefill) {
       parentName: document.getElementById('sf-parent').value.trim(),
       parentNameAr: document.getElementById('sf-parent-ar').value.trim(),
       registrationDate: document.getElementById('sf-regdate').value || todayISO(),
+      feeStatus: feeStatusSel.value,
+      feeStatusNote: document.getElementById('sf-fee-status-note').value.trim(),
       registrationFee: Number(document.getElementById('sf-regfee').value) || 0,
       monthlyFeeOverride: document.getElementById('sf-monthlyfee').value === '' ? null : Number(document.getElementById('sf-monthlyfee').value)
     };
@@ -1765,7 +1784,7 @@ function studentDetail(id) {
 
   openModal(`
     <div class="modal__header">
-      <h3>${escapeHtml(displayStudentName(s))}${s.nameAr && s.nameAr.trim() ? ` <span style="font-size:12px;color:var(--color-text-muted);font-weight:400">(${escapeHtml(s.name)})</span>` : ''} ${studentTypeBadgeHtml(s)}</h3>
+      <h3>${escapeHtml(displayStudentName(s))}${s.nameAr && s.nameAr.trim() ? ` <span style="font-size:12px;color:var(--color-text-muted);font-weight:400">(${escapeHtml(s.name)})</span>` : ''} ${studentTypeBadgeHtml(s)}${feeCategoryBadgeHtml(s)}</h3>
       <button class="modal__close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal__body">
@@ -1781,6 +1800,7 @@ function studentDetail(id) {
       </div>
       <p><strong>${L('القسم:', 'Classe :')}</strong> ${escapeHtml(className(s.classId))} &nbsp; | &nbsp; <strong>${L('الهاتف:', 'Téléphone :')}</strong> ${escapeHtml(s.phone || '—')}</p>
       <p><strong>${L('ولي الأمر:', 'Tuteur :')}</strong> ${escapeHtml(displayParentName(s) || '—')}${s.parentNameAr && s.parentNameAr.trim() ? ` <span style="color:var(--color-text-muted)">(${escapeHtml(s.parentName)})</span>` : ''} &nbsp; | &nbsp; <strong>${L('تاريخ التسجيل:', "Date d'inscription :")}</strong> ${fmtDate(s.registrationDate)}</p>
+      ${s.feeStatus && s.feeStatus !== 'normal' && s.feeStatusNote ? `<p style="color:var(--color-text-muted)"><strong>${L('سبب الخصم/الإعفاء:', 'Motif de la remise/exonération :')}</strong> ${escapeHtml(s.feeStatusNote)}</p>` : ''}
       ${siblings.length ? `<p style="color:var(--color-text-muted)">👨‍👩‍👧‍👦 ${L(`لولي الأمر هذا ${siblings.length + 1} أبناء مسجّلون:`, `Ce tuteur a ${siblings.length + 1} enfant(s) inscrit(s) :`)} ${escapeHtml([s.name, ...siblings.map(x => x.name)].join(L('، ', ', ')))}</p>` : ''}
       <div class="row-actions" style="margin:10px 0 16px">
         <button class="btn btn--outline btn--sm" id="sd-add-sibling">${L('＋ إضافة ابن آخر لنفس ولي الأمر', '＋ Ajouter un autre enfant')}</button>
