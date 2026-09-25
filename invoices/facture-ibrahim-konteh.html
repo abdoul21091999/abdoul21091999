@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>فاتورة — إبراهيم كونته</title>
+  <style>
+    @font-face {
+      font-family: "Cairo";
+      src: url("fonts/cairo-arabic.woff2") format("woff2");
+      font-weight: 200 1000;
+      unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+    }
+    @font-face {
+      font-family: "Cairo";
+      src: url("fonts/cairo-latin.woff2") format("woff2");
+      font-weight: 200 1000;
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    :root {
+      --green: #1f5f3f;
+      --green-soft: #e8f2ec;
+      --gold: #b8913a;
+      --ink: #1e2a32;
+      --muted: #5c6b73;
+      --line: #d9e1e4;
+      --bg: #f3f5f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Cairo", "DejaVu Sans", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 24px 16px;
+    }
+    .invoice {
+      max-width: 794px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, .08);
+      overflow: hidden;
+    }
+    .header-img { display: block; width: 100%; height: auto; }
+    .title-bar {
+      background: var(--green);
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 32px;
+    }
+    .title-bar h1 { font-size: 22px; font-weight: 800; }
+    .title-bar .meta { font-size: 14px; }
+    .title-bar .meta span { margin-inline-start: 18px; }
+    .content { padding: 24px 32px 32px; }
+    .parties {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+    .box h3 {
+      font-size: 13px;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .box p { font-size: 16px; font-weight: 700; }
+    .box small { color: var(--muted); font-size: 13px; font-weight: 400; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th {
+      background: var(--green-soft);
+      color: var(--green);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 10px 12px;
+      text-align: right;
+      border-bottom: 2px solid var(--green);
+    }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .num { text-align: left; direction: ltr; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    td.idx, th.idx { width: 40px; text-align: center; }
+    .detail { color: var(--muted); font-size: 13px; }
+    .totals {
+      margin-inline-start: auto;
+      width: 100%;
+      max-width: 340px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .totals div {
+      display: flex;
+      justify-content: space-between;
+      padding: 9px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .totals div:last-child { border-bottom: 0; }
+    .totals .grand { background: var(--green); color: #fff; font-weight: 800; font-size: 17px; }
+    .totals .rest { font-weight: 700; color: var(--green); }
+    .paid-stamp {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 24px 0;
+      padding: 14px 18px;
+      border: 2px dashed var(--green);
+      border-radius: 8px;
+      background: var(--green-soft);
+    }
+    .stamp {
+      flex-shrink: 0;
+      border: 3px solid var(--green);
+      color: var(--green);
+      border-radius: 6px;
+      padding: 2px 14px;
+      font-weight: 800;
+      font-size: 20px;
+      transform: rotate(-6deg);
+    }
+    .paid-stamp p { font-weight: 600; }
+    .words { color: var(--muted); font-size: 14px; margin-top: 4px; }
+    .signatures {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 40px;
+    }
+    .sig { text-align: center; }
+    .sig.official { position: relative; }
+    .sig .stamp-img {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      width: 120px;
+      transform: translateX(-62%) rotate(-8deg);
+      opacity: .92;
+    }
+    .sig .sign-img {
+      position: absolute;
+      left: 50%;
+      bottom: 30px;
+      width: 150px;
+      transform: translateX(-30%);
+    }
+    .sig .line { border-top: 1px solid var(--ink); margin-top: 110px; padding-top: 6px; font-size: 14px; color: var(--muted); }
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      padding: 12px 32px;
+    }
+    .print-btn {
+      display: block;
+      margin: 20px auto 0;
+      padding: 10px 28px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--green);
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      .content { padding: 20px 16px; }
+      .title-bar { padding: 12px 16px; }
+      .parties, .signatures { grid-template-columns: 1fr; }
+      th, td { padding: 8px 6px; font-size: 13px; }
+    }
+    @page { size: A4; margin: 10mm; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .invoice { box-shadow: none; border-radius: 0; max-width: none; }
+      .print-btn { display: none; }
+      html, body { font-size: 13px; line-height: 1.45; }
+      .header-img { width: 70%; margin: 0 auto; }
+      .title-bar { padding: 8px 24px; }
+      .title-bar h1 { font-size: 19px; }
+      .content { padding: 14px 24px 16px; }
+      .parties { margin-bottom: 14px; }
+      .box { padding: 8px 14px; }
+      th, td { padding: 6px 10px; }
+      table { margin-bottom: 12px; }
+      .totals div { padding: 6px 14px; }
+      .paid-stamp { margin: 14px 0; padding: 10px 16px; }
+      .signatures { margin-top: 16px; }
+      .sig .line { margin-top: 92px; }
+      footer { padding: 8px 24px; }
+      .invoice { break-inside: avoid; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice">
+    <img class="header-img" src="images/institut-header.jpg"
+         alt="جمهورية السنغال — وزارة التربية الوطنية — معهد سرنج مختار اندمب جوب الاسلامي">
+
+    <div class="title-bar">
+      <h1>فاتورة دفع الرسوم الدراسية</h1>
+      <div class="meta">
+        <span>رقم الفاتورة: <b><bdi dir="ltr">2026-002</bdi></b></span>
+        <span>التاريخ: <b>25/09/2026</b></span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="parties">
+        <div class="box">
+          <h3>ولي الأمر</h3>
+          <p>محمد كونته <small>(Mouhamed Konteh)</small></p>
+        </div>
+        <div class="box">
+          <h3>التلميذ</h3>
+          <p>إبراهيم كونته <small>(Ibrahim Konteh)</small></p>
+          <small>السنة الدراسية: <bdi dir="ltr">2026-2027</bdi></small>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="idx">#</th>
+            <th>البيان</th>
+            <th class="num">المبلغ (فرنك)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="idx">1</td>
+            <td>الرسوم الشهرية للسنة الدراسية كاملة
+              <div class="detail">12 شهرًا × 35.000 فرنك شهريًا</div></td>
+            <td class="num">420.000</td>
+          </tr>
+          <tr>
+            <td class="idx">2</td>
+            <td>رسوم التسجيل</td>
+            <td class="num">25.000</td>
+          </tr>
+          <tr>
+            <td class="idx">3</td>
+            <td>رسوم الصحة</td>
+            <td class="num">25.000</td>
+          </tr>
+          <tr>
+            <td class="idx">4</td>
+            <td>الزي المدرسي</td>
+            <td class="num">15.000</td>
+          </tr>
+          <tr>
+            <td class="idx">5</td>
+            <td>الأدوات المدرسية</td>
+            <td class="num">35.000</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <div><span>المجموع</span><span class="num">520.000 فرنك</span></div>
+        <div class="grand"><span>المبلغ المدفوع</span><span class="num">520.000 فرنك</span></div>
+        <div class="rest"><span>المبلغ المتبقي</span><span class="num">0 فرنك</span></div>
+      </div>
+
+      <div class="paid-stamp">
+        <div class="stamp">مدفوع بالكامل</div>
+        <div>
+          <p>سدّد ولي الأمر رسوم السنة الدراسية <bdi dir="ltr">2026-2027</bdi> كاملةً، ولم يبقَ عليه أي مبلغ.</p>
+          <p class="words">المبلغ بالحروف: خمسمائة وعشرون ألف فرنك سيفا</p>
+        </div>
+      </div>
+
+      <div class="signatures">
+        <div class="sig"><div class="line">توقيع ولي الأمر</div></div>
+        <div class="sig official">
+          <img class="stamp-img" src="images/stamp.png" alt="">
+          <img class="sign-img" src="images/signature.png" alt="">
+          <div class="line">ختم وتوقيع إدارة المعهد</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      معهد سرنج مختار اندمب جوب الاسلامي — رقم الترخيص: 0006564 بتاريخ 03 ماي 2024 — <bdi dir="ltr">Ngabou — 765223379</bdi>
+    </footer>
+  </div>
+
+  <button class="print-btn" onclick="window.print()">طباعة / حفظ PDF</button>
+</body>
+</html>
