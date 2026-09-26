@@ -1,0 +1,69 @@
+rules_version = '2';
+// قواعد أمان Firestore لنظام إدارة المدرسة — تُلصق في Firebase Console ← Firestore ← Rules
+// قبل تفعيل الحسابات: أي جهاز متصل برمز المدرسة يصل إلى كل البيانات (كالسابق).
+// بعد تفعيل الحسابات: المدير (والمشرفون) فقط يصلون إلى كل شيء، والمعلّم إلى حلقاته، ووليّ الأمر إلى أبنائه فقط.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function accessPath(code) { return /databases/$(database)/documents/schoolAccess/$(code); }
+    function accountPath(code) { return /databases/$(database)/documents/schools/$(code)/accounts/$(request.auth.uid); }
+    function activated(code) { return exists(accessPath(code)); }
+    function isAdmin(code) { return signedIn() && activated(code) && request.auth.uid in get(accessPath(code)).data.admins; }
+    // قبل التفعيل تبقى المدرسة مفتوحة لكل جهاز يعرف الرمز (السلوك القديم)
+    function fullAccess(code) { return isAdmin(code) || (signedIn() && !activated(code)); }
+    function hasAccount(code) { return signedIn() && exists(accountPath(code)); }
+    function account(code) { return get(accountPath(code)).data; }
+    function teaches(code, halaqaId) { return hasAccount(code) && account(code).role == 'teacher' && halaqaId in account(code).halaqaIds; }
+    function parentOf(code, memberId) { return hasAccount(code) && account(code).role == 'parent' && memberId in account(code).memberIds; }
+
+    match /schoolAccess/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.admins == [request.auth.uid];
+      allow update: if isAdmin(code) && request.resource.data.ownerUid == resource.data.ownerUid
+                    && request.resource.data.ownerUid in request.resource.data.admins;
+      allow delete: if false;
+    }
+
+    match /schools/{code} {
+      allow read, write: if fullAccess(code);
+
+      match /public/{docId} {
+        allow read: if fullAccess(code) || hasAccount(code);
+        allow write: if fullAccess(code);
+      }
+      match /accounts/{uid} {
+        allow read: if fullAccess(code) || (signedIn() && request.auth.uid == uid);
+        allow write: if isAdmin(code);
+      }
+      match /rosters/{halaqaId} {
+        allow read: if fullAccess(code) || teaches(code, halaqaId);
+        allow write: if fullAccess(code);
+      }
+      match /parents/{uid} {
+        allow read: if fullAccess(code) || (signedIn() && request.auth.uid == uid);
+        allow write: if fullAccess(code);
+      }
+      // الكشوف الأسبوعية، كشوف الخاتمين، وتقدّم الحفظ: المعلّم يقرأ ويكتب لحلقاته، ووليّ الأمر يقرأ لأبنائه
+      match /weeklyRecords/{id} {
+        allow read: if fullAccess(code) || teaches(code, resource.data.halaqaId) || parentOf(code, resource.data.memberId);
+        allow create: if fullAccess(code) || teaches(code, request.resource.data.halaqaId);
+        allow update: if fullAccess(code) || (teaches(code, resource.data.halaqaId) && teaches(code, request.resource.data.halaqaId));
+        allow delete: if fullAccess(code);
+      }
+      match /khatimRecords/{id} {
+        allow read: if fullAccess(code) || teaches(code, resource.data.halaqaId) || parentOf(code, resource.data.memberId);
+        allow create: if fullAccess(code) || teaches(code, request.resource.data.halaqaId);
+        allow update: if fullAccess(code) || (teaches(code, resource.data.halaqaId) && teaches(code, request.resource.data.halaqaId));
+        allow delete: if fullAccess(code);
+      }
+      match /hifz/{memberId} {
+        allow read: if fullAccess(code) || teaches(code, resource.data.halaqaId) || parentOf(code, memberId);
+        allow create: if fullAccess(code) || (teaches(code, request.resource.data.halaqaId) && request.resource.data.memberId == memberId);
+        allow update: if fullAccess(code) || (teaches(code, resource.data.halaqaId) && request.resource.data.halaqaId == resource.data.halaqaId
+                      && request.resource.data.memberId == memberId);
+        allow delete: if fullAccess(code);
+      }
+    }
+  }
+}

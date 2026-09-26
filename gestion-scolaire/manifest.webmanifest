@@ -1,0 +1,13 @@
+{
+  "name": "إدارة المدرسة — Gestion scolaire",
+  "short_name": "المدرسة",
+  "description": "إدارة الطلاب والرسوم وتحفيظ القرآن — Gestion des élèves, des frais et du hifz",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6fb",
+  "theme_color": "#1e40af",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
