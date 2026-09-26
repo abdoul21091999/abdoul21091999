@@ -6,6 +6,9 @@
 <title>نظام إدارة رسوم المدرسة</title>
 <meta name="description" content="برنامج كامل لإدارة رسوم التسجيل والرسوم الشهرية للطلاب، متابعة المدفوعات، طباعة الإيصالات، وإعداد التقارير الشهرية.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+<meta name="theme-color" content="#1e40af">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
@@ -362,6 +365,26 @@ button.badge { border: none; cursor: pointer; font-family: inherit; }
 .mode-card__icon { font-size: 44px; line-height: 1; }
 .mode-card__title { font-size: 17px; font-weight: 800; color: var(--color-text); }
 .mode-card__desc { font-size: 13px; color: var(--color-text-muted); line-height: 1.7; }
+
+/* تتبّع الحفظ */
+.hifz-bar { height: 8px; background: var(--color-border); border-radius: 99px; overflow: hidden; margin: 4px 0; min-width: 80px; }
+.hifz-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--color-accent), #34d399); border-radius: 99px; }
+.hizb-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; }
+.hizb-cell { aspect-ratio: 1.25; border: 1px solid var(--color-border); border-radius: 7px; background: var(--color-surface); font: inherit; font-weight: 700; font-size: 13px; color: var(--color-text-muted); padding: 0; cursor: pointer; }
+.hizb-cell:disabled { cursor: default; }
+.hizb-cell:not(:disabled):hover { border-color: var(--color-primary); }
+.hizb-cell.on { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+.follow-list { list-style: none; margin: 0; padding: 0; }
+.follow-list li { padding: 9px 4px; border-bottom: 1px solid var(--color-border); cursor: pointer; }
+.follow-list li:last-child { border-bottom: 0; }
+.follow-list li:hover { background: var(--color-bg); }
+.follow-list small { color: var(--color-text-muted); }
+.follow-list .badge { margin-top: 4px; font-size: 11.5px; }
+@media print {
+  .sheet-print .hizb-grid { gap: 3px; }
+  .sheet-print .hizb-cell { font-size: 10px; aspect-ratio: auto; padding: 3px 0; }
+  .sheet-print .hizb-cell.on { background: #059669 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>
 </head>
 <body>
@@ -571,7 +594,8 @@ function defaultState() {
     quranPayments: [],
     quranExpenses: [],
     quranStaff: [],
-    quranSalaryPayments: []
+    quranSalaryPayments: [],
+    quranAssets: []
   };
 }
 
@@ -594,7 +618,8 @@ function normalizeLoadedState(parsed) {
     quranPayments: Array.isArray(parsed.quranPayments) ? parsed.quranPayments : [],
     quranExpenses: Array.isArray(parsed.quranExpenses) ? parsed.quranExpenses : [],
     quranStaff: Array.isArray(parsed.quranStaff) ? parsed.quranStaff : [],
-    quranSalaryPayments: Array.isArray(parsed.quranSalaryPayments) ? parsed.quranSalaryPayments : []
+    quranSalaryPayments: Array.isArray(parsed.quranSalaryPayments) ? parsed.quranSalaryPayments : [],
+    quranAssets: Array.isArray(parsed.quranAssets) ? parsed.quranAssets : []
   };
 }
 function loadState() {
@@ -3156,9 +3181,11 @@ function printSalaryReceipt(paymentId) {
 const QURAN_SECTIONS = [
   { key: 'halaqat', icon: '🕌', ar: 'الحلقات', fr: 'Cercles' },
   { key: 'members', icon: '👨‍🎓', ar: 'الأعضاء', fr: 'Membres' },
+  { key: 'hifz', icon: '🗺️', ar: 'تقدّم الحفظ', fr: 'Progression hifz' },
   { key: 'weekly', icon: '📋', ar: 'الكشف الأسبوعي', fr: 'Fiche hebdomadaire' },
   { key: 'khatim', icon: '🏅', ar: 'كشف الخاتمين', fr: 'Fiche des khatimeen' },
   { key: 'performance', icon: '📊', ar: 'الأداء', fr: 'Performance' },
+  { key: 'assets', icon: '📦', ar: 'المصاحف والممتلكات', fr: 'Mushafs & biens' },
   { key: 'report', icon: '📅', ar: 'التقرير الشهري', fr: 'Rapport mensuel' },
   { key: 'expenses', icon: '💸', ar: 'المصروفات', fr: 'Dépenses' },
   { key: 'staff', icon: '👥', ar: 'الأساتذة والرواتب', fr: 'Enseignants & salaires' },
@@ -3178,7 +3205,7 @@ function renderQuran() {
   if (homeBtn) homeBtn.addEventListener('click', () => { quranView = 'dashboard'; renderQuran(); });
   const renderers = {
     dashboard: renderQuranDashboard, halaqat: renderQuranHalaqat, members: renderQuranMembers, weekly: renderQuranWeekly, khatim: renderQuranKhatim,
-    performance: renderQuranPerformance, report: renderQuranReport, expenses: renderQuranExpenses, staff: renderQuranStaff
+    performance: renderQuranPerformance, hifz: renderQuranHifz, assets: renderQuranAssets, report: renderQuranReport, expenses: renderQuranExpenses, staff: renderQuranStaff
   };
   renderers[quranView]();
 }
@@ -3214,6 +3241,14 @@ function renderQuranDashboard() {
     .reduce((s, p) => s + Number(p.amount), 0);
 
   const recent = [...state.quranPayments].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id)).slice(0, 8);
+  const hifzMembers = activeMembers.filter(m => m.role !== 'helper');
+  const hifzAvg = hifzMembers.length ? (hifzMembers.reduce((s, m) => s + memberHizbCount(m), 0) / hifzMembers.length).toFixed(1) : '0';
+  const khatmCount = hifzMembers.filter(m => memberHizbCount(m) === 60).length;
+  const followUp = quranFollowUpList();
+  const halaqaProgress = state.quranHalaqat.map(h => {
+    const ms = hifzMembers.filter(m => m.halaqaId === h.id);
+    return { h, count: ms.length, pct: ms.length ? Math.round(ms.reduce((s, m) => s + memberHifzPct(m), 0) / ms.length) : 0 };
+  });
 
   el.innerHTML = `
     <div class="hub-grid">
@@ -3258,6 +3293,52 @@ function renderQuranDashboard() {
       </div>
     </div>
 
+    <div class="stat-grid">
+      <div class="stat-card stat-card--primary">
+        <span class="stat-card__icon">📖</span>
+        <div class="stat-card__label">${L('متوسط الأحزاب المحفوظة', 'Moyenne de hizb mémorisés')}</div>
+        <div class="stat-card__value"><span dir="ltr">${hifzAvg} / 60</span></div>
+      </div>
+      <div class="stat-card stat-card--accent">
+        <span class="stat-card__icon">🏅</span>
+        <div class="stat-card__label">${L('أتمّوا حفظ القرآن', 'Ont mémorisé tout le Coran')}</div>
+        <div class="stat-card__value">${khatmCount}</div>
+      </div>
+      <div class="stat-card stat-card--danger">
+        <span class="stat-card__icon">🔔</span>
+        <div class="stat-card__label">${L('يحتاجون متابعة', 'À suivre')}</div>
+        <div class="stat-card__value">${followUp.length}</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card__header">
+          <h3>${L('🔔 يحتاجون متابعة', '🔔 Élèves à suivre')}</h3>
+          <button class="btn btn--outline btn--sm" data-qnav="hifz">${L('تقدّم الحفظ', 'Progression hifz')}</button>
+        </div>
+        <div class="card__body">
+          ${followUp.length === 0 ? emptyState('✅', L('لا يوجد ما يستدعي المتابعة — ما شاء الله', 'Rien à signaler — machallah')) : `
+          <ul class="follow-list">
+            ${followUp.slice(0, 8).map(({ m, reasons }) => `<li data-member="${m.id}" tabindex="0" role="button">
+              <strong>${escapeHtml(m.name)}</strong> <small>${escapeHtml(halaqaName(m.halaqaId))}</small>
+              <div>${reasons.map(r => `<span class="badge badge--unpaid">${escapeHtml(r)}</span>`).join(' ')}</div>
+            </li>`).join('')}
+          </ul>${followUp.length > 8 ? `<p style="color:var(--color-text-muted);margin-top:8px">+${followUp.length - 8}</p>` : ''}`}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card__header"><h3>${L('📊 تقدّم الحلقات في الحفظ', '📊 Progression des cercles')}</h3></div>
+        <div class="card__body">
+          ${halaqaProgress.length === 0 ? emptyState('🕌', L('لا توجد حلقات', 'Aucun cercle')) : halaqaProgress.map(x => `
+            <div style="margin-bottom:12px">
+              <div style="display:flex;justify-content:space-between;gap:8px"><strong>${escapeHtml(x.h.name)}</strong><small>${x.count} ${L('عضو', 'membres')} · ${x.pct}%</small></div>
+              ${hifzBarHtml(x.pct)}
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
     <div class="grid-2">
       <div class="card">
         <div class="card__header">
@@ -3298,6 +3379,10 @@ function renderQuranDashboard() {
       </div>
     </div>
   `;
+  el.querySelectorAll('[data-member]').forEach(li => {
+    li.addEventListener('click', () => quranMemberDetail(li.dataset.member));
+    li.addEventListener('keydown', e => { if (e.key === 'Enter') quranMemberDetail(li.dataset.member); });
+  });
   el.querySelectorAll('[data-qnav]').forEach(b => {
     b.addEventListener('click', () => goQuranView(b.dataset.qnav));
     b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goQuranView(b.dataset.qnav); } });
@@ -3471,6 +3556,7 @@ function renderQuranHalaqat() {
       state.quranWeeklyRecords = state.quranWeeklyRecords.filter(r => !memberIds.includes(r.memberId));
       state.quranKhatimRecords = state.quranKhatimRecords.filter(r => !memberIds.includes(r.memberId));
       state.quranPayments = state.quranPayments.filter(p => !memberIds.includes(p.memberId));
+      state.quranAssets.forEach(a => { a.assignments = (a.assignments || []).filter(x => !memberIds.includes(x.memberId)); });
       save(); toast(L('تم حذف الحلقة', 'Cercle supprimé'), 'success'); renderQuranHalaqat();
     });
   }));
@@ -3584,6 +3670,7 @@ function renderQuranMembers() {
       state.quranWeeklyRecords = state.quranWeeklyRecords.filter(r => r.memberId !== m.id);
       state.quranKhatimRecords = state.quranKhatimRecords.filter(r => r.memberId !== m.id);
       state.quranPayments = state.quranPayments.filter(p => p.memberId !== m.id);
+      state.quranAssets.forEach(a => { a.assignments = (a.assignments || []).filter(x => x.memberId !== m.id); });
       save(); toast(L('تم الحذف', 'Supprimé'), 'success'); renderQuranMembers();
     });
   }));
@@ -3755,14 +3842,16 @@ function weeklyRecordForm(memberId, weekStart) {
       ${isStudent ? `
       <h4 style="margin-bottom:10px">${L('الدرس (تسميع جديد)', 'Leçon (nouvelle récitation)')}</h4>
       <div class="field-row" style="margin-bottom:10px">
-        <div class="field"><label>${L('بداية الأسبوع — السورة', 'Début — Sourate')}</label><input id="wf-lesson-start-surah" value="${escapeHtml(rec.lessonStartSurah || '')}"></div>
+        <div class="field"><label>${L('بداية الأسبوع — السورة', 'Début — Sourate')}</label><input id="wf-lesson-start-surah" list="surah-list" autocomplete="off" value="${escapeHtml(rec.lessonStartSurah || '')}"></div>
         <div class="field"><label>${L('رقم الآية', 'N° verset')}</label><input id="wf-lesson-start-ayah" value="${escapeHtml(rec.lessonStartAyah || '')}"></div>
       </div>
       <div class="field-row" style="margin-bottom:10px">
-        <div class="field"><label>${L('نهاية الأسبوع — السورة', 'Fin — Sourate')}</label><input id="wf-lesson-end-surah" value="${escapeHtml(rec.lessonEndSurah || '')}"></div>
+        <div class="field"><label>${L('نهاية الأسبوع — السورة', 'Fin — Sourate')}</label><input id="wf-lesson-end-surah" list="surah-list" autocomplete="off" value="${escapeHtml(rec.lessonEndSurah || '')}"></div>
         <div class="field"><label>${L('رقم الآية', 'N° verset')}</label><input id="wf-lesson-end-ayah" value="${escapeHtml(rec.lessonEndAyah || '')}"></div>
       </div>
-      <div class="field" style="margin-bottom:16px"><label>${L('المقدار (مثال: 3 أوجه)', 'Quantité (ex : 3 faces)')}</label><input id="wf-lesson-amount" value="${escapeHtml(rec.lessonAmount || '')}"></div>
+      <div class="field" style="margin-bottom:10px"><label>${L('المقدار (مثال: 3 أوجه)', 'Quantité (ex : 3 faces)')}</label><input id="wf-lesson-amount" value="${escapeHtml(rec.lessonAmount || '')}"></div>
+      <label style="display:flex;gap:8px;align-items:center;margin-bottom:16px;font-size:13.5px"><input type="checkbox" id="wf-update-pos" checked> ${L('تحديث موضع الحفظ الحالي للطالب من نهاية الدرس', "Mettre à jour la position de l'élève avec la fin de la leçon")}</label>
+      ${surahDatalistHtml()}
 
       <h4 style="margin-bottom:10px">${L('المراجعة', 'Révision')}</h4>
       <div class="field-row" style="margin-bottom:10px">
@@ -3863,6 +3952,14 @@ function weeklyRecordForm(memberId, weekStart) {
       data.revisionStart = document.getElementById('wf-rev-start').value.trim();
       data.revisionEnd = document.getElementById('wf-rev-end').value.trim();
       data.revisionAmount = document.getElementById('wf-rev-amount').value.trim();
+      const endSurah = surahIndexFromText(data.lessonEndSurah);
+      const isLatestWeek = !state.quranWeeklyRecords.some(r => r.memberId === memberId && r.weekStart > weekStart && r.lessonEndSurah);
+      if (endSurah && isLatestWeek && document.getElementById('wf-update-pos').checked) {
+        const ay = parseInt(String(data.lessonEndAyah).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)), 10);
+        m.currentSurah = endSurah;
+        m.currentAyah = ay > 0 && ay <= SURAH_AYAHS[endSurah - 1] ? ay : null;
+        m.hifzUpdatedAt = todayISO();
+      }
     }
     const existingIdx = state.quranWeeklyRecords.findIndex(r => r.memberId === memberId && r.weekStart === weekStart);
     if (existingIdx >= 0) {
@@ -4342,11 +4439,457 @@ function renderQuranPerformance() {
 }
 
 /* ================= رسوم تحفيظ القرآن (دفعات) ================= */
+/* ================= تتبّع الحفظ (خريطة الأحزاب الستين) ================= */
+const SURAH_AR = ['الفاتحة','البقرة','آل عمران','النساء','المائدة','الأنعام','الأعراف','الأنفال','التوبة','يونس','هود','يوسف','الرعد','إبراهيم','الحجر','النحل','الإسراء','الكهف','مريم','طه','الأنبياء','الحج','المؤمنون','النور','الفرقان','الشعراء','النمل','القصص','العنكبوت','الروم','لقمان','السجدة','الأحزاب','سبأ','فاطر','يس','الصافات','ص','الزمر','غافر','فصلت','الشورى','الزخرف','الدخان','الجاثية','الأحقاف','محمد','الفتح','الحجرات','ق','الذاريات','الطور','النجم','القمر','الرحمن','الواقعة','الحديد','المجادلة','الحشر','الممتحنة','الصف','الجمعة','المنافقون','التغابن','الطلاق','التحريم','الملك','القلم','الحاقة','المعارج','نوح','الجن','المزمل','المدثر','القيامة','الإنسان','المرسلات','النبأ','النازعات','عبس','التكوير','الانفطار','المطففين','الانشقاق','البروج','الطارق','الأعلى','الغاشية','الفجر','البلد','الشمس','الليل','الضحى','الشرح','التين','العلق','القدر','البينة','الزلزلة','العاديات','القارعة','التكاثر','العصر','الهمزة','الفيل','قريش','الماعون','الكوثر','الكافرون','النصر','المسد','الإخلاص','الفلق','الناس'];
+const SURAH_FR = ['Al-Fatiha','Al-Baqara','Al-Imran','An-Nisa',"Al-Ma'ida","Al-An'am","Al-A'raf",'Al-Anfal','At-Tawba','Yunus','Hud','Yusuf',"Ar-Ra'd",'Ibrahim','Al-Hijr','An-Nahl','Al-Isra','Al-Kahf','Maryam','Ta-Ha','Al-Anbiya','Al-Hajj',"Al-Mu'minun",'An-Nur','Al-Furqan',"Ash-Shu'ara",'An-Naml','Al-Qasas','Al-Ankabut','Ar-Rum','Luqman','As-Sajda','Al-Ahzab','Saba','Fatir','Ya-Sin','As-Saffat','Sad','Az-Zumar','Ghafir','Fussilat','Ash-Shura','Az-Zukhruf','Ad-Dukhan','Al-Jathiya','Al-Ahqaf','Muhammad','Al-Fath','Al-Hujurat','Qaf','Adh-Dhariyat','At-Tur','An-Najm','Al-Qamar','Ar-Rahman',"Al-Waqi'a",'Al-Hadid','Al-Mujadila','Al-Hashr','Al-Mumtahana','As-Saff',"Al-Jumu'a",'Al-Munafiqun','At-Taghabun','At-Talaq','At-Tahrim','Al-Mulk','Al-Qalam','Al-Haqqa',"Al-Ma'arij",'Nuh','Al-Jinn','Al-Muzzammil','Al-Muddaththir','Al-Qiyama','Al-Insan','Al-Mursalat','An-Naba',"An-Nazi'at",'Abasa','At-Takwir','Al-Infitar','Al-Mutaffifin','Al-Inshiqaq','Al-Buruj','At-Tariq',"Al-A'la",'Al-Ghashiya','Al-Fajr','Al-Balad','Ash-Shams','Al-Layl','Ad-Duha','Ash-Sharh','At-Tin','Al-Alaq','Al-Qadr','Al-Bayyina','Az-Zalzala','Al-Adiyat',"Al-Qari'a",'At-Takathur','Al-Asr','Al-Humaza','Al-Fil','Quraysh',"Al-Ma'un",'Al-Kawthar','Al-Kafirun','An-Nasr','Al-Masad','Al-Ikhlas','Al-Falaq','An-Nas'];
+const SURAH_AYAHS = [7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6];
+// بداية كل حزب [سورة، آية] — الحزب 1 إلى 60 بترتيب المصحف
+const HIZB_START = [[1,1],[2,75],[2,142],[2,203],[2,253],[3,15],[3,93],[3,171],[4,24],[4,88],[4,148],[5,27],[5,82],[6,36],[6,111],[7,1],[7,88],[7,171],[8,41],[9,34],[9,93],[10,26],[11,6],[11,84],[12,53],[13,19],[15,1],[16,51],[17,1],[17,99],[18,75],[20,1],[21,1],[22,1],[23,1],[24,21],[25,21],[26,111],[27,56],[28,51],[29,46],[31,22],[33,31],[34,24],[36,28],[37,145],[39,32],[40,41],[41,47],[43,24],[46,1],[48,18],[51,31],[55,1],[58,1],[62,1],[67,1],[72,1],[78,1],[87,1]];
+
+function surahName(n) { return n ? L(SURAH_AR[n - 1], SURAH_FR[n - 1]) : '—'; }
+function hizbOf(surah, ayah) {
+  let h = 1;
+  for (let i = 0; i < HIZB_START.length; i++) {
+    const [s, a] = HIZB_START[i];
+    if (surah > s || (surah === s && (ayah || 1) >= a)) h = i + 1; else break;
+  }
+  return h;
+}
+function normalizeArabic(s) {
+  return String(s || '').toLowerCase()
+    .replace(/[ً-ْٰۡ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
+    .replace(/^\s*سوره\s*/, '').replace(/^\s*sourate\s*/, '')
+    .replace(/[^a-z0-9ء-ي]/g, '');
+}
+const SURAH_KEYS = SURAH_AR.map((ar, i) => [normalizeArabic(ar), normalizeArabic(ar).replace(/^ال/, ''), normalizeArabic(SURAH_FR[i]), normalizeArabic(SURAH_FR[i]).replace(/^(al|an|ar|as|at|az|ad|adh|ash)/, '')]);
+// يحوّل نصًا حرًّا (رقم، اسم عربي أو فرنسي) إلى رقم السورة، أو 0 إن لم يُعرف
+function surahIndexFromText(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return 0;
+  const num = parseInt(raw.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)), 10);
+  if (/^\s*[\d٠-٩]+/.test(raw) && num >= 1 && num <= 114) return num;
+  const key = normalizeArabic(raw.replace(/^[\d٠-٩]+[.\-\s]*/, ''));
+  if (!key) return 0;
+  const idx = SURAH_KEYS.findIndex(keys => keys.includes(key));
+  return idx >= 0 ? idx + 1 : 0;
+}
+function surahDatalistHtml() {
+  return `<datalist id="surah-list">${SURAH_AR.map((ar, i) => `<option value="${escapeHtml(ar)}">${i + 1} — ${escapeHtml(SURAH_FR[i])}</option>`).join('')}</datalist>`;
+}
+function hifzDirection() { return state.settings.quranHifzDirection === 'fatiha' ? 'fatiha' : 'nas'; }
+function memberHizbs(m) { return Array.isArray(m.hizbs) ? m.hizbs : []; }
+function memberHizbCount(m) { return memberHizbs(m).length; }
+function memberHifzPct(m) { return Math.round(memberHizbCount(m) / 60 * 100); }
+function memberJuzCount(m) {
+  const set = new Set(memberHizbs(m));
+  let n = 0;
+  for (let j = 0; j < 30; j++) if (set.has(2 * j + 1) && set.has(2 * j + 2)) n++;
+  return n;
+}
+function memberPositionLabel(m) {
+  if (!m.currentSurah) return '—';
+  return `${surahName(m.currentSurah)}${m.currentAyah ? ' : ' + m.currentAyah : ''}`;
+}
+function hifzBarHtml(pct) {
+  return `<div class="hifz-bar" title="${pct}%"><i style="width:${pct}%"></i></div>`;
+}
+function hizbGridHtml(selected, interactive) {
+  const set = new Set(selected || []);
+  const order = Array.from({ length: 60 }, (_, i) => i + 1);
+  if (hifzDirection() === 'nas') order.reverse();
+  return `<div class="hizb-grid">${order.map(n => {
+    const [s, a] = HIZB_START[n - 1];
+    return `<button type="button" class="hizb-cell ${set.has(n) ? 'on' : ''}" ${interactive ? `data-hizb="${n}"` : 'disabled'} title="${escapeHtml(surahName(s))} ${a}">${n}</button>`;
+  }).join('')}</div>`;
+}
+// الأحزاب المُنجزة بين بداية الحفظ والموضع الحالي، حسب اتجاه الحفظ
+function hizbsUpToPosition(surah, ayah) {
+  const h = hizbOf(surah, ayah);
+  const out = [];
+  if (hifzDirection() === 'nas') { for (let n = 60; n > h; n--) out.push(n); }
+  else { for (let n = 1; n < h; n++) out.push(n); }
+  return out;
+}
+function memberWeeklyRecords(memberId) {
+  return state.quranWeeklyRecords.filter(r => r.memberId === memberId).sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+}
+function lastLessonWeek(memberId) {
+  const r = memberWeeklyRecords(memberId).find(x => x.lessonEndSurah || x.lessonAmount);
+  return r ? r.weekStart : '';
+}
+// عدد أيام الغياب المسجّلة في الكشوف الأسبوعية ابتداءً من تاريخ معيّن
+function memberAbsenceDays(memberId, sinceISO) {
+  let n = 0;
+  state.quranWeeklyRecords.filter(r => r.memberId === memberId).forEach(r => {
+    Object.entries(r.attendance || {}).forEach(([d, v]) => {
+      if (sinceISO && d < sinceISO) return;
+      if (v === 'absent' || (v && typeof v === 'object' && v.absent)) n++;
+    });
+  });
+  return n;
+}
+function lessonRangeLabel(r) {
+  const from = [r.lessonStartSurah, r.lessonStartAyah].filter(Boolean).join(' ');
+  const to = [r.lessonEndSurah, r.lessonEndAyah].filter(Boolean).join(' ');
+  return from || to ? `${escapeHtml(from || '…')} ← ${escapeHtml(to || '…')}` : '—';
+}
+
+let quranHifzFilters = { halaqaId: '', sort: 'progress' };
+function renderQuranHifz() {
+  const el = document.getElementById('quran-subview');
+  let list = state.quranMembers.filter(m => m.status !== 'inactive' && m.role !== 'helper');
+  if (quranHifzFilters.halaqaId) list = list.filter(m => m.halaqaId === quranHifzFilters.halaqaId);
+  list.sort(quranHifzFilters.sort === 'name'
+    ? (a, b) => a.name.localeCompare(b.name, sortLocale())
+    : (a, b) => memberHizbCount(b) - memberHizbCount(a) || a.name.localeCompare(b.name, sortLocale()));
+  const avg = list.length ? (list.reduce((s, m) => s + memberHizbCount(m), 0) / list.length).toFixed(1) : '0';
+  const khatm = list.filter(m => memberHizbCount(m) === 60).length;
+  const noPos = list.filter(m => !m.currentSurah && !memberHizbCount(m)).length;
+
+  el.innerHTML = `
+    <div class="toolbar">
+      <div class="field" style="min-width:200px">
+        <label>${L('الحلقة', 'Cercle')}</label>
+        <select id="qh-halaqa">
+          <option value="">${L('كل الحلقات', 'Tous les cercles')}</option>
+          ${state.quranHalaqat.map(h => `<option value="${h.id}" ${quranHifzFilters.halaqaId === h.id ? 'selected' : ''}>${escapeHtml(h.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>${L('الترتيب', 'Tri')}</label>
+        <select id="qh-sort">
+          <option value="progress" ${quranHifzFilters.sort === 'progress' ? 'selected' : ''}>${L('الأكثر حفظًا', 'Plus avancés')}</option>
+          <option value="name" ${quranHifzFilters.sort === 'name' ? 'selected' : ''}>${L('الاسم', 'Nom')}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>${L('اتجاه الحفظ', 'Sens de mémorisation')}</label>
+        <select id="qh-direction">
+          <option value="nas" ${hifzDirection() === 'nas' ? 'selected' : ''}>${L('من الناس إلى الفاتحة', "D'An-Nas vers Al-Fatiha")}</option>
+          <option value="fatiha" ${hifzDirection() === 'fatiha' ? 'selected' : ''}>${L('من الفاتحة إلى الناس', "D'Al-Fatiha vers An-Nas")}</option>
+        </select>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card stat-card--primary"><span class="stat-card__icon">📖</span><div class="stat-card__label">${L('متوسط الأحزاب المحفوظة', 'Moyenne de hizb mémorisés')}</div><div class="stat-card__value"><span dir="ltr">${avg} / 60</span></div></div>
+      <div class="stat-card stat-card--accent"><span class="stat-card__icon">🏅</span><div class="stat-card__label">${L('أتمّوا حفظ القرآن', 'Ont mémorisé tout le Coran')}</div><div class="stat-card__value">${khatm}</div></div>
+      <div class="stat-card stat-card--warn"><span class="stat-card__icon">📝</span><div class="stat-card__label">${L('بدون موضع حفظ مسجّل', 'Sans position enregistrée')}</div><div class="stat-card__value">${noPos}</div></div>
+    </div>
+    <div class="card">
+      <div class="card__body" style="padding:0">
+        ${list.length === 0 ? emptyState('📖', L('لا يوجد أعضاء', 'Aucun membre')) : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>${L('الاسم', 'Nom')}</th><th>${L('الحلقة', 'Cercle')}</th><th>${L('الموضع الحالي', 'Position actuelle')}</th><th>${L('الأحزاب', 'Hizb')}</th><th>${L('الأجزاء', 'Juz')}</th><th>${L('آخر درس', 'Dernière leçon')}</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(m => {
+              const last = lastLessonWeek(m.id);
+              return `<tr>
+                <td><strong>${escapeHtml(m.name)}</strong>${m.role === 'khatim' ? ` <span class="badge badge--partial">${memberRoleLabel(m.role)}</span>` : ''}</td>
+                <td>${escapeHtml(halaqaName(m.halaqaId))}</td>
+                <td>${escapeHtml(memberPositionLabel(m))}</td>
+                <td style="min-width:150px">${hifzBarHtml(memberHifzPct(m))}<small>${memberHizbCount(m)}/60 · ${memberHifzPct(m)}%</small></td>
+                <td>${memberJuzCount(m)}</td>
+                <td>${last ? fmtDate(last) : '—'}</td>
+                <td class="row-actions">
+                  <button class="btn btn--primary btn--sm" data-hifz="${m.id}">${L('🗺️ الحفظ', '🗺️ Hifz')}</button>
+                  <button class="btn btn--outline btn--sm" data-view="${m.id}">${L('الملف', 'Profil')}</button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table></div>`}
+      </div>
+    </div>
+  `;
+  document.getElementById('qh-halaqa').addEventListener('change', e => { quranHifzFilters.halaqaId = e.target.value; renderQuranHifz(); });
+  document.getElementById('qh-sort').addEventListener('change', e => { quranHifzFilters.sort = e.target.value; renderQuranHifz(); });
+  document.getElementById('qh-direction').addEventListener('change', e => { state.settings.quranHifzDirection = e.target.value; save(); renderQuranHifz(); });
+  el.querySelectorAll('[data-hifz]').forEach(b => b.addEventListener('click', () => quranHifzForm(b.dataset.hifz)));
+  el.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => quranMemberDetail(b.dataset.view)));
+}
+
+function quranHifzForm(memberId, onDone) {
+  const m = getMember(memberId);
+  if (!m) return;
+  let selected = new Set(memberHizbs(m));
+  const surahOpts = sel => `<option value="">—</option>` + SURAH_AR.map((ar, i) => `<option value="${i + 1}" ${Number(sel) === i + 1 ? 'selected' : ''}>${i + 1}. ${escapeHtml(ar)} — ${escapeHtml(SURAH_FR[i])}</option>`).join('');
+  openModal(`
+    <div class="modal__header"><h3>🗺️ ${L('تقدّم الحفظ', 'Progression du hifz')} — ${escapeHtml(m.name)}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field-row" style="margin-bottom:12px">
+        <div class="field"><label>${L('السورة الحالية', 'Sourate actuelle')}</label><select id="hz-surah">${surahOpts(m.currentSurah)}</select></div>
+        <div class="field"><label>${L('الآية', 'Verset')}</label><input id="hz-ayah" type="number" min="1" value="${escapeHtml(m.currentAyah || '')}"></div>
+      </div>
+      <div class="toolbar" style="margin-bottom:10px">
+        <button type="button" class="btn btn--outline btn--sm" id="hz-fill">${L('⚡ تحديد الأحزاب حتى الموضع الحالي', "⚡ Cocher les hizb jusqu'à la position")}</button>
+        <button type="button" class="btn btn--ghost btn--sm" id="hz-clear">${L('مسح الكل', 'Tout effacer')}</button>
+        <strong id="hz-count" style="align-self:center"></strong>
+      </div>
+      <p style="color:var(--color-text-muted);font-size:13px;margin-bottom:8px">${L('اضغط على رقم الحزب لتحديده كمحفوظ أو لإلغائه. الأرقام بترتيب المصحف (الحزب 1 = الفاتحة، الحزب 60 = الأعلى).', 'Touchez un hizb pour le marquer mémorisé ou non. Numérotation du mushaf (hizb 1 = Al-Fatiha, hizb 60 = Al-A\'la).')}</p>
+      <div id="hz-grid"></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="hz-save">${L('حفظ', 'Enregistrer')}</button>
+    </div>
+  `, { wide: true });
+  const paint = () => {
+    document.getElementById('hz-grid').innerHTML = hizbGridHtml([...selected], true);
+    document.getElementById('hz-count').textContent = `${selected.size}/60 ${L('حزبًا', 'hizb')} · ${Math.round(selected.size / 60 * 100)}%`;
+    document.querySelectorAll('#hz-grid [data-hizb]').forEach(b => b.addEventListener('click', () => {
+      const n = Number(b.dataset.hizb);
+      if (selected.has(n)) selected.delete(n); else selected.add(n);
+      paint();
+    }));
+  };
+  paint();
+  const surahSel = document.getElementById('hz-surah'), ayahInp = document.getElementById('hz-ayah');
+  const syncMax = () => { ayahInp.max = surahSel.value ? SURAH_AYAHS[surahSel.value - 1] : ''; };
+  syncMax();
+  surahSel.addEventListener('change', syncMax);
+  document.getElementById('hz-fill').addEventListener('click', () => {
+    const s = Number(surahSel.value);
+    if (!s) { toast(L('اختر السورة الحالية أولًا', "Choisissez d'abord la sourate actuelle"), 'error'); return; }
+    hizbsUpToPosition(s, Number(ayahInp.value) || 1).forEach(n => selected.add(n));
+    paint();
+  });
+  document.getElementById('hz-clear').addEventListener('click', () => { selected = new Set(); paint(); });
+  document.getElementById('hz-save').addEventListener('click', () => {
+    const s = Number(surahSel.value) || null;
+    const a = Number(ayahInp.value) || null;
+    if (s && a && a > SURAH_AYAHS[s - 1]) { toast(L('رقم الآية أكبر من عدد آيات السورة', 'Numéro de verset trop grand pour cette sourate'), 'error'); return; }
+    m.currentSurah = s;
+    m.currentAyah = a;
+    m.hizbs = [...selected].sort((x, y) => x - y);
+    m.hifzUpdatedAt = todayISO();
+    save(); closeModal(); toast(L('تم حفظ التقدّم', 'Progression enregistrée'), 'success');
+    if (onDone) onDone(); else refreshCurrentSection();
+  });
+}
+
+/* ---- كشف متابعة لولي الأمر (طباعة) + رسالة واتساب ---- */
+function printQuranMemberReport(memberId) {
+  const m = getMember(memberId);
+  if (!m) return;
+  const h = getHalaqa(m.halaqaId);
+  const weeks = memberWeeklyRecords(m.id).slice(0, 8);
+  const months = lastNMonths(6).reverse().filter(mo => quranIsEnrolledInMonth(m, mo));
+  const since = addDaysISO(todayISO(), -30);
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="sheet-print">
+      ${quranLogoHtml()}
+      <h2 style="text-align:center;margin-bottom:2px">${escapeHtml(displayedQuranSchoolName())}</h2>
+      <h3 style="text-align:center;margin:0 0 14px">${L('كشف متابعة الطالب', "Bulletin de suivi de l'élève")}</h3>
+      <table style="margin-bottom:12px">
+        <tr><th>${L('الاسم', 'Nom')}</th><td>${escapeHtml(m.name)}</td><th>${L('الحلقة', 'Cercle')}</th><td>${escapeHtml(h ? h.name : '—')}</td></tr>
+        <tr><th>${L('الأستاذ', 'Enseignant')}</th><td>${escapeHtml(h && h.teacherName ? h.teacherName : '—')}</td><th>${L('الموضع الحالي', 'Position actuelle')}</th><td>${escapeHtml(memberPositionLabel(m))}</td></tr>
+        <tr><th>${L('الأحزاب المحفوظة', 'Hizb mémorisés')}</th><td><strong>${memberHizbCount(m)} / 60 (${memberHifzPct(m)}%)</strong></td><th>${L('الأجزاء الكاملة', 'Juz complets')}</th><td>${memberJuzCount(m)} / 30</td></tr>
+        <tr><th>${L('الغياب (آخر 30 يومًا)', 'Absences (30 derniers jours)')}</th><td>${memberAbsenceDays(m.id, since)}</td><th>${L('تاريخ الإصدار', "Date d'édition")}</th><td>${fmtDate(todayISO())}</td></tr>
+      </table>
+      <h4 style="margin:10px 0 6px">${L('خريطة الأحزاب الستين', 'Carte des 60 hizb')}</h4>
+      ${hizbGridHtml(memberHizbs(m), false)}
+      <h4 style="margin:14px 0 6px">${L('الدروس الأخيرة', 'Dernières leçons')}</h4>
+      <table>
+        <thead><tr><th>${L('الأسبوع', 'Semaine')}</th><th>${L('الدرس', 'Leçon')}</th><th>${L('المقدار', 'Qté')}</th><th>${L('المراجعة', 'Révision')}</th><th>${L('الغياب', 'Absences')}</th></tr></thead>
+        <tbody>
+          ${weeks.map(r => `<tr><td>${fmtDate(r.weekStart)}</td><td>${lessonRangeLabel(r)}</td><td>${escapeHtml(r.lessonAmount || '')}</td>
+            <td>${escapeHtml([r.revisionStart, r.revisionEnd].filter(Boolean).join(' ← '))} ${escapeHtml(r.revisionAmount || '')}</td>
+            <td>${Object.values(r.attendance || {}).filter(v => v === 'absent' || (v && v.absent)).length}</td></tr>`).join('') || `<tr><td colspan="5">—</td></tr>`}
+        </tbody>
+      </table>
+      ${months.length ? `
+      <h4 style="margin:14px 0 6px">${L('الرسوم الشهرية', 'Mensualités')}</h4>
+      <table><tr>${months.map(mo => `<th>${monthLabel(mo)}</th>`).join('')}</tr><tr>${months.map(mo => `<td>${statusBadge(quranMonthStatus(m, mo))}</td>`).join('')}</tr></table>` : ''}
+      <div style="display:flex;justify-content:space-between;margin-top:26px">
+        <span>${L('ملاحظات الأستاذ:', "Remarques de l'enseignant :")} ______________________</span>
+        <span>${L('التوقيع:', 'Signature :')} ____________</span>
+      </div>
+    </div>
+  `;
+  window.print();
+}
+function buildMemberReportWhatsAppText(m) {
+  const h = getHalaqa(m.halaqaId);
+  const last = memberWeeklyRecords(m.id)[0];
+  const month = currentMonth();
+  const lines = [
+    L('السلام عليكم ورحمة الله', 'Assalamou alaykoum'),
+    L(`تقرير متابعة الطالب: ${m.name}`, `Suivi de l'élève : ${m.name}`),
+    `${displayedQuranSchoolName()}${h ? ' — ' + h.name : ''}`,
+    '',
+    L(`📖 الأحزاب المحفوظة: ${memberHizbCount(m)} من 60 (${memberHifzPct(m)}%)`, `📖 Hizb mémorisés : ${memberHizbCount(m)} sur 60 (${memberHifzPct(m)} %)`),
+    L(`📍 الموضع الحالي: ${memberPositionLabel(m)}`, `📍 Position actuelle : ${memberPositionLabel(m)}`),
+  ];
+  if (last) lines.push(L(`📝 آخر درس (${fmtDate(last.weekStart)}): ${[last.lessonEndSurah, last.lessonEndAyah].filter(Boolean).join(' ') || '—'} ${last.lessonAmount ? '— ' + last.lessonAmount : ''}`,
+    `📝 Dernière leçon (${fmtDate(last.weekStart)}) : ${[last.lessonEndSurah, last.lessonEndAyah].filter(Boolean).join(' ') || '—'} ${last.lessonAmount ? '— ' + last.lessonAmount : ''}`));
+  lines.push(L(`🗓️ أيام الغياب (آخر 30 يومًا): ${memberAbsenceDays(m.id, addDaysISO(todayISO(), -30))}`, `🗓️ Jours d'absence (30 derniers jours) : ${memberAbsenceDays(m.id, addDaysISO(todayISO(), -30))}`));
+  if (quranIsEnrolledInMonth(m, month) && quranMonthlyFeeFor(m) > 0) {
+    const rest = Math.max(0, quranMonthlyFeeFor(m) - quranMonthPaid(m, month));
+    lines.push(rest > 0
+      ? L(`💰 رسوم ${monthLabel(month)}: متبقٍ ${rest.toLocaleString('en-US')} ${state.settings.currency}`, `💰 Mensualité ${monthLabel(month)} : reste ${rest.toLocaleString('en-US')} ${state.settings.currency}`)
+      : L(`💰 رسوم ${monthLabel(month)}: مسددة ✅`, `💰 Mensualité ${monthLabel(month)} : réglée ✅`));
+  }
+  lines.push('', L('جزاكم الله خيرًا', 'Jazakallahou khayran'));
+  return lines.join('\n');
+}
+
+/* ================= المصاحف والممتلكات ================= */
+const QURAN_ASSET_TYPES = [
+  { key: 'mushaf', ar: 'مصحف', fr: 'Mushaf' },
+  { key: 'lawh', ar: 'لوح', fr: 'Tablette (alluwa)' },
+  { key: 'book', ar: 'كتاب', fr: 'Livre' },
+  { key: 'furniture', ar: 'أثاث', fr: 'Mobilier' },
+  { key: 'equipment', ar: 'معدات', fr: 'Équipement' },
+  { key: 'other', ar: 'أخرى', fr: 'Autre' },
+];
+function assetTypeLabel(k) { const t = QURAN_ASSET_TYPES.find(x => x.key === k); return t ? L(t.ar, t.fr) : k; }
+function renderQuranAssets() {
+  const el = document.getElementById('quran-subview');
+  const list = [...state.quranAssets].sort((a, b) => (a.type + a.name).localeCompare(b.type + b.name, sortLocale()));
+  const total = list.reduce((s, a) => s + (Number(a.quantity) || 0) * (Number(a.unitValue) || 0), 0);
+  const assigned = list.reduce((s, a) => s + (a.assignments || []).length, 0);
+  el.innerHTML = `
+    <div class="toolbar"><button class="btn btn--primary" id="add-asset-btn">${L('＋ إضافة عنصر', '＋ Ajouter un article')}</button></div>
+    <div class="stat-grid">
+      <div class="stat-card stat-card--primary"><span class="stat-card__icon">📦</span><div class="stat-card__label">${L('عدد العناصر', "Nombre d'articles")}</div><div class="stat-card__value">${list.reduce((s, a) => s + (Number(a.quantity) || 0), 0)}</div></div>
+      <div class="stat-card stat-card--accent"><span class="stat-card__icon">💰</span><div class="stat-card__label">${L('القيمة الإجمالية', 'Valeur totale')}</div><div class="stat-card__value">${fmtMoney(total)}</div></div>
+      <div class="stat-card stat-card--warn"><span class="stat-card__icon">🤝</span><div class="stat-card__label">${L('مُسلَّمة للطلاب', 'Remis aux élèves')}</div><div class="stat-card__value">${assigned}</div></div>
+    </div>
+    <div class="card"><div class="card__body" style="padding:0">
+      ${list.length === 0 ? emptyState('📦', L('لم تُضِف أي عنصر بعد (مصاحف، ألواح، أثاث...)', 'Aucun article (mushafs, tablettes, mobilier…)')) : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>${L('العنصر', 'Article')}</th><th>${L('النوع', 'Type')}</th><th>${L('الكمية', 'Quantité')}</th><th>${L('المتاح', 'Disponible')}</th><th>${L('القيمة', 'Valeur')}</th><th>${L('آخر جرد', 'Dernier inventaire')}</th><th></th></tr></thead>
+        <tbody>
+          ${list.map(a => {
+            const used = (a.assignments || []).length;
+            return `<tr>
+              <td><strong>${escapeHtml(a.name)}</strong>${used ? `<br><small style="color:var(--color-text-muted)">${(a.assignments || []).map(x => { const mm = getMember(x.memberId); return escapeHtml(mm ? mm.name : L('محذوف', 'Supprimé')); }).join('، ')}</small>` : ''}</td>
+              <td>${assetTypeLabel(a.type)}</td>
+              <td>${Number(a.quantity) || 0}</td>
+              <td>${Math.max(0, (Number(a.quantity) || 0) - used)}</td>
+              <td>${fmtMoney((Number(a.quantity) || 0) * (Number(a.unitValue) || 0))}</td>
+              <td>${fmtDate(a.countedOn)}</td>
+              <td class="row-actions">
+                <button class="btn btn--primary btn--sm" data-assign="${a.id}">${L('تسليم', 'Remettre')}</button>
+                <button class="btn btn--outline btn--sm" data-edit="${a.id}">${L('تعديل', 'Modifier')}</button>
+                <button class="btn btn--danger btn--sm" data-del="${a.id}">${L('حذف', 'Supprimer')}</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>`}
+    </div></div>
+  `;
+  document.getElementById('add-asset-btn').addEventListener('click', () => quranAssetForm());
+  el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => quranAssetForm(state.quranAssets.find(a => a.id === b.dataset.edit))));
+  el.querySelectorAll('[data-assign]').forEach(b => b.addEventListener('click', () => quranAssetAssignForm(state.quranAssets.find(a => a.id === b.dataset.assign))));
+  el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    const a = state.quranAssets.find(x => x.id === b.dataset.del);
+    confirmAction(L(`هل تريد حذف "${a.name}"؟`, `Supprimer « ${a.name} » ?`), () => {
+      state.quranAssets = state.quranAssets.filter(x => x.id !== a.id);
+      save(); toast(L('تم الحذف', 'Supprimé'), 'success'); renderQuranAssets();
+    });
+  }));
+}
+function quranAssetForm(existing) {
+  const isEdit = !!existing;
+  const a = existing || { type: 'mushaf', quantity: 1, countedOn: todayISO() };
+  openModal(`
+    <div class="modal__header"><h3>${isEdit ? L('تعديل عنصر', "Modifier l'article") : L('إضافة عنصر', 'Ajouter un article')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field" style="margin-bottom:14px"><label>${L('اسم العنصر *', "Nom de l'article *")}</label><input id="af-name" value="${escapeHtml(a.name || '')}" placeholder="${L('مثال: مصحف ورش — من عمّ إلى الناس', 'Ex : Mushaf warsh — Amma à Nass')}"></div>
+      <div class="field-row" style="margin-bottom:14px">
+        <div class="field"><label>${L('النوع', 'Type')}</label><select id="af-type">${QURAN_ASSET_TYPES.map(t => `<option value="${t.key}" ${a.type === t.key ? 'selected' : ''}>${L(t.ar, t.fr)}</option>`).join('')}</select></div>
+        <div class="field"><label>${L('الكمية', 'Quantité')}</label><input id="af-qty" type="number" min="0" value="${escapeHtml(a.quantity)}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>${L('قيمة الوحدة', 'Valeur unitaire')} (${escapeHtml(state.settings.currency)})</label><input id="af-value" type="number" min="0" value="${escapeHtml(a.unitValue || '')}"></div>
+        <div class="field"><label>${L('تاريخ آخر جرد', 'Dernier inventaire')}</label><input id="af-date" type="date" value="${escapeHtml(a.countedOn || '')}"></div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="af-save">${L('حفظ', 'Enregistrer')}</button>
+    </div>
+  `);
+  document.getElementById('af-save').addEventListener('click', () => {
+    const name = document.getElementById('af-name').value.trim();
+    if (!name) { toast(L('يرجى إدخال اسم العنصر', "Veuillez saisir le nom de l'article"), 'error'); return; }
+    const qty = Math.max(0, parseInt(document.getElementById('af-qty').value, 10) || 0);
+    const data = { name, type: document.getElementById('af-type').value, quantity: qty, unitValue: Number(document.getElementById('af-value').value) || 0, countedOn: document.getElementById('af-date').value };
+    if (isEdit) Object.assign(existing, data); else state.quranAssets.push({ id: uid('qas'), assignments: [], ...data });
+    save(); closeModal(); toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success'); renderQuranAssets();
+  });
+}
+function quranAssetAssignForm(a) {
+  if (!a) return;
+  a.assignments = a.assignments || [];
+  const members = state.quranMembers.filter(m => m.status !== 'inactive').sort((x, y) => x.name.localeCompare(y.name, sortLocale()));
+  const draw = () => {
+    const free = (Number(a.quantity) || 0) - a.assignments.length;
+    openModal(`
+      <div class="modal__header"><h3>🤝 ${escapeHtml(a.name)}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+      <div class="modal__body">
+        <p style="margin-bottom:12px">${L('المتاح:', 'Disponible :')} <strong>${Math.max(0, free)}</strong> / ${Number(a.quantity) || 0}</p>
+        ${a.assignments.length ? `<div class="table-wrap" style="margin-bottom:14px"><table>
+          <thead><tr><th>${L('الطالب', 'Élève')}</th><th>${L('تاريخ التسليم', 'Remis le')}</th><th></th></tr></thead>
+          <tbody>${a.assignments.map((x, i) => { const mm = getMember(x.memberId); return `<tr><td>${escapeHtml(mm ? mm.name : L('محذوف', 'Supprimé'))}</td><td>${fmtDate(x.date)}</td><td class="row-actions"><button class="btn btn--outline btn--sm" data-return="${i}">${L('↩ استرجاع', '↩ Récupérer')}</button></td></tr>`; }).join('')}</tbody>
+        </table></div>` : ''}
+        ${free > 0 ? `<div class="field-row">
+          <div class="field"><label>${L('تسليم إلى', 'Remettre à')}</label><select id="as-member"><option value="">—</option>${members.map(m => `<option value="${m.id}">${escapeHtml(m.name)} — ${escapeHtml(halaqaName(m.halaqaId))}</option>`).join('')}</select></div>
+          <button class="btn btn--primary" id="as-add" style="align-self:flex-end">${L('تسليم', 'Remettre')}</button>
+        </div>` : `<p style="color:var(--color-text-muted)">${L('لا توجد وحدات متاحة.', 'Aucune unité disponible.')}</p>`}
+      </div>
+      <div class="modal__footer"><button class="btn btn--ghost" onclick="closeModal()">${L('إغلاق', 'Fermer')}</button></div>
+    `);
+    document.querySelectorAll('[data-return]').forEach(b => b.addEventListener('click', () => {
+      a.assignments.splice(Number(b.dataset.return), 1); save(); renderQuranAssets(); draw();
+    }));
+    const add = document.getElementById('as-add');
+    if (add) add.addEventListener('click', () => {
+      const memberId = document.getElementById('as-member').value;
+      if (!memberId) { toast(L('اختر الطالب', "Choisissez l'élève"), 'error'); return; }
+      a.assignments.push({ memberId, date: todayISO() }); save(); renderQuranAssets(); draw();
+    });
+  };
+  draw();
+}
+
+/* ---- تنبيهات "يحتاج متابعة" للوحة التحكم ---- */
+function quranFollowUpList() {
+  const weekStart = quranWeekStart(todayISO());
+  const prevWeek = addDaysISO(weekStart, -7);
+  const since = addDaysISO(todayISO(), -14);
+  const out = [];
+  state.quranMembers.filter(m => m.status !== 'inactive').forEach(m => {
+    const reasons = [];
+    const abs = memberAbsenceDays(m.id, since);
+    if (abs >= 2) reasons.push(L(`${abs} أيام غياب خلال أسبوعين`, `${abs} jours d'absence en 2 semaines`));
+    if (m.role === 'student') {
+      const hasRecent = state.quranWeeklyRecords.some(r => r.memberId === m.id && r.weekStart >= prevWeek && weeklyRecordFilled(r));
+      if (!hasRecent) reasons.push(L('لا يوجد كشف أسبوعي مسجّل مؤخرًا', 'Aucune fiche hebdomadaire récente'));
+    }
+    const month = currentMonth();
+    if (quranIsEnrolledInMonth(m, month) && quranMonthlyFeeFor(m) > 0) {
+      const prev = addDaysISO(month + '-01', -1).slice(0, 7);
+      if (quranIsEnrolledInMonth(m, prev) && quranMonthStatus(m, prev) === 'unpaid' && quranMonthStatus(m, month) === 'unpaid') reasons.push(L('شهران بدون دفع', 'Deux mois impayés'));
+    }
+    if (reasons.length) out.push({ m, reasons });
+  });
+  return out.sort((a, b) => b.reasons.length - a.reasons.length);
+}
+
 function quranMemberDetail(id) {
   const m = getMember(id);
   if (!m) return;
   const month = currentMonth();
   const payments = state.quranPayments.filter(p => p.memberId === id).sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+  const weeks = memberWeeklyRecords(id).slice(0, 6);
+  const since30 = addDaysISO(todayISO(), -30);
+  const assets = state.quranAssets.filter(a => (a.assignments || []).some(x => x.memberId === id));
+  const showHifz = m.role !== 'helper';
 
   openModal(`
     <div class="modal__header">
@@ -4354,7 +4897,16 @@ function quranMemberDetail(id) {
       <button class="modal__close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal__body">
-      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:18px">
+      <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:18px">
+        ${showHifz ? `<div class="stat-card stat-card--accent">
+          <div class="stat-card__label">${L('الأحزاب المحفوظة', 'Hizb mémorisés')}</div>
+          <div class="stat-card__value">${memberHizbCount(m)}/60</div>
+          ${hifzBarHtml(memberHifzPct(m))}
+        </div>` : ''}
+        <div class="stat-card stat-card--danger">
+          <div class="stat-card__label">${L('الغياب (30 يومًا)', 'Absences (30 j)')}</div>
+          <div class="stat-card__value">${memberAbsenceDays(id, since30)}</div>
+        </div>
         <div class="stat-card stat-card--warn">
           <div class="stat-card__label">${L('متبقٍ من رسوم التسجيل', 'Solde restant — inscription')}</div>
           <div class="stat-card__value">${fmtMoney(quranRegistrationBalance(m))}</div>
@@ -4366,6 +4918,27 @@ function quranMemberDetail(id) {
       </div>
       <p><strong>${L('الحلقة:', 'Cercle :')}</strong> ${escapeHtml(halaqaName(m.halaqaId))} &nbsp; | &nbsp; <strong>${L('الدور:', 'Rôle :')}</strong> ${memberRoleLabel(m.role)}</p>
       <p><strong>${L('الهاتف:', 'Téléphone :')}</strong> ${escapeHtml(m.phone || '—')} &nbsp; | &nbsp; <strong>${L('تاريخ التسجيل:', "Date d'inscription :")}</strong> ${fmtDate(m.registrationDate)}</p>
+      <div class="toolbar" style="margin:12px 0 0">
+        ${showHifz ? `<button class="btn btn--primary btn--sm" id="qmd-hifz">${L('🗺️ تحديث الحفظ', '🗺️ Mettre à jour le hifz')}</button>` : ''}
+        <button class="btn btn--outline btn--sm" id="qmd-report">${L('🖨️ كشف لولي الأمر', '🖨️ Bulletin pour le tuteur')}</button>
+        ${m.phone ? `<button class="btn btn--outline btn--sm" id="qmd-wa">${L('📤 إرسال التقرير عبر واتساب', '📤 Envoyer le suivi par WhatsApp')}</button>` : ''}
+      </div>
+
+      ${showHifz ? `
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
+      <h4 style="margin-bottom:6px">${L('تقدّم الحفظ', 'Progression du hifz')}</h4>
+      <p style="margin-bottom:8px;color:var(--color-text-muted)">${L('الموضع الحالي:', 'Position actuelle :')} <strong>${escapeHtml(memberPositionLabel(m))}</strong> · ${L('الأجزاء الكاملة:', 'Juz complets :')} <strong>${memberJuzCount(m)}/30</strong>${m.hifzUpdatedAt ? ` · ${L('آخر تحديث:', 'Mis à jour le')} ${fmtDate(m.hifzUpdatedAt)}` : ''}</p>
+      ${hizbGridHtml(memberHizbs(m), false)}
+
+      <h4 style="margin:16px 0 8px">${L('الدروس الأخيرة', 'Dernières leçons')}</h4>
+      ${weeks.length === 0 ? emptyState('📋', L('لا توجد كشوف أسبوعية بعد', 'Aucune fiche hebdomadaire')) : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>${L('الأسبوع', 'Semaine')}</th><th>${L('الدرس', 'Leçon')}</th><th>${L('المقدار', 'Qté')}</th><th>${L('المراجعة', 'Révision')}</th><th>${L('الغياب', 'Abs.')}</th></tr></thead>
+        <tbody>${weeks.map(r => `<tr><td>${fmtDate(r.weekStart)}</td><td>${lessonRangeLabel(r)}</td><td>${escapeHtml(r.lessonAmount || '')}</td><td>${escapeHtml(r.revisionAmount || '')}</td><td>${Object.values(r.attendance || {}).filter(v => v === 'absent' || (v && v.absent)).length}</td></tr>`).join('')}</tbody>
+      </table></div>`}` : ''}
+
+      ${assets.length ? `<p style="margin-top:14px"><strong>📦 ${L('عهدة الطالب:', "Matériel remis :")}</strong> ${assets.map(a => escapeHtml(a.name)).join('، ')}</p>` : ''}
+
       <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
       <h4 style="margin-bottom:10px">${L('سجل الدفعات', 'Historique des paiements')}</h4>
       ${payments.length === 0 ? emptyState('💳', L('لا توجد دفعات مسجّلة', 'Aucun paiement enregistré')) : `
@@ -4392,6 +4965,11 @@ function quranMemberDetail(id) {
 
   document.getElementById('qmd-edit').addEventListener('click', () => memberForm(m));
   document.getElementById('qmd-pay').addEventListener('click', () => quranPaymentForm(m.id));
+  document.getElementById('qmd-report').addEventListener('click', () => printQuranMemberReport(m.id));
+  const hifzBtn = document.getElementById('qmd-hifz');
+  if (hifzBtn) hifzBtn.addEventListener('click', () => quranHifzForm(m.id, () => { refreshCurrentSection(); quranMemberDetail(m.id); }));
+  const waBtn = document.getElementById('qmd-wa');
+  if (waBtn) waBtn.addEventListener('click', () => sendWhatsApp(m.phone, buildMemberReportWhatsAppText(m)));
   document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printQuranReceipt(b.dataset.print)));
   document.getElementById('modal-container').querySelectorAll('[data-toggle-status]').forEach(b => b.addEventListener('click', () => {
     m.studentType = nextStudentType(m.studentType);
@@ -5555,6 +6133,10 @@ async function init() {
 
   navigate('dashboard');
   renderGate();
+
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 
   if (getFirebaseConfig() && schoolCode) {
     const ok = await initFirebase();
