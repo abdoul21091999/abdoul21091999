@@ -1,0 +1,13 @@
+{
+  "name": "École coranique — المدرسة القرآنية",
+  "short_name": "Daara",
+  "description": "Gestion des élèves, du hifz, des présences et des mensualités du daara",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f3ea",
+  "theme_color": "#0e6a37",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
