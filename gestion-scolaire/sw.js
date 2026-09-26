@@ -1,5 +1,5 @@
 /* يتيح تثبيت التطبيق على الهاتف وفتحه بدون إنترنت. */
-const CACHE = 'gestion-scolaire-v1';
+const CACHE = 'gestion-scolaire-v2';
 const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon.svg'];
 
 self.addEventListener('install', e => {

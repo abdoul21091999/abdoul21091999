@@ -385,6 +385,11 @@ button.badge { border: none; cursor: pointer; font-family: inherit; }
   .sheet-print .hizb-cell { font-size: 10px; aspect-ratio: auto; padding: 3px 0; }
   .sheet-print .hizb-cell.on { background: #059669 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* قوائم الاختيار في نماذج الحسابات */
+.check-list { max-height: 260px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 8px 10px; }
+.check-list label, .check-list > div { display: flex; gap: 8px; align-items: center; padding: 5px 0; font-weight: 500; }
+.check-list small { color: var(--color-text-muted); }
 </style>
 </head>
 <body>
@@ -633,6 +638,8 @@ function loadState() {
   }
 }
 function save() {
+  if (portalRole) { portalSave(); return; }
+  if (adminSync.ready) stampLocalChanges();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   if (fbDb && schoolCode) {
     fbDb.collection('schools').doc(schoolCode).set(state).catch(err => {
@@ -640,6 +647,7 @@ function save() {
       toast(L('تعذّر رفع آخر تحديث للمزامنة — سيُعاد المحاولة لاحقًا', 'Échec de synchronisation — nouvelle tentative plus tard'), 'error');
     });
   }
+  if (adminSync.ready) runMirror();
 }
 
 /* ---------------- الاتصال المشترك (Firebase) ---------------- */
@@ -686,7 +694,7 @@ function initFirebase() {
   try {
     fbApp = firebase.initializeApp(cfg);
     fbDb = firebase.firestore();
-    return firebase.auth().signInAnonymously().then(() => true).catch(err => {
+    return waitForAuthUser().then(u => u ? true : firebase.auth().signInAnonymously().then(() => true)).catch(err => {
       console.error('Firebase auth failed', err);
       toast(L('تعذّر الاتصال بقاعدة البيانات — تحقق من إعدادات Firebase', 'Échec de connexion — vérifiez la configuration Firebase'), 'error');
       fbApp = null; fbDb = null;
@@ -703,23 +711,1063 @@ function attachSchoolListener() {
   if (!fbDb || !schoolCode) return;
   if (fbUnsub) { fbUnsub(); fbUnsub = null; }
   fbUnsub = fbDb.collection('schools').doc(schoolCode).onSnapshot(snap => {
+    if (!adminSync.mainLoaded) { adminSync.mainLoaded = true; maybeAdminSyncReady(); }
     if (!snap.exists) return;
     const remote = snap.data();
     if (JSON.stringify(remote) === JSON.stringify(state)) return;
     state = normalizeLoadedState(remote);
+    // ما كتبه المعلّمون في المجموعات الفرعية يبقى الأحدث
+    if (adminSync.ready && reapplyCacheToState()) { persistMergedState(); return; }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     renderBrand();
     renderStaticTexts();
     refreshCurrentSection();
-  }, err => { console.error('Firestore listen error', err); });
+  }, err => {
+    if (err && err.code === 'permission-denied') { onAdminAccessDenied(); return; }
+    console.error('Firestore listen error', err);
+  });
+  startAdminSync();
 }
 
 function disconnectSchool() {
   if (fbUnsub) { fbUnsub(); fbUnsub = null; }
+  stopAdminSync();
+  accessInfo = null;
   localStorage.removeItem(SCHOOL_CODE_KEY);
   schoolCode = '';
   refreshCurrentSection();
   toast(L('تم قطع الاتصال المشترك — بياناتك الحالية محفوظة محليًا فقط الآن', 'Déconnecté — vos données restent maintenant uniquement locales'), 'success');
+}
+
+const FIRESTORE_RULES = String.raw`rules_version = '2';
+// قواعد أمان Firestore لنظام إدارة المدرسة — تُلصق في Firebase Console ← Firestore ← Rules
+// قبل تفعيل الحسابات: أي جهاز متصل برمز المدرسة يصل إلى كل البيانات (كالسابق).
+// بعد تفعيل الحسابات: المدير (والمشرفون) فقط يصلون إلى كل شيء، والمعلّم إلى حلقاته، ووليّ الأمر إلى أبنائه فقط.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function accessPath(code) { return /databases/$(database)/documents/schoolAccess/$(code); }
+    function accountPath(code) { return /databases/$(database)/documents/schools/$(code)/accounts/$(request.auth.uid); }
+    function activated(code) { return exists(accessPath(code)); }
+    function isAdmin(code) { return signedIn() && activated(code) && request.auth.uid in get(accessPath(code)).data.admins; }
+    // قبل التفعيل تبقى المدرسة مفتوحة لكل جهاز يعرف الرمز (السلوك القديم)
+    function fullAccess(code) { return isAdmin(code) || (signedIn() && !activated(code)); }
+    function hasAccount(code) { return signedIn() && exists(accountPath(code)); }
+    function account(code) { return get(accountPath(code)).data; }
+    function teaches(code, halaqaId) { return hasAccount(code) && account(code).role == 'teacher' && halaqaId in account(code).halaqaIds; }
+    function parentOf(code, memberId) { return hasAccount(code) && account(code).role == 'parent' && memberId in account(code).memberIds; }
+
+    match /schoolAccess/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.admins == [request.auth.uid];
+      allow update: if isAdmin(code) && request.resource.data.ownerUid == resource.data.ownerUid
+                    && request.resource.data.ownerUid in request.resource.data.admins;
+      allow delete: if false;
+    }
+
+    match /schools/{code} {
+      allow read, write: if fullAccess(code);
+
+      match /public/{docId} {
+        allow read: if fullAccess(code) || hasAccount(code);
+        allow write: if fullAccess(code);
+      }
+      match /accounts/{uid} {
+        allow read: if fullAccess(code) || (signedIn() && request.auth.uid == uid);
+        allow write: if isAdmin(code);
+      }
+      match /rosters/{halaqaId} {
+        allow read: if fullAccess(code) || teaches(code, halaqaId);
+        allow write: if fullAccess(code);
+      }
+      match /parents/{uid} {
+        allow read: if fullAccess(code) || (signedIn() && request.auth.uid == uid);
+        allow write: if fullAccess(code);
+      }
+      // الكشوف الأسبوعية، كشوف الخاتمين، وتقدّم الحفظ: المعلّم يقرأ ويكتب لحلقاته، ووليّ الأمر يقرأ لأبنائه
+      match /weeklyRecords/{id} {
+        allow read: if fullAccess(code) || teaches(code, resource.data.halaqaId) || parentOf(code, resource.data.memberId);
+        allow create: if fullAccess(code) || teaches(code, request.resource.data.halaqaId);
+        allow update: if fullAccess(code) || (teaches(code, resource.data.halaqaId) && teaches(code, request.resource.data.halaqaId));
+        allow delete: if fullAccess(code);
+      }
+      match /khatimRecords/{id} {
+        allow read: if fullAccess(code) || teaches(code, resource.data.halaqaId) || parentOf(code, resource.data.memberId);
+        allow create: if fullAccess(code) || teaches(code, request.resource.data.halaqaId);
+        allow update: if fullAccess(code) || (teaches(code, resource.data.halaqaId) && teaches(code, request.resource.data.halaqaId));
+        allow delete: if fullAccess(code);
+      }
+      match /hifz/{memberId} {
+        allow read: if fullAccess(code) || teaches(code, resource.data.halaqaId) || parentOf(code, memberId);
+        allow create: if fullAccess(code) || (teaches(code, request.resource.data.halaqaId) && request.resource.data.memberId == memberId);
+        allow update: if fullAccess(code) || (teaches(code, resource.data.halaqaId) && request.resource.data.halaqaId == resource.data.halaqaId
+                      && request.resource.data.memberId == memberId);
+        allow delete: if fullAccess(code);
+      }
+    }
+  }
+}
+`;
+/* =========================================================
+   الحسابات والصلاحيات (مدير / معلّم / وليّ أمر)
+   - المدير: يصل إلى كل البيانات (الوثيقة الرئيسية schools/{code}).
+   - المعلّم: يقرأ قائمة أعضاء حلقاته ويكتب الكشوف الأسبوعية وتقدّم الحفظ فقط.
+   - وليّ الأمر: يقرأ تقدّم أبنائه وحالة رسومهم فقط.
+   جهاز المدير يُنشر نسخًا مجزّأة من البيانات (rosters / weeklyRecords / hifz / parents)
+   تحميها قواعد الأمان في firestore.rules، ويدمج تلقائيًا ما يكتبه المعلّمون.
+   ========================================================= */
+const PORTAL_KEY = 'sfm_portal';
+const PORTAL_LANG_KEY = 'sfm_portal_lang';
+const ACCOUNT_EMAIL_DOMAIN = 'school.example.com';
+let portalRole = '';      // 'teacher' | 'parent' عند العمل كبوابة
+let myAccount = null;     // وثيقة الحساب الحالي
+let accessInfo = null;    // schoolAccess/{code} عند تفعيل الحسابات
+let accountsList = [];    // حسابات المدرسة (للمدير)
+const adminSync = { active: false, ready: false, mainLoaded: false, pending: 0, unsubs: [], cache: new Map() };
+const portalSync = { unsubs: [], cache: new Map(), rosters: {}, hifz: {}, weekly: {}, khatim: {}, parentDoc: null, info: {} };
+
+function accountEmail(code, username) {
+  return `${String(username).trim().toLowerCase()}@${String(code).toLowerCase()}.${ACCOUNT_EMAIL_DOMAIN}`;
+}
+function stableStringify(v) {
+  if (Array.isArray(v)) return '[' + v.map(stableStringify).join(',') + ']';
+  if (v && typeof v === 'object') {
+    return '{' + Object.keys(v).filter(k => v[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + stableStringify(v[k])).join(',') + '}';
+  }
+  return JSON.stringify(v === undefined ? null : v);
+}
+function withoutKeys(obj, keys) { const o = { ...obj }; keys.forEach(k => delete o[k]); return o; }
+function contentKey(data) { return stableStringify(withoutKeys(data, ['updatedAt'])); }
+function firestoreSafe(obj) { return JSON.parse(JSON.stringify(obj)); }
+function waitForAuthUser() {
+  return new Promise(res => { const un = firebase.auth().onAuthStateChanged(u => { un(); res(u); }); });
+}
+function currentUid() { const u = firebase.auth && fbApp ? firebase.auth().currentUser : null; return u ? u.uid : ''; }
+function randomDigits(n) { let s = ''; for (let i = 0; i < n; i++) s += Math.floor(Math.random() * 10); return s; }
+function b64urlEncode(str) { return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function b64urlDecode(str) { return decodeURIComponent(escape(atob(str.replace(/-/g, '+').replace(/_/g, '/')))); }
+function roleLabel(role) {
+  return { admin: L('مشرف', 'Administrateur'), teacher: L('معلّم', 'Enseignant'), parent: L('وليّ أمر', 'Parent') }[role] || role;
+}
+async function commitWrites(writes) {
+  // writes: [{ path, data }] أو [{ path, del: true }] — مقسّمة على دفعات (حد Firestore 500)
+  for (let i = 0; i < writes.length; i += 450) {
+    const batch = fbDb.batch();
+    writes.slice(i, i + 450).forEach(w => {
+      const ref = fbDb.doc(w.path);
+      if (w.del) batch.delete(ref); else batch.set(ref, w.data);
+    });
+    await batch.commit();
+  }
+}
+
+/* ---------------- رابط الدخول للمعلّم / وليّ الأمر ---------------- */
+function buildJoinLink(username) {
+  const payload = b64urlEncode(JSON.stringify({ c: getFirebaseConfig(), s: schoolCode, u: username || '' }));
+  return `${location.origin}${location.pathname}#join=${payload}`;
+}
+function consumeJoinLink() {
+  const m = (location.hash || '').match(/#join=([A-Za-z0-9_-]+)/);
+  if (!m) return;
+  try {
+    const p = JSON.parse(b64urlDecode(m[1]));
+    if (p && p.c && p.c.apiKey && p.s) {
+      localStorage.setItem(PORTAL_KEY, JSON.stringify({ cfg: p.c, code: String(p.s).toUpperCase(), username: p.u || '' }));
+    }
+  } catch (e) { console.error('Invalid join link', e); }
+  history.replaceState(null, '', location.pathname + location.search);
+}
+function getPortalSession() {
+  try { return JSON.parse(localStorage.getItem(PORTAL_KEY) || 'null'); } catch (e) { return null; }
+}
+
+/* ---------------- شاشة تسجيل الدخول ---------------- */
+function renderGateLogin(opts) {
+  // opts: { code, username, note, onBack }
+  const gate = document.getElementById('connect-gate');
+  document.getElementById('app-root').hidden = true;
+  document.getElementById('mode-gate').hidden = true;
+  gate.hidden = false;
+  document.getElementById('gate-content').innerHTML = `
+    <h2>🔐 ${L('تسجيل الدخول', 'Connexion')}</h2>
+    <p class="help">${opts.note ? escapeHtml(opts.note) : L('أدخل اسم المستخدم وكلمة المرور اللذين أرسلهما لك مدير المدرسة.', "Saisissez l'identifiant et le mot de passe envoyés par le directeur de l'école.")}</p>
+    <p class="help" style="margin-top:-6px">${L('رمز المدرسة:', "Code de l'école :")} <strong>${escapeHtml(opts.code)}</strong></p>
+    <div class="field" style="margin-bottom:12px"><label>${L('اسم المستخدم', "Nom d'utilisateur")}</label><input id="gl-user" autocomplete="username" autocapitalize="none" value="${escapeHtml(opts.username || '')}"></div>
+    <div class="field" style="margin-bottom:16px"><label>${L('كلمة المرور', 'Mot de passe')}</label><input id="gl-pass" type="password" autocomplete="current-password"></div>
+    <button class="btn btn--primary" id="gl-login" style="width:100%;margin-bottom:10px">${L('دخول', 'Se connecter')}</button>
+    ${opts.onBack ? `<button class="btn btn--ghost" id="gl-back" style="width:100%">${L('رجوع', 'Retour')}</button>` : ''}
+  `;
+  const submit = async () => {
+    const username = document.getElementById('gl-user').value.trim();
+    const password = document.getElementById('gl-pass').value;
+    if (!username || !password) { toast(L('أدخل اسم المستخدم وكلمة المرور', "Saisissez l'identifiant et le mot de passe"), 'error'); return; }
+    const btn = document.getElementById('gl-login');
+    btn.disabled = true;
+    try {
+      await firebase.auth().signInWithEmailAndPassword(accountEmail(opts.code, username), password);
+      const acc = await fbDb.doc(`schools/${opts.code}/accounts/${currentUid()}`).get();
+      if (!acc.exists) {
+        await firebase.auth().signOut();
+        throw { code: 'no-account' };
+      }
+      routeAfterLogin(acc.data(), opts.code, username);
+    } catch (e) {
+      const wrong = ['auth/wrong-password', 'auth/user-not-found', 'auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/invalid-email', 'no-account'];
+      if (!wrong.includes(e.code)) console.error(e);
+      toast(wrong.includes(e.code)
+        ? L('اسم المستخدم أو كلمة المرور غير صحيحة', 'Identifiant ou mot de passe incorrect')
+        : L('تعذّر تسجيل الدخول — تحقق من الاتصال بالإنترنت', 'Connexion impossible — vérifiez votre connexion internet'), 'error');
+      btn.disabled = false;
+    }
+  };
+  document.getElementById('gl-login').addEventListener('click', submit);
+  document.getElementById('gl-pass').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  if (opts.onBack) document.getElementById('gl-back').addEventListener('click', opts.onBack);
+}
+function routeAfterLogin(account, code, username) {
+  const cfg = fbApp.options;
+  if (account.role === 'admin') {
+    localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(cfg));
+    localStorage.setItem(SCHOOL_CODE_KEY, code);
+    localStorage.removeItem(PORTAL_KEY);
+  } else {
+    localStorage.setItem(PORTAL_KEY, JSON.stringify({ cfg, code, username }));
+  }
+  location.reload();
+}
+async function logoutAccount() {
+  try { await firebase.auth().signOut(); } catch (e) { /* ignore */ }
+  const p = getPortalSession();
+  if (p) localStorage.setItem(PORTAL_KEY, JSON.stringify({ ...p }));
+  location.reload();
+}
+
+/* ================= جهة المدير: التفعيل والمزامنة المجزّأة ================= */
+function onAdminAccessDenied() {
+  if (fbUnsub) { fbUnsub(); fbUnsub = null; }
+  stopAdminSync();
+  renderGateLogin({
+    code: schoolCode,
+    note: L('تم تفعيل الحسابات في هذه المدرسة — سجّل الدخول بحساب المدير أو المشرف.', 'Les comptes sont activés pour cette école — connectez-vous avec un compte administrateur.'),
+    onBack: () => { disconnectSchool(); renderGate(); }
+  });
+}
+async function startAdminSync() {
+  if (!fbDb || !schoolCode || adminSync.active) return;
+  let snap;
+  try { snap = await fbDb.collection('schoolAccess').doc(schoolCode).get(); } catch (e) { console.error(e); return; }
+  accessInfo = snap.exists ? snap.data() : null;
+  if (!accessInfo || !(accessInfo.admins || []).includes(currentUid())) return;
+  adminSync.active = true;
+  adminSync.ready = false;
+  adminSync.cache = new Map();
+  const base = `schools/${schoolCode}`;
+  const collections = ['weeklyRecords', 'khatimRecords', 'hifz', 'rosters', 'parents', 'public'];
+  adminSync.pending = collections.length + 1;
+  const firstDone = new Set();
+  const markInitial = key => {
+    if (firstDone.has(key)) return;
+    firstDone.add(key);
+    adminSync.pending--;
+    maybeAdminSyncReady();
+  };
+  collections.forEach(col => {
+    const unsub = fbDb.collection(`${base}/${col}`).onSnapshot(qs => {
+      let changed = false;
+      qs.docChanges().forEach(ch => {
+        const path = ch.doc.ref.path;
+        if (ch.type === 'removed') {
+          adminSync.cache.delete(path);
+          if (removeRemoteFromState(col, ch.doc.id)) changed = true;
+          return;
+        }
+        const data = ch.doc.data();
+        adminSync.cache.set(path, data);
+        if (applyRemoteToState(col, ch.doc.id, data)) changed = true;
+      });
+      markInitial(col);
+      if (changed && adminSync.ready) persistMergedState();
+    }, err => console.error('sync listen', col, err));
+    adminSync.unsubs.push(unsub);
+  });
+  adminSync.unsubs.push(fbDb.collection(`${base}/accounts`).onSnapshot(qs => {
+    accountsList = qs.docs.map(d => ({ uid: d.id, ...d.data() }));
+    markInitial('accounts');
+    if (adminSync.ready) runMirror();
+    renderAccountsCard();
+  }, err => console.error('accounts listen', err)));
+}
+function maybeAdminSyncReady() {
+  if (adminSync.ready || adminSync.pending > 0 || !adminSync.mainLoaded) return;
+  adminSync.ready = true;
+  reapplyCacheToState();
+  persistMergedState();
+}
+function stopAdminSync() {
+  adminSync.unsubs.forEach(u => { try { u(); } catch (e) { /* ignore */ } });
+  adminSync.unsubs = [];
+  adminSync.active = false;
+  adminSync.ready = false;
+  adminSync.mainLoaded = false;
+}
+// بعد استبدال الحالة بنسخة الوثيقة الرئيسية (من جهاز آخر)، نعيد تطبيق ما في المجموعات الفرعية
+function reapplyCacheToState() {
+  let changed = false;
+  adminSync.cache.forEach((data, path) => {
+    const parts = path.split('/');
+    if (applyRemoteToState(parts[2], parts[3], data)) changed = true;
+  });
+  return changed;
+}
+function persistMergedState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (fbDb && schoolCode) fbDb.collection('schools').doc(schoolCode).set(state).catch(err => console.error(err));
+  runMirror();
+  refreshCurrentSection();
+}
+function recordListFor(col) { return col === 'weeklyRecords' ? state.quranWeeklyRecords : col === 'khatimRecords' ? state.quranKhatimRecords : null; }
+// يدمج وثيقة بعيدة (كتبها معلّم مثلًا) في الحالة المحلية إن كانت أحدث. يعيد true عند التغيير.
+function applyRemoteToState(col, id, data) {
+  const list = recordListFor(col);
+  if (list) {
+    const incoming = withoutKeys(data, ['halaqaId']);
+    const idx = list.findIndex(r => r.id === id);
+    if (idx < 0) {
+      if (!getMember(incoming.memberId)) return false;
+      list.push({ ...incoming, id });
+      return true;
+    }
+    const local = list[idx];
+    if (contentKey(withoutKeys(local, ['halaqaId'])) === contentKey(incoming)) return false;
+    if ((Number(data.updatedAt) || 0) < (Number(local.updatedAt) || 0)) return false;
+    list[idx] = { ...incoming, id };
+    return true;
+  }
+  if (col === 'hifz') {
+    const m = getMember(id);
+    if (!m) return false;
+    const local = hifzDocFor(m);
+    if (contentKey(withoutKeys(local, ['halaqaId'])) === contentKey(withoutKeys(data, ['halaqaId']))) return false;
+    if ((Number(data.updatedAt) || 0) < (Number(m.hifzStamp) || 0)) return false;
+    m.hizbs = Array.isArray(data.hizbs) ? data.hizbs : [];
+    m.currentSurah = data.currentSurah || null;
+    m.currentAyah = data.currentAyah || null;
+    m.hifzUpdatedAt = data.hifzUpdatedAt || '';
+    m.hifzStamp = Number(data.updatedAt) || 0;
+    return true;
+  }
+  return false;
+}
+function removeRemoteFromState(col, id) {
+  const list = recordListFor(col);
+  if (!list) return false;
+  const idx = list.findIndex(r => r.id === id);
+  if (idx < 0) return false;
+  list.splice(idx, 1);
+  return true;
+}
+function hifzDocFor(m) {
+  return {
+    memberId: m.id, halaqaId: m.halaqaId || '',
+    hizbs: Array.isArray(m.hizbs) ? m.hizbs : [],
+    currentSurah: m.currentSurah || null, currentAyah: m.currentAyah || null,
+    hifzUpdatedAt: m.hifzUpdatedAt || '', updatedAt: Number(m.hifzStamp) || 0
+  };
+}
+function parentPaymentSummary(p) {
+  return { date: p.date || '', amount: Number(p.amount) || 0, type: p.type, months: paymentMonths(p), receiptNumber: p.receiptNumber || '' };
+}
+// الوثائق التي يجب أن تكون منشورة، محسوبة من الحالة المحلية
+function desiredMirrorDocs() {
+  const base = `schools/${schoolCode}`;
+  const docs = new Map();
+  const addRecord = (col, r) => {
+    const m = getMember(r.memberId);
+    if (!m) return;
+    docs.set(`${base}/${col}/${r.id}`, { ...withoutKeys(r, ['id']), halaqaId: m.halaqaId || '', updatedAt: Number(r.updatedAt) || 0 });
+  };
+  state.quranWeeklyRecords.forEach(r => addRecord('weeklyRecords', r));
+  state.quranKhatimRecords.forEach(r => addRecord('khatimRecords', r));
+  state.quranMembers.forEach(m => docs.set(`${base}/hifz/${m.id}`, hifzDocFor(m)));
+  state.quranHalaqat.forEach(h => docs.set(`${base}/rosters/${h.id}`, {
+    halaqaId: h.id, name: h.name, teacherName: h.teacherName || '',
+    members: state.quranMembers.filter(m => m.halaqaId === h.id && m.status !== 'inactive')
+      .map(m => ({ id: m.id, name: m.name, role: m.role, level: m.level || '', registrationDate: m.registrationDate || '', phone: m.phone || '', studentType: m.studentType || '' }))
+  }));
+  docs.set(`${base}/public/info`, {
+    quranSchoolNameAr: state.settings.quranSchoolNameAr || '', quranSchoolNameFr: state.settings.quranSchoolNameFr || '',
+    quranLogo: quranLogoSrc() || '', currency: state.settings.currency || 'FCFA', hifzDirection: hifzDirection()
+  });
+  accountsList.filter(a => a.role === 'parent').forEach(a => {
+    const children = (a.memberIds || []).map(id => {
+      const m = getMember(id);
+      if (!m) return null;
+      const h = getHalaqa(m.halaqaId);
+      const months = lastNMonths(6).reverse().filter(mo => quranIsEnrolledInMonth(m, mo))
+        .map(mo => ({ month: mo, status: quranMonthStatus(m, mo), paid: quranMonthPaid(m, mo), due: quranMonthlyFeeFor(m) }));
+      const payments = state.quranPayments.filter(p => p.memberId === id)
+        .sort((x, y) => (y.date + y.id).localeCompare(x.date + x.id)).slice(0, 10).map(parentPaymentSummary);
+      return {
+        id: m.id, name: m.name, role: m.role, level: m.level || '', halaqaName: h ? h.name : '', teacherName: h ? h.teacherName || '' : '',
+        registrationDate: m.registrationDate || '', monthlyFee: quranMonthlyFeeFor(m), registrationBalance: quranRegistrationBalance(m), months, payments
+      };
+    }).filter(Boolean);
+    docs.set(`${base}/parents/${a.uid}`, { name: a.name || '', children });
+  });
+  return docs;
+}
+// يختم التعديلات المحلية بوقتها قبل رفعها (لحلّ التعارض مع تعديلات المعلّمين)
+function stampLocalChanges() {
+  const now = Date.now();
+  const base = `schools/${schoolCode}`;
+  const stampList = (col, list) => list.forEach(r => {
+    const m = getMember(r.memberId);
+    if (!m) return;
+    const cached = adminSync.cache.get(`${base}/${col}/${r.id}`);
+    const desired = { ...withoutKeys(r, ['id']), halaqaId: m.halaqaId || '' };
+    if (!cached || contentKey(desired) !== contentKey(cached)) r.updatedAt = now;
+  });
+  stampList('weeklyRecords', state.quranWeeklyRecords);
+  stampList('khatimRecords', state.quranKhatimRecords);
+  state.quranMembers.forEach(m => {
+    const cached = adminSync.cache.get(`${base}/hifz/${m.id}`);
+    if (!cached || contentKey(hifzDocFor(m)) !== contentKey(cached)) m.hifzStamp = now;
+  });
+}
+let mirrorRunning = false, mirrorQueued = false;
+async function runMirror() {
+  if (!adminSync.ready || !fbDb || !schoolCode) return;
+  if (mirrorRunning) { mirrorQueued = true; return; }
+  mirrorRunning = true;
+  try {
+    const desired = desiredMirrorDocs();
+    const writes = [];
+    desired.forEach((data, path) => {
+      const safe = firestoreSafe(data);
+      const cached = adminSync.cache.get(path);
+      if (!cached || contentKey(cached) !== contentKey(safe)) writes.push({ path, data: safe });
+    });
+    adminSync.cache.forEach((_, path) => { if (!desired.has(path)) writes.push({ path, del: true }); });
+    if (writes.length) {
+      writes.forEach(w => { if (w.del) adminSync.cache.delete(w.path); else adminSync.cache.set(w.path, w.data); });
+      await commitWrites(writes);
+    }
+  } catch (e) {
+    console.error('mirror failed', e);
+  } finally {
+    mirrorRunning = false;
+    if (mirrorQueued) { mirrorQueued = false; runMirror(); }
+  }
+}
+
+/* ---- إنشاء الحسابات (بتطبيق Firebase ثانوي حتى لا يُسجَّل خروج المدير) ---- */
+async function createAuthUser(email, password) {
+  const sec = firebase.initializeApp(getFirebaseConfig(), 'acct-' + Date.now());
+  try {
+    const cred = await sec.auth().createUserWithEmailAndPassword(email, password);
+    const uid = cred.user.uid;
+    await sec.auth().signOut();
+    return uid;
+  } finally {
+    sec.delete().catch(() => {});
+  }
+}
+function authErrorMessage(e) {
+  const map = {
+    'auth/operation-not-allowed': L('طريقة الدخول بالبريد وكلمة المرور غير مفعّلة في Firebase. افتح Firebase Console ← Authentication ← Sign-in method وفعّل "Email/Password".',
+      'La connexion par e-mail/mot de passe est désactivée. Dans Firebase Console ← Authentication ← Sign-in method, activez « Email/Password ».'),
+    'auth/email-already-in-use': L('اسم المستخدم هذا مستخدم من قبل — اختر اسمًا آخر', "Ce nom d'utilisateur est déjà pris — choisissez-en un autre"),
+    'auth/credential-already-in-use': L('اسم المستخدم هذا مستخدم من قبل — اختر اسمًا آخر', "Ce nom d'utilisateur est déjà pris — choisissez-en un autre"),
+    'auth/weak-password': L('كلمة المرور قصيرة جدًا (6 أحرف على الأقل)', 'Mot de passe trop court (6 caractères minimum)'),
+    'auth/invalid-email': L('اسم المستخدم يجب أن يحتوي على حروف لاتينية وأرقام فقط', "L'identifiant ne doit contenir que des lettres latines et des chiffres"),
+    'auth/network-request-failed': L('لا يوجد اتصال بالإنترنت', 'Pas de connexion internet'),
+  };
+  return map[e && e.code] || L('حدث خطأ: ', 'Erreur : ') + ((e && (e.code || e.message)) || '');
+}
+function validUsername(u) { return /^[a-z0-9][a-z0-9._-]{2,29}$/.test(u); }
+
+async function activateAccounts(username, password, name) {
+  const user = firebase.auth().currentUser;
+  if (!user) throw { code: 'auth/network-request-failed' };
+  const email = accountEmail(schoolCode, username);
+  if (user.isAnonymous) {
+    await user.linkWithCredential(firebase.auth.EmailAuthProvider.credential(email, password));
+  }
+  const uid = user.uid;
+  await fbDb.collection('schoolAccess').doc(schoolCode).set({ ownerUid: uid, admins: [uid], activatedAt: new Date().toISOString() });
+  await fbDb.doc(`schools/${schoolCode}/accounts/${uid}`).set({ role: 'admin', username, name: name || '', phone: '', createdAt: new Date().toISOString() });
+  adminSync.mainLoaded = true;
+  await startAdminSync();
+}
+async function checkRulesApplied() {
+  // جهاز مجهول مؤقت يحاول قراءة البيانات: إن نجح فالقواعد القديمة ما زالت مفعّلة
+  const sec = firebase.initializeApp(getFirebaseConfig(), 'rules-check-' + Date.now());
+  try {
+    await sec.auth().signInAnonymously();
+    await sec.firestore().collection('schools').doc(schoolCode).get();
+    return false;
+  } catch (e) {
+    return e && e.code === 'permission-denied';
+  } finally {
+    try { const u = sec.auth().currentUser; if (u) await u.delete(); } catch (e) { /* ignore */ }
+    sec.delete().catch(() => {});
+  }
+}
+
+/* ---- بطاقة الحسابات في الإعدادات ---- */
+function accountsCardHtml() {
+  const isConnected = !!(getFirebaseConfig() && schoolCode);
+  const head = `<div class="card__header"><h3>👥 ${L('حسابات المعلّمين وأولياء الأمور', 'Comptes enseignants et parents')}</h3></div>`;
+  if (!isConnected) {
+    return `<div class="card" style="max-width:640px;margin-bottom:18px">${head}<div class="card__body">
+      <p style="color:var(--color-text-muted)">${L('لإنشاء حسابات للمعلّمين وأولياء الأمور فعّل "المزامنة المشتركة" أولًا (أعلاه).', "Pour créer des comptes enseignants et parents, activez d'abord la « synchronisation partagée » (ci-dessus).")}</p>
+    </div></div>`;
+  }
+  if (!accessInfo) {
+    return `<div class="card" style="max-width:640px;margin-bottom:18px">${head}<div class="card__body">
+      <p style="margin-bottom:10px">${L('بعد التفعيل: كل معلّم يدخل من هاتفه ويرى حلقاته فقط ويسجّل الكشوف الأسبوعية والحفظ، وكل وليّ أمر يرى تقدّم أبنائه ورسومهم فقط. الأجهزة المتصلة بالرمز فقط تحتاج بعدها إلى تسجيل الدخول بحساب مشرف.',
+        "Après activation : chaque enseignant se connecte depuis son téléphone, voit uniquement ses cercles et remplit les fiches et le hifz ; chaque parent voit uniquement la progression et les frais de ses enfants. Les appareils connectés par simple code devront se connecter avec un compte administrateur.")}</p>
+      <ol style="margin:0 0 12px;padding-inline-start:20px;color:var(--color-text-muted);font-size:13.5px">
+        <li>${L('في Firebase Console ← Authentication ← Sign-in method فعّل "Email/Password".', 'Dans Firebase Console ← Authentication ← Sign-in method, activez « Email/Password ».')}</li>
+        <li>${L('اختر اسم مستخدم وكلمة مرور لحسابك كمدير واضغط "تفعيل".', 'Choisissez un identifiant et un mot de passe pour votre compte directeur, puis « Activer ».')}</li>
+        <li>${L('انسخ قواعد الأمان الجديدة والصقها في Firestore ← Rules.', 'Copiez les nouvelles règles de sécurité dans Firestore ← Rules.')}</li>
+      </ol>
+      <div class="field-row" style="margin-bottom:10px">
+        <div class="field"><label>${L('اسم المستخدم للمدير', 'Identifiant du directeur')}</label><input id="acc-admin-user" value="admin" autocapitalize="none"></div>
+        <div class="field"><label>${L('كلمة المرور (6 أحرف على الأقل)', 'Mot de passe (6 caractères min.)')}</label><input id="acc-admin-pass" type="password" autocomplete="new-password"></div>
+      </div>
+      <button class="btn btn--primary" id="acc-activate">${L('🔐 تفعيل الحسابات', '🔐 Activer les comptes')}</button>
+    </div></div>`;
+  }
+  const me = currentUid();
+  const halaqaNames = ids => (ids || []).map(id => halaqaName(id)).join('، ') || '—';
+  const memberNames = ids => (ids || []).map(id => { const m = getMember(id); return m ? m.name : L('محذوف', 'Supprimé'); }).join('، ') || '—';
+  const sorted = [...accountsList].sort((a, b) => (a.role + (a.name || '')).localeCompare(b.role + (b.name || ''), sortLocale()));
+  return `<div class="card" style="max-width:900px;margin-bottom:18px">${head}<div class="card__body">
+    <div id="acc-rules-status" style="margin-bottom:12px"></div>
+    <div class="toolbar" style="margin-bottom:12px">
+      <button class="btn btn--primary btn--sm" data-new-account="teacher">${L('＋ حساب معلّم', '＋ Compte enseignant')}</button>
+      <button class="btn btn--primary btn--sm" data-new-account="parent">${L('＋ حساب وليّ أمر', '＋ Compte parent')}</button>
+      <button class="btn btn--outline btn--sm" data-new-account="parents-bulk">${L('⚡ حسابات لكل الأولياء', '⚡ Comptes pour tous les parents')}</button>
+      <button class="btn btn--outline btn--sm" data-new-account="admin">${L('＋ حساب مشرف', '＋ Compte administrateur')}</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>${L('الاسم', 'Nom')}</th><th>${L('الدور', 'Rôle')}</th><th>${L('اسم المستخدم', 'Identifiant')}</th><th>${L('الصلاحية', 'Accès')}</th><th></th></tr></thead>
+      <tbody>
+        ${sorted.map(a => `<tr>
+          <td><strong>${escapeHtml(a.name || '—')}</strong>${a.phone ? `<br><small style="color:var(--color-text-muted)">${escapeHtml(a.phone)}</small>` : ''}</td>
+          <td><span class="badge ${a.role === 'admin' ? 'badge--partial' : a.role === 'teacher' ? 'badge--paid' : 'badge--muted'}">${roleLabel(a.role)}</span></td>
+          <td dir="ltr">${escapeHtml(a.username || '')}</td>
+          <td style="max-width:260px">${a.role === 'teacher' ? escapeHtml(halaqaNames(a.halaqaIds)) : a.role === 'parent' ? escapeHtml(memberNames(a.memberIds)) : L('كل البيانات', 'Toutes les données')}</td>
+          <td class="row-actions">
+            ${a.role !== 'admin' ? `<button class="btn btn--outline btn--sm" data-acc-edit="${a.uid}">${L('تعديل', 'Modifier')}</button>` : ''}
+            <button class="btn btn--outline btn--sm" data-acc-share="${a.uid}">${L('📤 رابط الدخول', '📤 Lien de connexion')}</button>
+            ${a.uid !== me && a.uid !== (accessInfo && accessInfo.ownerUid) ? `<button class="btn btn--danger btn--sm" data-acc-del="${a.uid}">${L('حذف', 'Supprimer')}</button>` : ''}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <details style="margin-top:14px">
+      <summary style="cursor:pointer;font-weight:700">${L('🛡️ قواعد الأمان (Firestore Rules)', '🛡️ Règles de sécurité (Firestore Rules)')}</summary>
+      <p style="color:var(--color-text-muted);font-size:13px;margin:8px 0">${L('انسخ هذه القواعد والصقها في Firebase Console ← Firestore Database ← Rules ثم اضغط Publish.', 'Copiez ces règles dans Firebase Console ← Firestore Database ← Rules puis cliquez sur Publish.')}</p>
+      <textarea readonly rows="8" dir="ltr" style="width:100%;font-family:monospace;font-size:11.5px" id="acc-rules-text">${escapeHtml(FIRESTORE_RULES)}</textarea>
+      <button class="btn btn--outline btn--sm" id="acc-copy-rules" style="margin-top:6px">${L('📋 نسخ القواعد', '📋 Copier les règles')}</button>
+    </details>
+  </div></div>`;
+}
+function renderAccountsCard() {
+  const wrap = document.getElementById('accounts-card-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = accountsCardHtml();
+  bindAccountsCard();
+}
+let rulesCheckResult = null;
+function renderRulesStatus() {
+  const el = document.getElementById('acc-rules-status');
+  if (!el) return;
+  if (rulesCheckResult === true) {
+    el.innerHTML = `<span class="badge badge--paid">✅ ${L('قواعد الأمان مفعّلة — البيانات محمية', 'Règles de sécurité actives — données protégées')}</span>`;
+  } else if (rulesCheckResult === false) {
+    el.innerHTML = `<div class="badge badge--unpaid" style="white-space:normal;line-height:1.6">⚠️ ${L('قواعد الأمان الجديدة لم تُلصق بعد في Firebase — البيانات ما زالت مكشوفة لكل من يعرف رمز المدرسة. انسخ القواعد أدناه.', "Les nouvelles règles ne sont pas encore publiées dans Firebase — les données restent visibles pour quiconque connaît le code. Copiez les règles ci-dessous.")}</div>
+      <button class="btn btn--outline btn--sm" id="acc-recheck" style="margin-top:6px">${L('🔄 إعادة التحقق', '🔄 Revérifier')}</button>`;
+    document.getElementById('acc-recheck').addEventListener('click', () => { rulesCheckResult = null; renderRulesStatus(); runRulesCheck(); });
+  } else {
+    el.innerHTML = `<span style="color:var(--color-text-muted)">${L('⏳ التحقق من قواعد الأمان...', '⏳ Vérification des règles de sécurité…')}</span>`;
+  }
+}
+async function runRulesCheck() {
+  try { rulesCheckResult = await checkRulesApplied(); } catch (e) { rulesCheckResult = null; }
+  renderRulesStatus();
+}
+function bindAccountsCard() {
+  const act = document.getElementById('acc-activate');
+  if (act) act.addEventListener('click', async () => {
+    const username = document.getElementById('acc-admin-user').value.trim().toLowerCase();
+    const password = document.getElementById('acc-admin-pass').value;
+    if (!validUsername(username)) { toast(L('اسم المستخدم: 3 أحرف لاتينية أو أرقام على الأقل', 'Identifiant : au moins 3 lettres latines ou chiffres'), 'error'); return; }
+    if (password.length < 6) { toast(L('كلمة المرور قصيرة جدًا (6 أحرف على الأقل)', 'Mot de passe trop court (6 caractères minimum)'), 'error'); return; }
+    act.disabled = true;
+    try {
+      await activateAccounts(username, password, state.settings.quranSchoolNameAr ? L('المدير', 'Directeur') : '');
+      toast(L('تم تفعيل الحسابات ✅ — لا تنسَ لصق قواعد الأمان', 'Comptes activés ✅ — publiez maintenant les règles de sécurité'), 'success');
+      renderAccountsCard();
+    } catch (e) {
+      console.error(e);
+      toast(authErrorMessage(e), 'error');
+      act.disabled = false;
+    }
+  });
+  if (!accessInfo) return;
+  if (rulesCheckResult === null) runRulesCheck(); else renderRulesStatus();
+  document.getElementById('acc-copy-rules').addEventListener('click', () => {
+    navigator.clipboard.writeText(FIRESTORE_RULES).then(() => toast(L('تم النسخ', 'Copié'), 'success')).catch(() => {
+      document.getElementById('acc-rules-text').select();
+    });
+  });
+  document.querySelectorAll('[data-new-account]').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.newAccount === 'parents-bulk') bulkParentAccounts(); else accountForm(b.dataset.newAccount);
+  }));
+  document.querySelectorAll('[data-acc-edit]').forEach(b => b.addEventListener('click', () => accountForm(null, accountsList.find(a => a.uid === b.dataset.accEdit))));
+  document.querySelectorAll('[data-acc-share]').forEach(b => b.addEventListener('click', () => shareAccountModal(accountsList.find(a => a.uid === b.dataset.accShare))));
+  document.querySelectorAll('[data-acc-del]').forEach(b => b.addEventListener('click', () => {
+    const a = accountsList.find(x => x.uid === b.dataset.accDel);
+    confirmAction(L(`حذف حساب "${a.name || a.username}"؟ لن يتمكن من الدخول بعد الآن.`, `Supprimer le compte « ${a.name || a.username} » ? Il ne pourra plus se connecter.`), async () => {
+      try {
+        if (a.role === 'admin') {
+          await fbDb.collection('schoolAccess').doc(schoolCode).update({ admins: firebase.firestore.FieldValue.arrayRemove(a.uid) });
+          accessInfo.admins = (accessInfo.admins || []).filter(x => x !== a.uid);
+        }
+        await fbDb.doc(`schools/${schoolCode}/accounts/${a.uid}`).delete();
+        toast(L('تم حذف الحساب', 'Compte supprimé'), 'success');
+      } catch (e) { console.error(e); toast(authErrorMessage(e), 'error'); }
+    });
+  }));
+}
+function guardianGroups() {
+  // تجميع أبناء كل وليّ أمر حسب رقم الهاتف
+  const groups = new Map();
+  state.quranMembers.filter(m => m.status !== 'inactive' && m.phone).forEach(m => {
+    const key = formatPhoneForWhatsApp(m.phone);
+    if (!key) return;
+    if (!groups.has(key)) groups.set(key, { phone: m.phone, memberIds: [] });
+    groups.get(key).memberIds.push(m.id);
+  });
+  return [...groups.values()];
+}
+function accountForm(role, existing) {
+  const isEdit = !!existing;
+  role = isEdit ? existing.role : role;
+  const a = existing || { name: '', phone: '', halaqaIds: [], memberIds: [] };
+  const prefix = role === 'teacher' ? 't' : role === 'parent' ? 'p' : 'a';
+  const members = state.quranMembers.filter(m => m.status !== 'inactive').sort((x, y) => x.name.localeCompare(y.name, sortLocale()));
+  const title = { teacher: L('حساب معلّم', 'Compte enseignant'), parent: L('حساب وليّ أمر', 'Compte parent'), admin: L('حساب مشرف', 'Compte administrateur') }[role];
+  openModal(`
+    <div class="modal__header"><h3>${isEdit ? L('تعديل', 'Modifier') + ' — ' : ''}${title}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <div class="field-row" style="margin-bottom:12px">
+        <div class="field"><label>${L('الاسم *', 'Nom *')}</label><input id="ac-name" value="${escapeHtml(a.name || '')}"></div>
+        <div class="field"><label>${L('الهاتف (واتساب)', 'Téléphone (WhatsApp)')}</label><input id="ac-phone" value="${escapeHtml(a.phone || '')}"></div>
+      </div>
+      ${isEdit ? '' : `<div class="field-row" style="margin-bottom:12px">
+        <div class="field"><label>${L('اسم المستخدم', "Nom d'utilisateur")}</label><input id="ac-user" dir="ltr" autocapitalize="none" value="${prefix}${randomDigits(4)}"></div>
+        <div class="field"><label>${L('كلمة المرور', 'Mot de passe')}</label><input id="ac-pass" dir="ltr" value="${randomDigits(6)}"></div>
+      </div>`}
+      ${role === 'teacher' ? `
+        <label style="font-weight:700;display:block;margin-bottom:6px">${L('الحلقات التي يدرّسها *', 'Cercles enseignés *')}</label>
+        <div class="check-list">${state.quranHalaqat.map(h => `<label><input type="checkbox" class="ac-halaqa" value="${h.id}" ${(a.halaqaIds || []).includes(h.id) ? 'checked' : ''}> ${escapeHtml(h.name)}${h.teacherName ? ` <small>(${escapeHtml(h.teacherName)})</small>` : ''}</label>`).join('') || `<p>${L('لا توجد حلقات', 'Aucun cercle')}</p>`}</div>` : ''}
+      ${role === 'parent' ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap">
+          <label style="font-weight:700">${L('الأبناء *', 'Enfants *')}</label>
+          <button type="button" class="btn btn--outline btn--sm" id="ac-by-phone">${L('📞 اختيار الأبناء حسب رقم الهاتف', '📞 Sélectionner les enfants par téléphone')}</button>
+        </div>
+        <input id="ac-search" placeholder="${L('بحث...', 'Rechercher…')}" style="margin-bottom:6px;width:100%">
+        <div class="check-list" id="ac-members">${members.map(m => `<label data-name="${escapeHtml(m.name.toLowerCase())}"><input type="checkbox" class="ac-member" value="${m.id}" data-phone="${escapeHtml(formatPhoneForWhatsApp(m.phone))}" ${(a.memberIds || []).includes(m.id) ? 'checked' : ''}> ${escapeHtml(m.name)} <small>— ${escapeHtml(halaqaName(m.halaqaId))}${m.phone ? ' · ' + escapeHtml(m.phone) : ''}</small></label>`).join('')}</div>` : ''}
+      ${role === 'admin' ? `<p style="color:var(--color-text-muted)">${L('المشرف يرى ويعدّل كل بيانات المدرسة (مثل المدير).', "L'administrateur voit et modifie toutes les données de l'école.")}</p>` : ''}
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إلغاء', 'Annuler')}</button>
+      <button class="btn btn--primary" id="ac-save">${isEdit ? L('حفظ', 'Enregistrer') : L('إنشاء الحساب', 'Créer le compte')}</button>
+    </div>
+  `, { wide: true });
+  const phoneBtn = document.getElementById('ac-by-phone');
+  if (phoneBtn) phoneBtn.addEventListener('click', () => {
+    const key = formatPhoneForWhatsApp(document.getElementById('ac-phone').value);
+    if (!key) { toast(L('أدخل رقم هاتف وليّ الأمر أولًا', "Saisissez d'abord le téléphone du parent"), 'error'); return; }
+    let n = 0;
+    document.querySelectorAll('.ac-member').forEach(cb => { if (cb.dataset.phone === key) { cb.checked = true; n++; } });
+    toast(n ? L(`تم اختيار ${n}`, `${n} sélectionné(s)`) : L('لا يوجد طالب بهذا الرقم', 'Aucun élève avec ce numéro'), n ? 'success' : 'error');
+  });
+  const search = document.getElementById('ac-search');
+  if (search) search.addEventListener('input', () => {
+    const q = search.value.trim().toLowerCase();
+    document.querySelectorAll('#ac-members label').forEach(l => { l.style.display = !q || l.dataset.name.includes(q) ? '' : 'none'; });
+  });
+  document.getElementById('ac-save').addEventListener('click', async () => {
+    const name = document.getElementById('ac-name').value.trim();
+    const phone = document.getElementById('ac-phone').value.trim();
+    if (!name) { toast(L('يرجى إدخال الاسم', 'Veuillez saisir le nom'), 'error'); return; }
+    const data = { role, name, phone };
+    if (role === 'teacher') {
+      data.halaqaIds = [...document.querySelectorAll('.ac-halaqa:checked')].map(c => c.value);
+      if (!data.halaqaIds.length) { toast(L('اختر حلقة واحدة على الأقل', 'Choisissez au moins un cercle'), 'error'); return; }
+    }
+    if (role === 'parent') {
+      data.memberIds = [...document.querySelectorAll('.ac-member:checked')].map(c => c.value);
+      if (!data.memberIds.length) { toast(L('اختر ابنًا واحدًا على الأقل', 'Choisissez au moins un enfant'), 'error'); return; }
+    }
+    const btn = document.getElementById('ac-save');
+    btn.disabled = true;
+    try {
+      if (isEdit) {
+        await fbDb.doc(`schools/${schoolCode}/accounts/${existing.uid}`).set({ ...withoutKeys(existing, ['uid']), ...data });
+        closeModal(); toast(L('تم الحفظ بنجاح', 'Enregistré avec succès'), 'success');
+        return;
+      }
+      const username = document.getElementById('ac-user').value.trim().toLowerCase();
+      const password = document.getElementById('ac-pass').value.trim();
+      if (!validUsername(username)) { toast(L('اسم المستخدم: 3 أحرف لاتينية أو أرقام على الأقل', 'Identifiant : au moins 3 lettres latines ou chiffres'), 'error'); btn.disabled = false; return; }
+      if (password.length < 6) { toast(L('كلمة المرور قصيرة جدًا (6 أحرف على الأقل)', 'Mot de passe trop court (6 caractères minimum)'), 'error'); btn.disabled = false; return; }
+      const account = await createAccount({ ...data, username }, password);
+      shareAccountModal(account, password);
+    } catch (e) {
+      console.error(e);
+      toast(authErrorMessage(e), 'error');
+      btn.disabled = false;
+    }
+  });
+}
+async function createAccount(data, password) {
+  const uid = await createAuthUser(accountEmail(schoolCode, data.username), password);
+  const account = { ...data, createdAt: new Date().toISOString() };
+  await fbDb.doc(`schools/${schoolCode}/accounts/${uid}`).set(account);
+  if (data.role === 'admin') {
+    await fbDb.collection('schoolAccess').doc(schoolCode).update({ admins: firebase.firestore.FieldValue.arrayUnion(uid) });
+    accessInfo.admins = [...(accessInfo.admins || []), uid];
+  }
+  return { uid, ...account };
+}
+function accountShareText(a, password) {
+  const school = displayedQuranSchoolName();
+  const lines = [
+    L(`السلام عليكم ${a.name || ''}`, `Assalamou alaykoum ${a.name || ''}`),
+    L(`هذا حسابك (${roleLabel(a.role)}) في ${school}:`, `Voici votre compte (${roleLabel(a.role)}) — ${school} :`),
+    '',
+    L('🔗 رابط الدخول:', '🔗 Lien de connexion :'),
+    buildJoinLink(a.username),
+    L(`👤 اسم المستخدم: ${a.username}`, `👤 Identifiant : ${a.username}`),
+  ];
+  if (password) lines.push(L(`🔑 كلمة المرور: ${password}`, `🔑 Mot de passe : ${password}`));
+  lines.push('', L('افتح الرابط من هاتفك ثم أضِف الصفحة إلى الشاشة الرئيسية.', "Ouvrez le lien sur votre téléphone puis ajoutez la page à l'écran d'accueil."));
+  return lines.join('\n');
+}
+function shareAccountModal(a, password) {
+  if (!a) return;
+  const text = accountShareText(a, password);
+  openModal(`
+    <div class="modal__header"><h3>📤 ${escapeHtml(a.name || a.username)}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      ${password ? `<p style="margin-bottom:10px"><span class="badge badge--paid">✅ ${L('تم إنشاء الحساب', 'Compte créé')}</span> ${L('احفظ كلمة المرور أو أرسلها الآن — لن تظهر مرة أخرى.', "Notez ou envoyez le mot de passe maintenant — il ne sera plus affiché.")}</p>` :
+        `<p style="margin-bottom:10px;color:var(--color-text-muted)">${L('كلمة المرور لا تُحفظ في البرنامج. إن نسيها، احذف الحساب وأنشئ حسابًا جديدًا.', "Le mot de passe n'est pas conservé. En cas d'oubli, supprimez le compte et créez-en un nouveau.")}</p>`}
+      <textarea readonly rows="9" style="width:100%" id="acs-text">${escapeHtml(text)}</textarea>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--outline" id="acs-copy">${L('📋 نسخ', '📋 Copier')}</button>
+      ${a.phone ? `<button class="btn btn--primary" id="acs-wa">${L('📤 إرسال عبر واتساب', '📤 Envoyer par WhatsApp')}</button>` : ''}
+    </div>
+  `);
+  document.getElementById('acs-copy').addEventListener('click', () => {
+    navigator.clipboard.writeText(text).then(() => toast(L('تم النسخ', 'Copié'), 'success')).catch(() => document.getElementById('acs-text').select());
+  });
+  const wa = document.getElementById('acs-wa');
+  if (wa) wa.addEventListener('click', () => sendWhatsApp(a.phone, text));
+}
+function bulkParentAccounts() {
+  const existingPhones = new Set(accountsList.filter(a => a.role === 'parent').map(a => formatPhoneForWhatsApp(a.phone)));
+  const groups = guardianGroups().filter(g => !existingPhones.has(formatPhoneForWhatsApp(g.phone)));
+  openModal(`
+    <div class="modal__header"><h3>⚡ ${L('حسابات لكل الأولياء', 'Comptes pour tous les parents')}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      ${groups.length ? `<p style="margin-bottom:10px">${L(`سيُنشأ حساب لكل رقم هاتف وليّ أمر ليس له حساب بعد (${groups.length} حسابًا)، ويُربط بكل أبنائه المسجّلين بنفس الرقم.`, `Un compte sera créé pour chaque numéro de parent sans compte (${groups.length} comptes), lié à tous ses enfants inscrits avec ce numéro.`)}</p>
+        <div class="check-list">${groups.map(g => `<div>📞 ${escapeHtml(g.phone)} — ${g.memberIds.map(id => escapeHtml(getMember(id).name)).join('، ')}</div>`).join('')}</div>
+        <p id="bulk-progress" style="margin-top:10px;font-weight:700"></p>` :
+        `<p>${L('كل أولياء الأمور الذين لديهم رقم هاتف لديهم حساب بالفعل.', 'Tous les parents ayant un numéro ont déjà un compte.')}</p>`}
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--ghost" onclick="closeModal()">${L('إغلاق', 'Fermer')}</button>
+      ${groups.length ? `<button class="btn btn--primary" id="bulk-go">${L('إنشاء الحسابات', 'Créer les comptes')}</button>` : ''}
+    </div>
+  `, { wide: true });
+  const go = document.getElementById('bulk-go');
+  if (!go) return;
+  go.addEventListener('click', async () => {
+    go.disabled = true;
+    const created = [];
+    for (let i = 0; i < groups.length; i++) {
+      const g = groups[i];
+      document.getElementById('bulk-progress').textContent = `${i + 1} / ${groups.length}`;
+      const first = getMember(g.memberIds[0]);
+      const password = randomDigits(6);
+      try {
+        const acc = await createAccount({ role: 'parent', name: L(`وليّ أمر ${first.name}`, `Parent de ${first.name}`), phone: g.phone, memberIds: g.memberIds, username: 'p' + randomDigits(5) }, password);
+        created.push({ acc, password });
+      } catch (e) {
+        console.error(e);
+        toast(authErrorMessage(e), 'error');
+        if (e && e.code === 'auth/operation-not-allowed') break;
+      }
+    }
+    showBulkCredentials(created);
+  });
+}
+function showBulkCredentials(created) {
+  openModal(`
+    <div class="modal__header"><h3>✅ ${L('تم إنشاء', 'Créés :')} ${created.length}</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+      <p style="margin-bottom:10px">${L('أرسل لكل وليّ أمر بيانات دخوله الآن — كلمات المرور لا تظهر مرة أخرى.', 'Envoyez maintenant ses identifiants à chaque parent — les mots de passe ne seront plus affichés.')}</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>${L('وليّ الأمر', 'Parent')}</th><th>${L('اسم المستخدم', 'Identifiant')}</th><th>${L('كلمة المرور', 'Mot de passe')}</th><th></th></tr></thead>
+        <tbody>${created.map((c, i) => `<tr><td>${escapeHtml(c.acc.name)}<br><small>${escapeHtml(c.acc.phone)}</small></td><td dir="ltr">${escapeHtml(c.acc.username)}</td><td dir="ltr">${escapeHtml(c.password)}</td>
+          <td class="row-actions"><button class="btn btn--primary btn--sm" data-bulk-wa="${i}">📤 ${L('واتساب', 'WhatsApp')}</button></td></tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+    <div class="modal__footer"><button class="btn btn--ghost" onclick="closeModal()">${L('إغلاق', 'Fermer')}</button></div>
+  `, { wide: true });
+  document.querySelectorAll('[data-bulk-wa]').forEach(b => b.addEventListener('click', () => {
+    const c = created[Number(b.dataset.bulkWa)];
+    sendWhatsApp(c.acc.phone, accountShareText(c.acc, c.password));
+    b.textContent = '✓';
+  }));
+}
+
+/* ================= البوابة: المعلّم ووليّ الأمر ================= */
+async function startPortal(p) {
+  document.getElementById('app-root').hidden = true;
+  try {
+    fbApp = firebase.initializeApp(p.cfg);
+    fbDb = firebase.firestore();
+  } catch (e) {
+    console.error(e);
+    localStorage.removeItem(PORTAL_KEY);
+    location.reload();
+    return;
+  }
+  const lang = localStorage.getItem(PORTAL_LANG_KEY);
+  state = defaultState();
+  if (lang) state.settings.language = lang;
+  document.documentElement.lang = state.settings.language;
+  document.documentElement.dir = state.settings.language === 'fr' ? 'ltr' : 'rtl';
+  const leave = () => { localStorage.removeItem(PORTAL_KEY); location.reload(); };
+  const user = await waitForAuthUser();
+  if (!user || user.isAnonymous) {
+    renderGateLogin({ code: p.code, username: p.username, onBack: leave });
+    return;
+  }
+  let acc;
+  try { acc = await fbDb.doc(`schools/${p.code}/accounts/${user.uid}`).get(); }
+  catch (e) { acc = null; console.error(e); }
+  if (!acc || !acc.exists) {
+    await firebase.auth().signOut().catch(() => {});
+    renderGateLogin({ code: p.code, username: p.username, onBack: leave, note: L('هذا الحساب لم يعد موجودًا — تواصل مع إدارة المدرسة.', "Ce compte n'existe plus — contactez l'administration de l'école.") });
+    return;
+  }
+  myAccount = acc.data();
+  if (myAccount.role === 'admin') { routeAfterLogin(myAccount, p.code, p.username); return; }
+  portalRole = myAccount.role;
+  schoolCode = p.code;
+  appMode = 'quran';
+  applyPortalUI();
+  navigate('quran');
+  attachPortalListeners(p.code, user.uid);
+}
+function applyPortalUI() {
+  document.getElementById('connect-gate').hidden = true;
+  document.getElementById('mode-gate').hidden = true;
+  document.getElementById('app-root').hidden = false;
+  document.querySelectorAll('.nav-link').forEach(link => { link.hidden = link.dataset.section !== 'quran'; });
+  const quickActions = document.querySelector('.topbar__actions');
+  if (quickActions) quickActions.style.display = 'none';
+  const btn = document.getElementById('mode-switch-btn');
+  const fresh = btn.cloneNode(true);
+  btn.replaceWith(fresh);
+  fresh.textContent = L('🚪 تسجيل الخروج', '🚪 Se déconnecter');
+  fresh.addEventListener('click', () => confirmAction(L('تسجيل الخروج من هذا الجهاز؟', 'Se déconnecter de cet appareil ?'), logoutAccount));
+  renderBrand();
+  renderStaticTexts();
+}
+function portalSectionTitle() {
+  return portalRole === 'parent' ? L('أبنائي', 'Mes enfants') : L('حلقاتي', 'Mes cercles');
+}
+function attachPortalListeners(code, uid) {
+  const base = `schools/${code}`;
+  const rerender = () => { if (!document.getElementById('app-root').hidden) refreshCurrentSection(); };
+  const listen = (ref, onData) => portalSync.unsubs.push(ref.onSnapshot(onData, err => {
+    console.error('portal listen', err);
+    if (err && err.code === 'permission-denied') toast(L('تغيّرت صلاحيات حسابك — أعد تسجيل الدخول', 'Les accès de votre compte ont changé — reconnectez-vous'), 'error');
+  }));
+  listen(fbDb.doc(`${base}/public/info`), snap => {
+    portalSync.info = snap.exists ? snap.data() : {};
+    const i = portalSync.info;
+    Object.assign(state.settings, {
+      quranSchoolNameAr: i.quranSchoolNameAr || state.settings.quranSchoolNameAr,
+      quranSchoolNameFr: i.quranSchoolNameFr || state.settings.quranSchoolNameFr,
+      quranLogo: i.quranLogo || '', currency: i.currency || 'FCFA', quranHifzDirection: i.hifzDirection || 'nas'
+    });
+    renderBrand();
+    rerender();
+  });
+  // تغيير صلاحيات الحساب (حلقات/أبناء) يعيد تحميل البوابة
+  let firstAccount = true;
+  listen(fbDb.doc(`${base}/accounts/${uid}`), snap => {
+    if (firstAccount) { firstAccount = false; return; }
+    location.reload();
+  });
+  const byField = portalRole === 'teacher' ? 'halaqaId' : 'memberId';
+  const ids = (portalRole === 'teacher' ? myAccount.halaqaIds : myAccount.memberIds) || [];
+  if (!ids.length) { rerender(); return; }
+  const chunks = [];
+  for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+  const collect = (col, store) => chunks.forEach(chunk => listen(fbDb.collection(`${base}/${col}`).where(byField, 'in', chunk), qs => {
+    qs.docChanges().forEach(ch => {
+      if (ch.type === 'removed') { delete store[ch.doc.id]; portalSync.cache.delete(`${col}/${ch.doc.id}`); return; }
+      store[ch.doc.id] = { ...ch.doc.data(), id: ch.doc.id };
+      portalSync.cache.set(`${col}/${ch.doc.id}`, contentKey(withoutKeys(store[ch.doc.id], ['id'])));
+    });
+    rebuildPortalState();
+    rerender();
+  }));
+  collect('weeklyRecords', portalSync.weekly);
+  collect('khatimRecords', portalSync.khatim);
+  if (portalRole === 'teacher') {
+    collect('hifz', portalSync.hifz);
+    ids.forEach(hid => listen(fbDb.doc(`${base}/rosters/${hid}`), snap => {
+      if (snap.exists) portalSync.rosters[hid] = snap.data(); else delete portalSync.rosters[hid];
+      rebuildPortalState();
+      rerender();
+    }));
+  } else {
+    ids.forEach(mid => listen(fbDb.doc(`${base}/hifz/${mid}`), snap => {
+      if (snap.exists) portalSync.hifz[mid] = snap.data(); else delete portalSync.hifz[mid];
+      rerender();
+    }));
+    listen(fbDb.doc(`${base}/parents/${uid}`), snap => {
+      portalSync.parentDoc = snap.exists ? snap.data() : null;
+      rerender();
+    });
+  }
+}
+function rebuildPortalState() {
+  if (portalRole !== 'teacher') {
+    state.quranWeeklyRecords = Object.values(portalSync.weekly);
+    state.quranKhatimRecords = Object.values(portalSync.khatim);
+    return;
+  }
+  const rosters = Object.values(portalSync.rosters);
+  state.quranHalaqat = rosters.map(r => ({ id: r.halaqaId, name: r.name, teacherName: r.teacherName, monthlyFee: 0 }));
+  // نعيد استخدام كائنات الأعضاء نفسها حتى لا تضيع تعديلات نافذة مفتوحة
+  const previous = new Map(state.quranMembers.map(m => [m.id, m]));
+  state.quranMembers = [];
+  rosters.forEach(r => (r.members || []).forEach(m => {
+    const hz = portalSync.hifz[m.id] || {};
+    const member = Object.assign(previous.get(m.id) || {}, m, {
+      halaqaId: r.halaqaId, status: 'active',
+      hizbs: Array.isArray(hz.hizbs) ? hz.hizbs : [], currentSurah: hz.currentSurah || null, currentAyah: hz.currentAyah || null,
+      hifzUpdatedAt: hz.hifzUpdatedAt || ''
+    });
+    state.quranMembers.push(member);
+    portalSync.cache.set(`hifzMember/${m.id}`, contentKey(portalHifzData(member)));
+  }));
+  state.quranWeeklyRecords = Object.values(portalSync.weekly);
+  state.quranKhatimRecords = Object.values(portalSync.khatim);
+}
+function portalHifzData(m) {
+  return { memberId: m.id, halaqaId: m.halaqaId, hizbs: m.hizbs || [], currentSurah: m.currentSurah || null, currentAyah: m.currentAyah || null, hifzUpdatedAt: m.hifzUpdatedAt || '' };
+}
+// حفظ تعديلات المعلّم: تُرفع فقط الكشوف ومواضع الحفظ التي تغيّرت
+function portalSave() {
+  localStorage.setItem(PORTAL_LANG_KEY, state.settings.language);
+  if (portalRole !== 'teacher' || !fbDb) return;
+  const base = `schools/${schoolCode}`;
+  const now = Date.now();
+  const writes = [];
+  const recordWrites = (col, list, store) => list.forEach(r => {
+    const m = getMember(r.memberId);
+    if (!m) return;
+    const data = firestoreSafe({ ...withoutKeys(r, ['id', 'updatedAt']), halaqaId: m.halaqaId });
+    const key = `${col}/${r.id}`;
+    if (portalSync.cache.get(key) === contentKey(data)) return;
+    portalSync.cache.set(key, contentKey(data));
+    store[r.id] = { ...data, updatedAt: now, id: r.id };
+    writes.push({ path: `${base}/${key}`, data: { ...data, updatedAt: now } });
+  });
+  recordWrites('weeklyRecords', state.quranWeeklyRecords, portalSync.weekly);
+  recordWrites('khatimRecords', state.quranKhatimRecords, portalSync.khatim);
+  state.quranMembers.forEach(m => {
+    const data = firestoreSafe(portalHifzData(m));
+    const key = `hifzMember/${m.id}`;
+    if (portalSync.cache.get(key) === contentKey(data)) return;
+    portalSync.cache.set(key, contentKey(data));
+    portalSync.hifz[m.id] = { ...data, updatedAt: now };
+    writes.push({ path: `${base}/hifz/${m.id}`, data: { ...data, updatedAt: now } });
+  });
+  if (writes.length) commitWrites(writes).catch(err => {
+    console.error('portal save failed', err);
+    toast(L('تعذّر حفظ التعديل — تحقق من الاتصال بالإنترنت', "Échec de l'enregistrement — vérifiez votre connexion"), 'error');
+  });
+}
+
+/* ---- صفحة وليّ الأمر ---- */
+function parentPaymentLabel(p) {
+  const months = p.months || [];
+  const range = months.length > 1 ? `${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])}` : monthLabel(months[0]);
+  if (p.type === 'registration') return L('رسوم تسجيل', "Frais d'inscription");
+  if (p.type === 'combo') return L('رسوم تسجيل + رسوم شهرية', 'Inscription + mensualité') + (months.length ? ` (${range})` : '');
+  return L('رسوم شهرية', 'Mensualité') + (months.length ? ` — ${range}` : '');
+}
+function renderParentPortal() {
+  const el = document.getElementById('section-quran');
+  const doc = portalSync.parentDoc;
+  const since = addDaysISO(todayISO(), -30);
+  const children = doc ? doc.children || [] : [];
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:18px"><div class="card__body">
+      <h2 style="margin:0 0 4px">${L('السلام عليكم', 'Assalamou alaykoum')} ${escapeHtml(myAccount.name || '')} 👋</h2>
+      <p style="color:var(--color-text-muted);margin:0">${L('هنا تتابع تقدّم أبنائك في الحفظ والحضور والرسوم.', "Suivez ici la progression, l'assiduité et les frais de vos enfants.")}</p>
+    </div></div>
+    ${!doc ? emptyState('⏳', L('جارٍ تحميل البيانات... إن لم تظهر، اطلب من المدرسة فتح البرنامج مرة لتحديثها.', "Chargement… Si rien n'apparaît, demandez à l'école d'ouvrir l'application pour la mettre à jour.")) :
+      children.length === 0 ? emptyState('👤', L('لا يوجد أبناء مرتبطون بحسابك', 'Aucun enfant associé à votre compte')) :
+      children.map(c => {
+        const hz = portalSync.hifz[c.id] || {};
+        const member = { id: c.id, hizbs: Array.isArray(hz.hizbs) ? hz.hizbs : [], currentSurah: hz.currentSurah, currentAyah: hz.currentAyah };
+        const weeks = Object.values(portalSync.weekly).filter(r => r.memberId === c.id).sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+        let absences = 0;
+        weeks.forEach(r => Object.entries(r.attendance || {}).forEach(([d, v]) => { if (d >= since && (v === 'absent' || (v && v.absent))) absences++; }));
+        const unpaid = (c.months || []).filter(x => x.status !== 'paid').reduce((s, x) => s + Math.max(0, x.due - x.paid), 0) + (c.registrationBalance || 0);
+        return `
+        <div class="card" style="margin-bottom:18px">
+          <div class="card__header"><h3>👦 ${escapeHtml(c.name)}</h3><small style="color:var(--color-text-muted)">${escapeHtml(c.halaqaName)}${c.teacherName ? ' — ' + escapeHtml(c.teacherName) : ''}</small></div>
+          <div class="card__body">
+            <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+              ${c.role !== 'helper' ? `<div class="stat-card stat-card--accent"><div class="stat-card__label">${L('الأحزاب المحفوظة', 'Hizb mémorisés')}</div><div class="stat-card__value"><span dir="ltr">${memberHizbCount(member)} / 60</span></div>${hifzBarHtml(memberHifzPct(member))}</div>` : ''}
+              <div class="stat-card stat-card--primary"><div class="stat-card__label">${L('الموضع الحالي', 'Position actuelle')}</div><div class="stat-card__value" style="font-size:17px">${escapeHtml(memberPositionLabel(member))}</div></div>
+              <div class="stat-card stat-card--danger"><div class="stat-card__label">${L('الغياب (30 يومًا)', 'Absences (30 j)')}</div><div class="stat-card__value">${absences}</div></div>
+              <div class="stat-card ${unpaid > 0 ? 'stat-card--warn' : 'stat-card--accent'}"><div class="stat-card__label">${L('المتبقي من الرسوم', 'Reste à payer')}</div><div class="stat-card__value">${fmtMoney(unpaid)}</div></div>
+            </div>
+            ${c.role !== 'helper' ? `<h4 style="margin:6px 0 8px">${L('خريطة الأحزاب', 'Carte des hizb')}</h4>${hizbGridHtml(member.hizbs, false)}` : ''}
+            <h4 style="margin:16px 0 8px">${L('الدروس الأخيرة', 'Dernières leçons')}</h4>
+            ${weeks.length === 0 ? `<p style="color:var(--color-text-muted)">—</p>` : `<div class="table-wrap"><table>
+              <thead><tr><th>${L('الأسبوع', 'Semaine')}</th><th>${L('الدرس', 'Leçon')}</th><th>${L('المقدار', 'Qté')}</th><th>${L('المراجعة', 'Révision')}</th><th>${L('الغياب', 'Abs.')}</th></tr></thead>
+              <tbody>${weeks.slice(0, 5).map(r => `<tr><td>${fmtDate(r.weekStart)}</td><td>${lessonRangeLabel(r)}</td><td>${escapeHtml(r.lessonAmount || '')}</td><td>${escapeHtml(r.revisionAmount || '')}</td><td>${Object.values(r.attendance || {}).filter(v => v === 'absent' || (v && v.absent)).length}</td></tr>`).join('')}</tbody>
+            </table></div>`}
+            ${(c.months || []).length ? `<h4 style="margin:16px 0 8px">${L('الرسوم الشهرية', 'Mensualités')}</h4>
+              <div class="table-wrap"><table><tr>${c.months.map(x => `<th>${monthLabel(x.month)}</th>`).join('')}</tr><tr>${c.months.map(x => `<td>${statusBadge(x.status)}</td>`).join('')}</tr></table></div>` : ''}
+            ${(c.payments || []).length ? `<h4 style="margin:16px 0 8px">${L('آخر الدفعات', 'Derniers paiements')}</h4>
+              <div class="table-wrap"><table><thead><tr><th>${L('التاريخ', 'Date')}</th><th>${L('النوع', 'Type')}</th><th>${L('المبلغ', 'Montant')}</th></tr></thead>
+              <tbody>${c.payments.map(p => `<tr><td>${fmtDate(p.date)}</td><td>${escapeHtml(parentPaymentLabel(p))}</td><td>${fmtMoney(p.amount)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+  `;
 }
 
 function renderGate() {
@@ -883,7 +1931,18 @@ async function handleGateJoin() {
   const ok = await initFirebase();
   if (!ok) { btn.disabled = false; return; }
   try {
-    const doc = await fbDb.collection('schools').doc(code).get();
+    let doc;
+    try {
+      doc = await fbDb.collection('schools').doc(code).get();
+    } catch (err) {
+      if (err && err.code === 'permission-denied') {
+        schoolCode = code;
+        localStorage.setItem(SCHOOL_CODE_KEY, code);
+        renderGateLogin({ code, note: L('الحسابات مفعّلة في هذه المدرسة — سجّل الدخول بحسابك.', 'Les comptes sont activés pour cette école — connectez-vous avec votre compte.'), onBack: () => { disconnectSchool(); renderGate(); } });
+        return;
+      }
+      throw err;
+    }
     if (!doc.exists) {
       toast(L('هذا الرمز غير موجود', "Ce code n'existe pas"), 'error');
       btn.disabled = false;
@@ -1262,7 +2321,7 @@ const sections = {
   backup: { ar: 'النسخ الاحتياطي', fr: 'Sauvegarde', render: renderBackup, mode: 'shared' },
   settings: { ar: 'الإعدادات', fr: 'Paramètres', render: renderSettings, mode: 'shared' }
 };
-function sectionTitle(key) { return L(sections[key].ar, sections[key].fr); }
+function sectionTitle(key) { return portalRole && key === 'quran' ? portalSectionTitle() : L(sections[key].ar, sections[key].fr); }
 function currentSectionKey() {
   const active = document.querySelector('.nav-link.active');
   return active ? active.dataset.section : 'dashboard';
@@ -1312,10 +2371,12 @@ function renderStaticTexts() {
   document.getElementById('menu-toggle').setAttribute('aria-label', L('القائمة', 'Menu'));
   document.getElementById('quick-payment-btn').textContent = L('＋ تسجيل دفعة', '＋ Nouveau paiement');
   document.getElementById('quick-student-btn').textContent = L('＋ طالب جديد', '＋ Nouvel élève');
-  document.getElementById('sidebar-footer').textContent = L(
-    'تطبيق يعمل بالكامل من متصفحك — بياناتك محفوظة محليًا',
-    'Application 100% locale — vos données restent dans votre navigateur'
-  );
+  document.getElementById('sidebar-footer').textContent = portalRole
+    ? `👤 ${(myAccount && myAccount.name) || ''} — ${roleLabel(portalRole)}`
+    : L(
+      'تطبيق يعمل بالكامل من متصفحك — بياناتك محفوظة محليًا',
+      'Application 100% locale — vos données restent dans votre navigateur'
+    );
   Object.keys(sections).forEach(key => {
     const labelEl = document.querySelector(`.nav-link[data-section="${key}"] .nav-label`);
     if (labelEl) labelEl.textContent = sectionTitle(key);
@@ -3191,7 +4252,13 @@ const QURAN_SECTIONS = [
   { key: 'staff', icon: '👥', ar: 'الأساتذة والرواتب', fr: 'Enseignants & salaires' },
 ];
 let quranView = 'dashboard';
+const TEACHER_QURAN_SECTIONS = ['weekly', 'khatim', 'hifz', 'performance'];
+function visibleQuranSections() {
+  return portalRole === 'teacher' ? QURAN_SECTIONS.filter(s => TEACHER_QURAN_SECTIONS.includes(s.key)) : QURAN_SECTIONS;
+}
 function renderQuran() {
+  if (portalRole === 'parent') { renderParentPortal(); return; }
+  if (portalRole === 'teacher' && quranView !== 'dashboard' && !TEACHER_QURAN_SECTIONS.includes(quranView)) quranView = 'dashboard';
   const el = document.getElementById('section-quran');
   el.innerHTML = quranView === 'dashboard'
     ? `<div id="quran-subview"></div>`
@@ -3252,7 +4319,7 @@ function renderQuranDashboard() {
 
   el.innerHTML = `
     <div class="hub-grid">
-      ${QURAN_SECTIONS.map(s => `
+      ${visibleQuranSections().map(s => `
         <div class="hub-tile" data-qnav="${s.key}" tabindex="0" role="button">
           <span class="hub-tile__icon">${s.icon}</span>
           <span class="hub-tile__label">${L(s.ar, s.fr)}</span>
@@ -3260,7 +4327,7 @@ function renderQuranDashboard() {
       `).join('')}
     </div>
 
-    <div class="stat-grid">
+    <div class="stat-grid" data-finance>
       <div class="stat-card stat-card--primary">
         <span class="stat-card__icon">👨‍🎓</span>
         <div class="stat-card__label">${L('عدد الأعضاء النشطين', 'Membres actifs')}</div>
@@ -3339,7 +4406,7 @@ function renderQuranDashboard() {
       </div>
     </div>
 
-    <div class="grid-2">
+    <div class="grid-2" data-finance>
       <div class="card">
         <div class="card__header">
           <h3>${L('آخر الدفعات', 'Derniers paiements')}</h3>
@@ -3379,6 +4446,7 @@ function renderQuranDashboard() {
       </div>
     </div>
   `;
+  if (portalRole) el.querySelectorAll('[data-finance]').forEach(n => n.remove());
   el.querySelectorAll('[data-member]').forEach(li => {
     li.addEventListener('click', () => quranMemberDetail(li.dataset.member));
     li.addEventListener('keydown', e => { if (e.key === 'Enter') quranMemberDetail(li.dataset.member); });
@@ -4674,7 +5742,7 @@ function printQuranMemberReport(memberId) {
   if (!m) return;
   const h = getHalaqa(m.halaqaId);
   const weeks = memberWeeklyRecords(m.id).slice(0, 8);
-  const months = lastNMonths(6).reverse().filter(mo => quranIsEnrolledInMonth(m, mo));
+  const months = portalRole ? [] : lastNMonths(6).reverse().filter(mo => quranIsEnrolledInMonth(m, mo));
   const since = addDaysISO(todayISO(), -30);
   const area = document.getElementById('print-area');
   area.innerHTML = `
@@ -4725,7 +5793,7 @@ function buildMemberReportWhatsAppText(m) {
   if (last) lines.push(L(`📝 آخر درس (${fmtDate(last.weekStart)}): ${[last.lessonEndSurah, last.lessonEndAyah].filter(Boolean).join(' ') || '—'} ${last.lessonAmount ? '— ' + last.lessonAmount : ''}`,
     `📝 Dernière leçon (${fmtDate(last.weekStart)}) : ${[last.lessonEndSurah, last.lessonEndAyah].filter(Boolean).join(' ') || '—'} ${last.lessonAmount ? '— ' + last.lessonAmount : ''}`));
   lines.push(L(`🗓️ أيام الغياب (آخر 30 يومًا): ${memberAbsenceDays(m.id, addDaysISO(todayISO(), -30))}`, `🗓️ Jours d'absence (30 derniers jours) : ${memberAbsenceDays(m.id, addDaysISO(todayISO(), -30))}`));
-  if (quranIsEnrolledInMonth(m, month) && quranMonthlyFeeFor(m) > 0) {
+  if (!portalRole && quranIsEnrolledInMonth(m, month) && quranMonthlyFeeFor(m) > 0) {
     const rest = Math.max(0, quranMonthlyFeeFor(m) - quranMonthPaid(m, month));
     lines.push(rest > 0
       ? L(`💰 رسوم ${monthLabel(month)}: متبقٍ ${rest.toLocaleString('en-US')} ${state.settings.currency}`, `💰 Mensualité ${monthLabel(month)} : reste ${rest.toLocaleString('en-US')} ${state.settings.currency}`)
@@ -4872,7 +5940,7 @@ function quranFollowUpList() {
       if (!hasRecent) reasons.push(L('لا يوجد كشف أسبوعي مسجّل مؤخرًا', 'Aucune fiche hebdomadaire récente'));
     }
     const month = currentMonth();
-    if (quranIsEnrolledInMonth(m, month) && quranMonthlyFeeFor(m) > 0) {
+    if (!portalRole && quranIsEnrolledInMonth(m, month) && quranMonthlyFeeFor(m) > 0) {
       const prev = addDaysISO(month + '-01', -1).slice(0, 7);
       if (quranIsEnrolledInMonth(m, prev) && quranMonthStatus(m, prev) === 'unpaid' && quranMonthStatus(m, month) === 'unpaid') reasons.push(L('شهران بدون دفع', 'Deux mois impayés'));
     }
@@ -4890,6 +5958,7 @@ function quranMemberDetail(id) {
   const since30 = addDaysISO(todayISO(), -30);
   const assets = state.quranAssets.filter(a => (a.assignments || []).some(x => x.memberId === id));
   const showHifz = m.role !== 'helper';
+  const finance = !portalRole;
 
   openModal(`
     <div class="modal__header">
@@ -4907,14 +5976,14 @@ function quranMemberDetail(id) {
           <div class="stat-card__label">${L('الغياب (30 يومًا)', 'Absences (30 j)')}</div>
           <div class="stat-card__value">${memberAbsenceDays(id, since30)}</div>
         </div>
-        <div class="stat-card stat-card--warn">
+        ${finance ? `<div class="stat-card stat-card--warn">
           <div class="stat-card__label">${L('متبقٍ من رسوم التسجيل', 'Solde restant — inscription')}</div>
           <div class="stat-card__value">${fmtMoney(quranRegistrationBalance(m))}</div>
         </div>
         <div class="stat-card stat-card--primary">
           <div class="stat-card__label">${L('حالة شهر', 'Statut de')} ${monthLabel(month)}</div>
           <div class="stat-card__value">${statusBadge(quranMonthStatus(m, month))}</div>
-        </div>
+        </div>` : ''}
       </div>
       <p><strong>${L('الحلقة:', 'Cercle :')}</strong> ${escapeHtml(halaqaName(m.halaqaId))} &nbsp; | &nbsp; <strong>${L('الدور:', 'Rôle :')}</strong> ${memberRoleLabel(m.role)}</p>
       <p><strong>${L('الهاتف:', 'Téléphone :')}</strong> ${escapeHtml(m.phone || '—')} &nbsp; | &nbsp; <strong>${L('تاريخ التسجيل:', "Date d'inscription :")}</strong> ${fmtDate(m.registrationDate)}</p>
@@ -4939,7 +6008,7 @@ function quranMemberDetail(id) {
 
       ${assets.length ? `<p style="margin-top:14px"><strong>📦 ${L('عهدة الطالب:', "Matériel remis :")}</strong> ${assets.map(a => escapeHtml(a.name)).join('، ')}</p>` : ''}
 
-      <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
+      ${finance ? `<hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
       <h4 style="margin-bottom:10px">${L('سجل الدفعات', 'Historique des paiements')}</h4>
       ${payments.length === 0 ? emptyState('💳', L('لا توجد دفعات مسجّلة', 'Aucun paiement enregistré')) : `
       <div class="table-wrap"><table>
@@ -4955,16 +6024,18 @@ function quranMemberDetail(id) {
               </td>
             </tr>`).join('')}
         </tbody>
-      </table></div>`}
+      </table></div>`}` : ''}
     </div>
-    <div class="modal__footer">
+    ${finance ? `<div class="modal__footer">
       <button class="btn btn--outline" id="qmd-edit">${L('تعديل البيانات', 'Modifier')}</button>
       <button class="btn btn--primary" id="qmd-pay">${L('＋ تسجيل دفعة', '＋ Nouveau paiement')}</button>
-    </div>
+    </div>` : ''}
   `, { wide: true });
 
-  document.getElementById('qmd-edit').addEventListener('click', () => memberForm(m));
-  document.getElementById('qmd-pay').addEventListener('click', () => quranPaymentForm(m.id));
+  if (finance) {
+    document.getElementById('qmd-edit').addEventListener('click', () => memberForm(m));
+    document.getElementById('qmd-pay').addEventListener('click', () => quranPaymentForm(m.id));
+  }
   document.getElementById('qmd-report').addEventListener('click', () => printQuranMemberReport(m.id));
   const hifzBtn = document.getElementById('qmd-hifz');
   if (hifzBtn) hifzBtn.addEventListener('click', () => quranHifzForm(m.id, () => { refreshCurrentSection(); quranMemberDetail(m.id); }));
@@ -5862,6 +6933,7 @@ function renderSettings() {
         <button class="btn btn--primary btn--sm" id="st-enable-sync">${L('🔗 تفعيل المزامنة المشتركة', '🔗 Activer la synchronisation partagée')}</button>`}
       </div>
     </div>
+    <div id="accounts-card-wrap">${accountsCardHtml()}</div>
     <div class="card" style="max-width:640px">
       <div class="card__header"><h3>${L('إعدادات المدرسة', "Paramètres de l'école")}</h3></div>
       <div class="card__body">
@@ -6037,6 +7109,7 @@ function renderSettings() {
     document.getElementById('st-logo-remove').hidden = true;
     toast(L('تمت إزالة الشعار', 'Logo supprimé'), 'success');
   });
+  bindAccountsCard();
   if (isConnected) {
     document.getElementById('st-copy-code').addEventListener('click', () => {
       navigator.clipboard.writeText(schoolCode).then(() => toast(L('تم النسخ', 'Copié'), 'success')).catch(() => {});
@@ -6108,6 +7181,7 @@ function closeSidebar() {
 
 /* ================= تهيئة التطبيق ================= */
 async function init() {
+  consumeJoinLink();
   document.documentElement.lang = state.settings.language;
   document.documentElement.dir = state.settings.language === 'fr' ? 'ltr' : 'rtl';
   renderBrand();
@@ -6130,6 +7204,13 @@ async function init() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeModal();
   });
+
+  const portal = getPortalSession();
+  if (portal) {
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+    startPortal(portal);
+    return;
+  }
 
   navigate('dashboard');
   renderGate();
