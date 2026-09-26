@@ -545,6 +545,7 @@ function defaultState() {
       defaultRegistrationFee: 0,
       receiptPrefix: 'REC',
       nextReceiptNumber: 1,
+      nextInvoiceNumber: 1,
       address: '',
       phone: '',
       language: 'ar',
@@ -987,6 +988,129 @@ function feeCategoryBadgeHtml(student) {
   if (cat === 'discount') return ` <span class="badge badge--discount">${L('🏷️ خصم', '🏷️ Remise')}</span>`;
   return '';
 }
+function extraFeesList(student) {
+  return Array.isArray(student.extraFees) ? student.extraFees : [];
+}
+function extraFeesTotal(student) {
+  return extraFeesList(student).reduce((s, f) => s + (Number(f.amount) || 0), 0);
+}
+function extraFeesPaid(student) {
+  return state.payments
+    .filter(p => p.studentId === student.id && (p.type === 'extra' || p.type === 'combo'))
+    .reduce((s, p) => s + Number(p.type === 'combo' ? (p.extraAmount || 0) : p.amount), 0);
+}
+function extraFeesBalance(student) {
+  return Math.max(0, extraFeesTotal(student) - extraFeesPaid(student));
+}
+function extraFeesStatus(student) {
+  const fee = extraFeesTotal(student);
+  if (fee <= 0) return 'paid';
+  const paid = extraFeesPaid(student);
+  if (paid >= fee) return 'paid';
+  if (paid > 0) return 'partial';
+  return 'unpaid';
+}
+function invoiceMonthsForStudent(student) {
+  return schoolYearMonths().filter(m => isEnrolledInMonth(student, m));
+}
+function nextInvoiceNumber() {
+  const n = state.settings.nextInvoiceNumber || 1;
+  state.settings.nextInvoiceNumber = n + 1;
+  const yearPart = ((state.settings.schoolYear || '').split('-')[0] || '').trim() || String(new Date().getFullYear());
+  return `${yearPart}-${String(n).padStart(3, '0')}`;
+}
+function numberToArabicWords(n) {
+  n = Math.round(Number(n) || 0);
+  if (n === 0) return 'صفر';
+  const neg = n < 0;
+  n = Math.abs(n);
+  const ones = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
+  const teens = ['عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+  const tens = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+  const hundreds = ['', 'مائة', 'مئتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
+  function threeDigits(num) {
+    const parts = [];
+    const h = Math.floor(num / 100);
+    const rem = num % 100;
+    if (h > 0) parts.push(hundreds[h]);
+    if (rem > 0) {
+      if (rem < 10) parts.push(ones[rem]);
+      else if (rem < 20) parts.push(teens[rem - 10]);
+      else {
+        const t = Math.floor(rem / 10);
+        const o = rem % 10;
+        parts.push(o > 0 ? `${ones[o]} و${tens[t]}` : tens[t]);
+      }
+    }
+    return parts.join(' و');
+  }
+  const scales = [
+    { value: 1000000000, singular: 'مليار', dual: 'ملياران', plural: 'مليارات' },
+    { value: 1000000, singular: 'مليون', dual: 'مليونان', plural: 'ملايين' },
+    { value: 1000, singular: 'ألف', dual: 'ألفان', plural: 'آلاف' }
+  ];
+  let remaining = n;
+  const segments = [];
+  scales.forEach(scale => {
+    const count = Math.floor(remaining / scale.value);
+    if (count > 0) {
+      remaining -= count * scale.value;
+      if (count === 1) segments.push(scale.singular);
+      else if (count === 2) segments.push(scale.dual);
+      else if (count >= 3 && count <= 10) segments.push(`${threeDigits(count)} ${scale.plural}`);
+      else segments.push(`${threeDigits(count)} ${scale.singular}`);
+    }
+  });
+  if (remaining > 0) segments.push(threeDigits(remaining));
+  return (neg ? 'ناقص ' : '') + segments.join(' و');
+}
+function numberToFrenchWords(n) {
+  n = Math.round(Number(n) || 0);
+  if (n === 0) return 'zéro';
+  const neg = n < 0;
+  n = Math.abs(n);
+  const ones = ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix',
+    'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+  const tensWords = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+  function twoDigits(num) {
+    if (num < 20) return ones[num];
+    const t = Math.floor(num / 10);
+    const o = num % 10;
+    if (t === 7 || t === 9) return `${tensWords[t - 1]}-${ones[10 + o]}`;
+    if (o === 0) return tensWords[t] + (t === 8 ? 's' : '');
+    if (o === 1 && t !== 8) return `${tensWords[t]} et un`;
+    return `${tensWords[t]}-${ones[o]}`;
+  }
+  function threeDigits(num) {
+    const h = Math.floor(num / 100);
+    const rem = num % 100;
+    let out = '';
+    if (h > 0) out += (h === 1 ? 'cent' : `${ones[h]} cent`) + (h > 1 && rem === 0 ? 's' : '');
+    if (rem > 0) out += (out ? ' ' : '') + twoDigits(rem);
+    return out;
+  }
+  const scales = [
+    { value: 1000000000, word: 'milliard' },
+    { value: 1000000, word: 'million' },
+    { value: 1000, word: 'mille' }
+  ];
+  let remaining = n;
+  const segments = [];
+  scales.forEach(scale => {
+    const count = Math.floor(remaining / scale.value);
+    if (count > 0) {
+      remaining -= count * scale.value;
+      if (scale.value === 1000 && count === 1) segments.push('mille');
+      else segments.push(`${threeDigits(count)} ${scale.word}${count > 1 && scale.value !== 1000 ? 's' : ''}`);
+    }
+  });
+  if (remaining > 0) segments.push(threeDigits(remaining));
+  return (neg ? 'moins ' : '') + segments.join(' ').trim();
+}
+function amountInWords(amount) {
+  const currency = state.settings.currency || 'FCFA';
+  return L(`${numberToArabicWords(amount)} ${currency}`, `${numberToFrenchWords(amount)} ${currency}`);
+}
 function paymentMonths(p) {
   if (Array.isArray(p.months) && p.months.length) return p.months;
   return p.month ? [p.month] : [];
@@ -1051,13 +1175,15 @@ function distributeAmountOverMonths(student, months, totalAmount) {
 }
 function paymentLabel(p) {
   if (p.type === 'registration') return L('رسوم تسجيل', "Frais d'inscription");
+  if (p.type === 'extra') return L('رسوم إضافية', 'Frais additionnels');
   if (p.type === 'combo') {
     const months = paymentMonths(p);
-    if (months.length <= 1) return L(`رسوم تسجيل + رسوم شهرية (${monthLabel(months[0])})`, `Inscription + mensualité (${monthLabel(months[0])})`);
+    const extraSuffix = p.extraAmount > 0 ? L(' + رسوم إضافية', ' + frais additionnels') : '';
+    if (months.length <= 1) return L(`رسوم تسجيل + رسوم شهرية (${monthLabel(months[0])})`, `Inscription + mensualité (${monthLabel(months[0])})`) + extraSuffix;
     return L(
       `رسوم تسجيل + رسوم شهرية — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} أشهر)`,
       `Inscription + mensualités — ${monthLabel(months[0])} → ${monthLabel(months[months.length - 1])} (${months.length} mois)`
-    );
+    ) + extraSuffix;
   }
   const months = paymentMonths(p);
   if (months.length <= 1) return L('رسوم شهرية — ', 'Mensualité — ') + monthLabel(months[0]);
@@ -1693,6 +1819,11 @@ function studentForm(existing, prefill) {
           <input id="sf-fee-status-note" value="${escapeHtml(existing ? existing.feeStatusNote || '' : '')}" placeholder="${L('مثال: حالة اجتماعية، منحة...', 'Ex : cas social, bourse...')}">
         </div>
       </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>${L('رسوم إضافية (اختياري) — مثال: رسم صحي، زي مدرسي، أدوات مدرسية', 'Frais additionnels (optionnel) — ex : santé, uniforme, fournitures')}</label>
+        <div id="sf-extra-fees-list"></div>
+        <button type="button" class="btn btn--outline btn--sm" id="sf-extra-fee-add" style="margin-top:6px">${L('＋ إضافة بند', '＋ Ajouter un poste')}</button>
+      </div>
       ${isEdit ? `
       <div class="field">
         <label>${L('الحالة', 'Statut')}</label>
@@ -1730,6 +1861,37 @@ function studentForm(existing, prefill) {
   feeStatusSel.addEventListener('change', updateFeeStatusVisibility);
   updateFeeStatusVisibility();
 
+  let extraFeeRows = extraFeesList(seed).map(f => ({ id: f.id || uid('ef'), label: f.label || '', amount: f.amount != null ? f.amount : '' }));
+  function renderExtraFeeRows() {
+    const wrap = document.getElementById('sf-extra-fees-list');
+    wrap.innerHTML = extraFeeRows.length ? extraFeeRows.map(r => `
+      <div class="field-row" data-extra-row="${r.id}" style="margin-bottom:6px;align-items:end">
+        <div class="field" style="flex:2">
+          <input class="sf-extra-label" placeholder="${L('اسم البند (مثال: رسم صحي)', 'Nom du poste (ex : frais de santé)')}" value="${escapeHtml(r.label)}">
+        </div>
+        <div class="field" style="flex:1">
+          <input class="sf-extra-amount" type="number" min="0" placeholder="0" value="${r.amount}">
+        </div>
+        <button type="button" class="btn btn--outline btn--sm sf-extra-remove">✕</button>
+      </div>
+    `).join('') : `<p style="color:var(--color-text-muted);font-size:13px;margin:4px 0">${L('لا توجد بنود إضافية', 'Aucun poste additionnel')}</p>`;
+    wrap.querySelectorAll('[data-extra-row]').forEach(rowEl => {
+      const id = rowEl.dataset.extraRow;
+      const row = extraFeeRows.find(r => r.id === id);
+      rowEl.querySelector('.sf-extra-label').addEventListener('input', e => { row.label = e.target.value; });
+      rowEl.querySelector('.sf-extra-amount').addEventListener('input', e => { row.amount = e.target.value; });
+      rowEl.querySelector('.sf-extra-remove').addEventListener('click', () => {
+        extraFeeRows = extraFeeRows.filter(r => r.id !== id);
+        renderExtraFeeRows();
+      });
+    });
+  }
+  renderExtraFeeRows();
+  document.getElementById('sf-extra-fee-add').addEventListener('click', () => {
+    extraFeeRows.push({ id: uid('ef'), label: '', amount: '' });
+    renderExtraFeeRows();
+  });
+
   document.getElementById('sf-save').addEventListener('click', () => {
     const name = document.getElementById('sf-name').value.trim();
     if (!name) { toast(L('يرجى إدخال اسم الطالب', "Veuillez saisir le nom de l'élève"), 'error'); return; }
@@ -1744,7 +1906,10 @@ function studentForm(existing, prefill) {
       feeStatus: feeStatusSel.value,
       feeStatusNote: document.getElementById('sf-fee-status-note').value.trim(),
       registrationFee: Number(document.getElementById('sf-regfee').value) || 0,
-      monthlyFeeOverride: document.getElementById('sf-monthlyfee').value === '' ? null : Number(document.getElementById('sf-monthlyfee').value)
+      monthlyFeeOverride: document.getElementById('sf-monthlyfee').value === '' ? null : Number(document.getElementById('sf-monthlyfee').value),
+      extraFees: extraFeeRows
+        .filter(r => r.label.trim() && Number(r.amount) > 0)
+        .map(r => ({ id: r.id, label: r.label.trim(), amount: Number(r.amount) || 0 }))
     };
     if (isEdit) {
       Object.assign(existing, data);
@@ -1801,10 +1966,19 @@ function studentDetail(id) {
       <p><strong>${L('القسم:', 'Classe :')}</strong> ${escapeHtml(className(s.classId))} &nbsp; | &nbsp; <strong>${L('الهاتف:', 'Téléphone :')}</strong> ${escapeHtml(s.phone || '—')}</p>
       <p><strong>${L('ولي الأمر:', 'Tuteur :')}</strong> ${escapeHtml(displayParentName(s) || '—')}${s.parentNameAr && s.parentNameAr.trim() ? ` <span style="color:var(--color-text-muted)">(${escapeHtml(s.parentName)})</span>` : ''} &nbsp; | &nbsp; <strong>${L('تاريخ التسجيل:', "Date d'inscription :")}</strong> ${fmtDate(s.registrationDate)}</p>
       ${s.feeStatus && s.feeStatus !== 'normal' && s.feeStatusNote ? `<p style="color:var(--color-text-muted)"><strong>${L('سبب الخصم/الإعفاء:', 'Motif de la remise/exonération :')}</strong> ${escapeHtml(s.feeStatusNote)}</p>` : ''}
+      ${extraFeesList(s).length ? `
+      <div style="margin:10px 0">
+        <strong>${L('الرسوم الإضافية:', 'Frais additionnels :')}</strong>
+        <ul style="margin:6px 0;padding-inline-start:20px">
+          ${extraFeesList(s).map(f => `<li>${escapeHtml(f.label)} — ${fmtMoney(f.amount)}</li>`).join('')}
+        </ul>
+        <span style="color:var(--color-text-muted);font-size:13px">${L('المتبقي:', 'Solde dû :')} ${fmtMoney(extraFeesBalance(s))}</span>
+      </div>` : ''}
       ${siblings.length ? `<p style="color:var(--color-text-muted)">👨‍👩‍👧‍👦 ${L(`لولي الأمر هذا ${siblings.length + 1} أبناء مسجّلون:`, `Ce tuteur a ${siblings.length + 1} enfant(s) inscrit(s) :`)} ${escapeHtml([s.name, ...siblings.map(x => x.name)].join(L('، ', ', ')))}</p>` : ''}
       <div class="row-actions" style="margin:10px 0 16px">
         <button class="btn btn--outline btn--sm" id="sd-add-sibling">${L('＋ إضافة ابن آخر لنفس ولي الأمر', '＋ Ajouter un autre enfant')}</button>
         ${s.phone ? `<button class="btn btn--outline btn--sm" id="sd-family-invoice">${L('🧾 فاتورة عائلية موحّدة', '🧾 Facture familiale groupée')}</button>` : ''}
+        <button class="btn btn--outline btn--sm" id="sd-annual-invoice">${L('🧾 فاتورة سنوية شاملة', 'Facture annuelle complète')}</button>
       </div>
       <hr style="margin:16px 0;border:none;border-top:1px solid var(--color-border)">
       <h4 style="margin-bottom:10px">${L('سجل الدفعات', 'Historique des paiements')}</h4>
@@ -1836,6 +2010,7 @@ function studentDetail(id) {
   document.getElementById('sd-add-sibling').addEventListener('click', () => studentForm(null, { parentName: s.parentName, parentNameAr: s.parentNameAr, phone: s.phone, classId: s.classId }));
   const invoiceBtn = document.getElementById('sd-family-invoice');
   if (invoiceBtn) invoiceBtn.addEventListener('click', () => familyInvoiceModal(s.phone));
+  document.getElementById('sd-annual-invoice').addEventListener('click', () => printAnnualInvoice(s.id));
   document.querySelectorAll('[data-print]').forEach(b => b.addEventListener('click', () => printReceipt(b.dataset.print)));
   document.querySelectorAll('[data-whatsapp]').forEach(b => b.addEventListener('click', () => sendReceiptWhatsApp(b.dataset.whatsapp)));
   document.getElementById('modal-container').querySelectorAll('[data-toggle-status]').forEach(b => b.addEventListener('click', () => {
@@ -2074,6 +2249,7 @@ function paymentForm(studentId) {
             <option value="combo">${L('رسوم تسجيل + رسوم شهرية معًا', "Inscription + mensualité(s) ensemble")}</option>
             <option value="registration">${L('رسوم تسجيل فقط', 'Inscription seulement')}</option>
             <option value="monthly">${L('رسوم شهرية', 'Mensualité')}</option>
+            <option value="extra">${L('رسوم إضافية فقط', 'Frais additionnels seulement')}</option>
           </select>
         </div>
         <div class="field" id="pf-month-wrap">
@@ -2123,6 +2299,10 @@ function paymentForm(studentId) {
           <input id="pf-combo-month" type="number" min="0" placeholder="0">
           <small id="pf-combo-month-hint" style="color:var(--color-text-muted);display:block;margin-top:4px"></small>
         </div>
+        <div class="field" id="pf-combo-extra-wrap" hidden>
+          <label>${L('مبلغ الرسوم الإضافية', 'Montant des frais additionnels')} (${escapeHtml(state.settings.currency)})</label>
+          <input id="pf-combo-extra" type="number" min="0" placeholder="0">
+        </div>
       </div>
       <div class="field" id="pf-combo-total-wrap" style="margin-bottom:14px" hidden>
         <small id="pf-combo-total" style="color:var(--color-text-muted)"></small>
@@ -2159,6 +2339,8 @@ function paymentForm(studentId) {
   const comboRegInput = document.getElementById('pf-combo-reg');
   const comboMonthInput = document.getElementById('pf-combo-month');
   const comboMonthHint = document.getElementById('pf-combo-month-hint');
+  const comboExtraWrap = document.getElementById('pf-combo-extra-wrap');
+  const comboExtraInput = document.getElementById('pf-combo-extra');
   const monthInput = document.getElementById('pf-month');
   const studentSel = document.getElementById('pf-student');
 
@@ -2189,12 +2371,18 @@ function paymentForm(studentId) {
     if (type === 'registration') {
       amountInput.value = registrationBalance(st) || '';
       previewEl.textContent = '';
+    } else if (type === 'extra') {
+      amountInput.value = extraFeesBalance(st) || '';
+      previewEl.textContent = '';
     } else if (type === 'combo') {
       const months = selectedMonths();
       const fee = monthlyFeeFor(st);
       comboRegInput.value = registrationBalance(st) || '';
       comboMonthInput.value = totalDueForMonths(st, months) || '';
       comboMonthHint.textContent = `${fmtMoney(fee)} ${L('×', '×')} ${months.length} ${L(months.length > 1 ? 'أشهر' : 'شهر', months.length > 1 ? 'mois' : 'mois')} = ${fmtMoney(fee * months.length)}`;
+      const extraBal = extraFeesBalance(st);
+      comboExtraWrap.hidden = extraBal <= 0;
+      comboExtraInput.value = extraBal > 0 ? extraBal : '';
       previewEl.textContent = months.length > 1
         ? `${L('سيتم تغطية:', 'Mois couverts :')} ${months.map(monthLabel).join(L('، ', ', '))}`
         : '';
@@ -2208,7 +2396,7 @@ function paymentForm(studentId) {
     }
   }
   function updateComboTotal() {
-    const total = (Number(comboRegInput.value) || 0) + (Number(comboMonthInput.value) || 0);
+    const total = (Number(comboRegInput.value) || 0) + (Number(comboMonthInput.value) || 0) + (Number(comboExtraInput.value) || 0);
     comboTotalEl.textContent = `${L('الإجمالي:', 'Total :')} ${fmtMoney(total)}`;
   }
   typeSel.addEventListener('change', refresh);
@@ -2218,6 +2406,7 @@ function paymentForm(studentId) {
   countCustomInput.addEventListener('input', refresh);
   comboRegInput.addEventListener('input', updateComboTotal);
   comboMonthInput.addEventListener('input', updateComboTotal);
+  comboExtraInput.addEventListener('input', updateComboTotal);
   refresh();
 
   document.getElementById('pf-save').addEventListener('click', () => {
@@ -2227,7 +2416,8 @@ function paymentForm(studentId) {
     if (type === 'combo') {
       const regAmt = Number(comboRegInput.value) || 0;
       const monAmt = Number(comboMonthInput.value) || 0;
-      if (regAmt <= 0 && monAmt <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
+      const extraAmt = Number(comboExtraInput.value) || 0;
+      if (regAmt <= 0 && monAmt <= 0 && extraAmt <= 0) { toast(L('يرجى إدخال مبلغ صحيح', 'Veuillez saisir un montant valide'), 'error'); return; }
       const months = selectedMonths();
       const payment = {
         id: uid('pay'),
@@ -2236,7 +2426,8 @@ function paymentForm(studentId) {
         registrationAmount: regAmt,
         months,
         allocations: distributeAmountOverMonths(st, months, monAmt),
-        amount: regAmt + monAmt,
+        extraAmount: extraAmt,
+        amount: regAmt + monAmt + extraAmt,
         date: document.getElementById('pf-combo-date').value || todayISO(),
         note: document.getElementById('pf-note').value.trim(),
         receiptNo: nextReceiptNumber()
@@ -2302,6 +2493,7 @@ function renderPayments() {
           <option value="combo" ${paymentFilters.type === 'combo' ? 'selected' : ''}>${L('تسجيل + رسوم شهرية', 'Inscription + mensualité(s)')}</option>
           <option value="registration" ${paymentFilters.type === 'registration' ? 'selected' : ''}>${L('رسوم تسجيل', 'Inscription')}</option>
           <option value="monthly" ${paymentFilters.type === 'monthly' ? 'selected' : ''}>${L('رسوم شهرية', 'Mensualité')}</option>
+          <option value="extra" ${paymentFilters.type === 'extra' ? 'selected' : ''}>${L('رسوم إضافية', 'Frais additionnels')}</option>
         </select>
       </div>
       <button class="btn btn--primary" id="pyf-add" style="align-self:flex-end">${L('＋ تسجيل دفعة', '＋ Nouveau paiement')}</button>
@@ -2374,7 +2566,8 @@ function printReceipt(paymentId) {
         <tr><td>${L('تاريخ الدفع', 'Date de paiement')}</td><td>${fmtDate(p.date)}</td></tr>
         ${p.type === 'combo' ? `
         <tr><td>${L('رسوم التسجيل', "Frais d'inscription")}</td><td>${fmtMoney(p.registrationAmount || 0)}</td></tr>
-        <tr><td>${L('رسوم الأشهر', 'Frais mensuels')}</td><td>${fmtMoney((p.amount || 0) - (p.registrationAmount || 0))}</td></tr>
+        <tr><td>${L('رسوم الأشهر', 'Frais mensuels')}</td><td>${fmtMoney((p.amount || 0) - (p.registrationAmount || 0) - (p.extraAmount || 0))}</td></tr>
+        ${p.extraAmount ? `<tr><td>${L('رسوم إضافية', 'Frais additionnels')}</td><td>${fmtMoney(p.extraAmount)}</td></tr>` : ''}
         ` : ''}
         ${p.note ? `<tr><td>${L('ملاحظة', 'Remarque')}</td><td>${escapeHtml(p.note)}</td></tr>` : ''}
         <tr class="total-row"><td>${L('المبلغ المدفوع', 'Montant payé')}</td><td>${fmtMoney(p.amount)}</td></tr>
@@ -2382,6 +2575,74 @@ function printReceipt(paymentId) {
       <div class="sign">
         <span>${L('توقيع المستلم: ..............................', 'Signature : ..............................')}</span>
         <span>${fmtDate(todayISO())}</span>
+      </div>
+    </div>
+  `;
+  window.print();
+}
+
+function printAnnualInvoice(studentId) {
+  const st = getStudent(studentId);
+  if (!st) return;
+  const area = document.getElementById('print-area');
+  const months = invoiceMonthsForStudent(st);
+  const fee = monthlyFeeFor(st);
+  const monthlyTotal = fee * months.length;
+  const monthlyPaidTotal = months.reduce((s, m) => s + monthPaid(st, m), 0);
+  const regFee = registrationFee(st);
+  const regPaid = registrationPaid(st);
+  const extras = extraFeesList(st);
+  const extrasTotal = extraFeesTotal(st);
+  const extrasPaid = extraFeesPaid(st);
+  const grandTotal = regFee + monthlyTotal + extrasTotal;
+  const grandPaid = Math.min(grandTotal, regPaid + monthlyPaidTotal + extrasPaid);
+  const balance = Math.max(0, grandTotal - grandPaid);
+  const invoiceNo = nextInvoiceNumber();
+  save();
+
+  const rows = [
+    {
+      label: `${L('الرسوم الشهرية للسنة الدراسية كاملة', "Frais mensuels pour l'année scolaire")}<br><span style="font-size:11px;color:var(--color-text-muted)">${months.length} ${L(months.length > 1 ? 'أشهر' : 'شهر', 'mois')} × ${fmtMoney(fee)}</span>`,
+      amount: monthlyTotal
+    },
+    { label: L('رسوم التسجيل', "Frais d'inscription"), amount: regFee },
+    ...extras.map(f => ({ label: escapeHtml(f.label), amount: Number(f.amount) || 0 }))
+  ];
+
+  area.innerHTML = `
+    <div class="receipt" style="max-width:620px">
+      ${receiptHeaderHtml()}
+      ${receiptLogoHtml()}
+      <h2>${escapeHtml(displayedSchoolName())}</h2>
+      ${receiptLicenseHtml()}
+      <div class="sub">${escapeHtml(state.settings.address || '')} ${state.settings.phone ? ' — ' + escapeHtml(state.settings.phone) : ''}</div>
+      <div class="sub">${L('السنة الدراسية:', 'Année scolaire :')} ${escapeHtml(state.settings.schoolYear)}</div>
+      <hr>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+        <strong style="font-size:16px">${L('فاتورة رسوم مدرسية', 'Facture de frais scolaires')}</strong>
+        <span style="font-size:13px">${L('رقم الفاتورة:', 'N° facture :')} <strong>${escapeHtml(invoiceNo)}</strong> — ${fmtDate(todayISO())}</span>
+      </div>
+      <table>
+        <tr><td>${L('ولي الأمر', 'Tuteur')}</td><td>${escapeHtml(displayParentName(st) || '—')}</td></tr>
+        <tr><td>${L('الطالب', "Élève")}</td><td>${escapeHtml(displayStudentName(st))}</td></tr>
+        <tr><td>${L('القسم الدراسي', 'Classe')}</td><td>${escapeHtml(className(st.classId))}</td></tr>
+      </table>
+      <table style="margin-top:10px">
+        <tr><td><strong>${L('البند', 'Description')}</strong></td><td><strong>${L('المبلغ', 'Montant')}</strong></td></tr>
+        ${rows.map(r => `<tr><td>${r.label}</td><td>${fmtMoney(r.amount)}</td></tr>`).join('')}
+        <tr class="total-row"><td>${L('الإجمالي', 'Total')}</td><td>${fmtMoney(grandTotal)}</td></tr>
+        <tr><td>${L('المبلغ المدفوع', 'Montant payé')}</td><td>${fmtMoney(grandPaid)}</td></tr>
+        <tr><td>${L('المتبقي', 'Solde dû')}</td><td>${fmtMoney(balance)}</td></tr>
+      </table>
+      ${balance <= 0 ? `
+      <div style="display:flex;align-items:center;gap:14px;border:2px dashed var(--color-accent);border-radius:10px;padding:12px;margin:16px 0">
+        <div style="border:2px solid var(--color-accent);color:var(--color-accent);border-radius:8px;padding:6px 10px;font-weight:800;white-space:nowrap">${L('مدفوع بالكامل', 'PAYÉ INTÉGRALEMENT')}</div>
+        <div style="font-size:13px;color:var(--color-text-muted)">${L('تم سداد كامل الرسوم لهذه السنة الدراسية، ولا يوجد أي مبلغ متبقٍ.', "Le tuteur a réglé l'intégralité des frais pour cette année scolaire. Aucun solde ne reste dû.")}</div>
+      </div>` : ''}
+      <p style="font-size:13px;color:var(--color-text-muted);margin:10px 0"><strong>${L('المبلغ بالحروف:', 'Montant en lettres :')}</strong> ${amountInWords(grandPaid)}</p>
+      <div class="sign">
+        <span>${L('توقيع ولي الأمر: ..............................', 'Signature du tuteur : ..............................')}</span>
+        <span>${L('ختم وتوقيع المؤسسة', "Cachet et signature de l'institut")}</span>
       </div>
     </div>
   `;
