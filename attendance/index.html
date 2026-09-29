@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>حضور الأساتذة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --surface-2: #eef1f6;
+    --text: #1b2433;
+    --muted: #667085;
+    --border: #dde2ea;
+    --primary: #1f6feb;
+    --primary-ink: #ffffff;
+    --ok: #15803d;
+    --ok-bg: #dcfce7;
+    --warn: #b45309;
+    --warn-bg: #fef3c7;
+    --bad: #b91c1c;
+    --bad-bg: #fee2e2;
+    --info: #1d4ed8;
+    --info-bg: #dbeafe;
+    --radius: 12px;
+    --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f141c; --surface: #171e29; --surface-2: #1f2836; --text: #e6eaf2;
+      --muted: #98a2b3; --border: #2b3546; --primary: #4c8dff;
+      --ok: #4ade80; --ok-bg: #14301f; --warn: #fbbf24; --warn-bg: #33270d;
+      --bad: #f87171; --bad-bg: #3a1717; --info: #93c5fd; --info-bg: #172a45;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f141c; --surface: #171e29; --surface-2: #1f2836; --text: #e6eaf2;
+    --muted: #98a2b3; --border: #2b3546; --primary: #4c8dff;
+    --ok: #4ade80; --ok-bg: #14301f; --warn: #fbbf24; --warn-bg: #33270d;
+    --bad: #f87171; --bad-bg: #3a1717; --info: #93c5fd; --info-bg: #172a45;
+    --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Tajawal", system-ui, sans-serif; font-size: 16px; line-height: 1.5;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  header.top {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+    margin-bottom: 12px;
+  }
+  header.top h1 { margin: 0; font-size: 1.4rem; font-weight: 800; }
+  header.top .sub { color: var(--muted); font-size: .95rem; }
+  .clock { text-align: left; }
+  .clock .time { font-size: 1.8rem; font-weight: 800; font-variant-numeric: tabular-nums; direction: ltr; }
+  .clock .date { color: var(--muted); font-size: .95rem; }
+
+  nav.tabs {
+    display: flex; gap: 6px; overflow-x: auto; padding: 4px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 16px;
+  }
+  nav.tabs button {
+    flex: 1 0 auto; border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 700;
+    padding: 10px 14px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+  }
+  nav.tabs button.active { background: var(--primary); color: var(--primary-ink); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+  .card + .card { margin-top: 16px; }
+  .card h2 { margin: 0 0 12px; font-size: 1.15rem; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+  .stat .n { font-size: 1.7rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .stat .l { color: var(--muted); font-size: .9rem; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-bottom: 12px; }
+  .toolbar .grow { flex: 1 1 200px; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: .9rem; color: var(--muted); }
+  input, select, textarea {
+    font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 9px; padding: 9px 11px; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .btn {
+    font: inherit; font-weight: 700; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    padding: 9px 14px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+  }
+  .btn:hover { filter: brightness(.97); }
+  .btn.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  .btn.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .btn.bad { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .btn.sm { padding: 5px 10px; font-size: .88rem; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .grid-teachers { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+  .t-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .t-card .name { font-weight: 800; font-size: 1.05rem; }
+  .t-card .meta { color: var(--muted); font-size: .9rem; }
+  .t-card .times { display: flex; gap: 14px; font-size: .92rem; font-variant-numeric: tabular-nums; }
+  .t-card .times b { direction: ltr; display: inline-block; }
+  .t-card .btn { width: 100%; padding: 11px; }
+
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .82rem; font-weight: 700; }
+  .b-ok { background: var(--ok-bg); color: var(--ok); }
+  .b-warn { background: var(--warn-bg); color: var(--warn); }
+  .b-bad { background: var(--bad-bg); color: var(--bad); }
+  .b-info { background: var(--info-bg); color: var(--info); }
+  .b-muted { background: var(--surface-2); color: var(--muted); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+  th { color: var(--muted); font-weight: 700; background: var(--surface-2); }
+  td.num { font-variant-numeric: tabular-nums; direction: ltr; text-align: right; }
+
+  .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .days { display: flex; flex-wrap: wrap; gap: 8px; }
+  .days label { display: flex; gap: 6px; align-items: center; background: var(--surface-2); border: 1px solid var(--border); padding: 6px 10px; border-radius: 9px; cursor: pointer; }
+  .days input { width: auto; }
+  .muted { color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); padding: 28px 10px; }
+  .hidden { display: none !important; }
+
+  dialog { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); padding: 0; width: min(460px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(0,0,0,.45); }
+  dialog form { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  dialog h3 { margin: 0; }
+  dialog .actions { display: flex; gap: 8px; justify-content: flex-start; }
+
+  .toast {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(20px); opacity: 0;
+    background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-weight: 700;
+    transition: .25s; pointer-events: none; z-index: 50; max-width: calc(100vw - 32px); text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .lock { max-width: 360px; margin: 30px auto; text-align: center; }
+
+  @media print {
+    nav.tabs, .toolbar, .no-print, .clock { display: none !important; }
+    body { background: #fff; color: #000; }
+    .card { border: 0; box-shadow: none; padding: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 id="schoolTitle">حضور وانصراف الأساتذة</h1>
+      <div class="sub" id="schoolHours"></div>
+    </div>
+    <div class="clock">
+      <div class="time" id="clockTime">--:--:--</div>
+      <div class="date" id="clockDate"></div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button data-tab="today" class="active">الحضور اليوم</button>
+    <button data-tab="log">السجل اليومي</button>
+    <button data-tab="report">التقارير</button>
+    <button data-tab="teachers">الأساتذة</button>
+    <button data-tab="settings">الإعدادات</button>
+  </nav>
+
+  <!-- اليوم -->
+  <section id="tab-today">
+    <div class="stats" id="todayStats"></div>
+    <div class="toolbar">
+      <label class="f grow">بحث عن أستاذ
+        <input id="todaySearch" type="search" placeholder="اكتب الاسم أو المادة…">
+      </label>
+    </div>
+    <div class="grid-teachers" id="todayGrid"></div>
+  </section>
+
+  <!-- السجل -->
+  <section id="tab-log" class="hidden">
+    <div class="card">
+      <h2>السجل اليومي</h2>
+      <div class="toolbar">
+        <label class="f">التاريخ <input id="logDate" type="date"></label>
+        <button class="btn" id="logPrev">اليوم السابق</button>
+        <button class="btn" id="logNext">اليوم التالي</button>
+        <button class="btn" id="logCsv">تصدير Excel (CSV)</button>
+        <button class="btn" onclick="window.print()">طباعة</button>
+      </div>
+      <div id="logInfo" class="muted" style="margin-bottom:8px"></div>
+      <div class="table-wrap"><table id="logTable"></table></div>
+    </div>
+  </section>
+
+  <!-- التقارير -->
+  <section id="tab-report" class="hidden">
+    <div class="card">
+      <h2>تقرير الحضور لفترة</h2>
+      <div class="toolbar">
+        <label class="f">من <input id="repFrom" type="date"></label>
+        <label class="f">إلى <input id="repTo" type="date"></label>
+        <button class="btn" id="repMonth">هذا الشهر</button>
+        <button class="btn" id="repLastMonth">الشهر الماضي</button>
+        <button class="btn" id="repCsv">تصدير Excel (CSV)</button>
+        <button class="btn" onclick="window.print()">طباعة</button>
+      </div>
+      <div id="repInfo" class="muted" style="margin-bottom:8px"></div>
+      <div class="table-wrap"><table id="repTable"></table></div>
+    </div>
+  </section>
+
+  <!-- الأساتذة -->
+  <section id="tab-teachers" class="hidden">
+    <div class="card">
+      <h2>إضافة أستاذ</h2>
+      <form id="addTeacher" class="row2">
+        <label class="f">الاسم الكامل <input name="name" required></label>
+        <label class="f">المادة <input name="subject"></label>
+        <label class="f">الهاتف <input name="phone" inputmode="tel"></label>
+        <div style="display:flex;align-items:end"><button class="btn primary" style="width:100%">إضافة</button></div>
+      </form>
+    </div>
+    <div class="card">
+      <h2>قائمة الأساتذة</h2>
+      <div class="table-wrap"><table id="teachersTable"></table></div>
+    </div>
+  </section>
+
+  <!-- الإعدادات -->
+  <section id="tab-settings" class="hidden">
+    <div class="card">
+      <h2>إعدادات المدرسة</h2>
+      <form id="settingsForm" style="display:flex;flex-direction:column;gap:14px">
+        <div class="row2">
+          <label class="f">اسم المدرسة <input name="schoolName"></label>
+          <label class="f">بداية الدوام <input name="start" type="time" required></label>
+          <label class="f">نهاية الدوام <input name="end" type="time" required></label>
+          <label class="f">مدة السماح للتأخير (دقائق) <input name="grace" type="number" min="0" max="120"></label>
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:6px">أيام العمل</div>
+          <div class="days" id="daysBox"></div>
+        </div>
+        <label class="f">كلمة سر الإدارة (اختيارية — تحمي كل الصفحات ما عدا «الحضور اليوم»)
+          <input name="adminPin" type="password" autocomplete="new-password" placeholder="اتركها فارغة لإلغاء الحماية">
+        </label>
+        <div><button class="btn primary">حفظ الإعدادات</button></div>
+      </form>
+    </div>
+    <div class="card">
+      <h2>النسخ الاحتياطي</h2>
+      <p class="muted" style="margin-top:0">البيانات محفوظة في هذا المتصفح فقط. احفظ نسخة احتياطية بانتظام لتجنب فقدانها أو لنقلها إلى جهاز آخر.</p>
+      <div class="toolbar">
+        <button class="btn" id="backupBtn">تنزيل نسخة احتياطية</button>
+        <label class="btn">استرجاع نسخة <input id="restoreInput" type="file" accept="application/json,.json" class="hidden"></label>
+        <button class="btn bad" id="wipeBtn">حذف كل البيانات</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- قفل الإدارة -->
+  <section id="lockView" class="hidden">
+    <div class="card lock">
+      <h2>هذه الصفحة خاصة بالإدارة</h2>
+      <form id="unlockForm" style="display:flex;flex-direction:column;gap:10px">
+        <input id="unlockPin" type="password" placeholder="كلمة سر الإدارة" autocomplete="current-password">
+        <button class="btn primary">دخول</button>
+      </form>
+    </div>
+  </section>
+</div>
+
+<!-- نافذة تعديل سجل -->
+<dialog id="editDlg">
+  <form method="dialog" id="editForm">
+    <h3 id="editTitle">تعديل السجل</h3>
+    <label class="f">الحالة
+      <select name="kind">
+        <option value="present">حاضر</option>
+        <option value="leave">إجازة / عذر</option>
+        <option value="none">غائب (بدون تسجيل)</option>
+      </select>
+    </label>
+    <div class="row2" id="editTimes">
+      <label class="f">وقت الحضور <input name="in" type="time"></label>
+      <label class="f">وقت الانصراف <input name="out" type="time"></label>
+    </div>
+    <label class="f">ملاحظة <input name="note"></label>
+    <div class="actions">
+      <button class="btn primary" value="save">حفظ</button>
+      <button class="btn" value="cancel" formnovalidate>إلغاء</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- نافذة تعديل أستاذ -->
+<dialog id="teacherDlg">
+  <form method="dialog" id="teacherForm">
+    <h3>تعديل بيانات الأستاذ</h3>
+    <label class="f">الاسم الكامل <input name="name" required></label>
+    <label class="f">المادة <input name="subject"></label>
+    <label class="f">الهاتف <input name="phone"></label>
+    <label class="f">تاريخ بدء العمل (لا يُحسب غياب قبله) <input name="since" type="date"></label>
+    <label class="f" style="flex-direction:row;align-items:center;gap:8px"><input name="active" type="checkbox" style="width:auto"> نشط (يظهر في قائمة الحضور)</label>
+    <div class="actions">
+      <button class="btn primary" value="save">حفظ</button>
+      <button class="btn" value="cancel" formnovalidate>إلغاء</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- التخزين ----------
+  const KEY = "teacherAttendance.v1";
+  const DAY_NAMES = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+  const LOCALE = "ar-u-nu-latn";
+
+  const defaults = () => ({
+    settings: { schoolName: "", start: "08:00", end: "14:00", grace: 10, workDays: [1, 2, 3, 4, 5], adminPin: "" },
+    teachers: [],
+    records: {} // { "YYYY-MM-DD": { teacherId: { in, out, leave, note } } }
+  });
+
+  let db;
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      db = raw ? JSON.parse(raw) : defaults();
+    } catch { db = defaults(); }
+    const d = defaults();
+    db.settings = Object.assign(d.settings, db.settings || {});
+    db.teachers = db.teachers || [];
+    db.records = db.records || {};
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(db)); }
+    catch { toast("تعذّر الحفظ في المتصفح! احفظ نسخة احتياطية."); }
+  }
+
+  // ---------- أدوات ----------
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => document.querySelectorAll(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const pad = (n) => String(n).padStart(2, "0");
+  const dateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const parseKey = (k) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+  const todayKey = () => dateKey(new Date());
+  const nowHM = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  const toMin = (hm) => { if (!hm) return null; const [h, m] = hm.split(":").map(Number); return h * 60 + m; };
+  const fmtDur = (min) => min == null || min <= 0 ? "—" : `${Math.floor(min / 60)}س ${pad(min % 60)}د`;
+  const fmtDate = (k) => parseKey(k).toLocaleDateString(LOCALE, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const addDays = (k, n) => { const d = parseKey(k); d.setDate(d.getDate() + n); return dateKey(d); };
+  const isWorkDay = (k) => db.settings.workDays.includes(parseKey(k).getDay());
+
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2600);
+  }
+
+  function rec(k, id) { return (db.records[k] || {})[id]; }
+  function setRec(k, id, r) {
+    db.records[k] = db.records[k] || {};
+    if (r) db.records[k][id] = r; else delete db.records[k][id];
+    if (!Object.keys(db.records[k]).length) delete db.records[k];
+    save();
+  }
+
+  // تحليل حالة سجل أستاذ في يوم معيّن
+  function analyze(k, id) {
+    const r = rec(k, id);
+    const s = db.settings;
+    const res = { r, late: 0, early: 0, worked: null, status: "", cls: "" };
+    if (r && r.leave) { res.status = "إجازة / عذر"; res.cls = "b-info"; return res; }
+    if (!r || !r.in) {
+      const tk = todayKey(), t = db.teachers.find((x) => x.id === id);
+      if (t && t.since && k < t.since) { res.status = "قبل تاريخ التعيين"; res.cls = "b-muted"; res.before = true; }
+      else if (!isWorkDay(k)) { res.status = "يوم عطلة"; res.cls = "b-muted"; }
+      else if (k > tk) { res.status = "—"; res.cls = "b-muted"; }
+      else if (k === tk && toMin(nowHM()) < toMin(s.end)) { res.status = "لم يسجّل بعد"; res.cls = "b-muted"; }
+      else { res.status = "غائب"; res.cls = "b-bad"; res.absent = true; }
+      return res;
+    }
+    const inM = toMin(r.in), outM = toMin(r.out);
+    const lateBy = inM - toMin(s.start);
+    if (lateBy > Number(s.grace || 0)) res.late = lateBy;
+    if (outM != null) {
+      res.worked = outM - inM;
+      if (outM < toMin(s.end)) res.early = toMin(s.end) - outM;
+    }
+    const parts = [];
+    if (res.late) parts.push(`متأخر ${res.late} د`);
+    if (res.early) parts.push(`انصراف مبكر ${res.early} د`);
+    if (!parts.length) parts.push(outM == null ? "حاضر" : "حضور كامل");
+    else if (outM == null) parts.push("لم ينصرف");
+    res.status = parts.join(" · ");
+    res.cls = res.late || res.early ? "b-warn" : "b-ok";
+    return res;
+  }
+
+  // ---------- الساعة والعنوان ----------
+  function tickClock() {
+    const d = new Date();
+    $("#clockTime").textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    $("#clockDate").textContent = d.toLocaleDateString(LOCALE, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+    if (tickClock.day && tickClock.day !== dateKey(d) && current === "today") renderToday();
+    tickClock.day = dateKey(d);
+  }
+  function renderHeader() {
+    const s = db.settings;
+    $("#schoolTitle").textContent = s.schoolName ? `${s.schoolName} — حضور الأساتذة` : "حضور وانصراف الأساتذة";
+    $("#schoolHours").textContent = `الدوام من ${s.start} إلى ${s.end} · مدة السماح ${s.grace} دقيقة`;
+  }
+
+  // ---------- التبويبات ----------
+  let current = "today";
+  let unlocked = sessionStorage.getItem("ta.unlocked") === "1";
+  function show(tab) {
+    current = tab;
+    $$("nav.tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+    $$("section[id^=tab-]").forEach((s) => s.classList.add("hidden"));
+    const locked = tab !== "today" && db.settings.adminPin && !unlocked;
+    $("#lockView").classList.toggle("hidden", !locked);
+    if (locked) { $("#unlockPin").value = ""; $("#unlockPin").focus(); return; }
+    $("#tab-" + tab).classList.remove("hidden");
+    ({ today: renderToday, log: renderLog, report: renderReport, teachers: renderTeachers, settings: renderSettings })[tab]();
+  }
+  $$("nav.tabs button").forEach((b) => b.addEventListener("click", () => show(b.dataset.tab)));
+  $("#unlockForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if ($("#unlockPin").value === db.settings.adminPin) {
+      unlocked = true; sessionStorage.setItem("ta.unlocked", "1"); show(current);
+    } else toast("كلمة السر غير صحيحة");
+  });
+
+  // ---------- الحضور اليوم ----------
+  function renderToday() {
+    const k = todayKey();
+    const q = $("#todaySearch").value.trim().toLowerCase();
+    const active = db.teachers.filter((t) => t.active !== false);
+    let present = 0, late = 0, left = 0, leave = 0;
+    active.forEach((t) => {
+      const a = analyze(k, t.id);
+      if (a.r && a.r.leave) leave++;
+      else if (a.r && a.r.in) { present++; if (a.late) late++; if (a.r.out) left++; }
+    });
+    const notYet = active.length - present - leave;
+    $("#todayStats").innerHTML = [
+      [active.length, "عدد الأساتذة"], [present, "حاضرون"], [late, "متأخرون"],
+      [notYet, isWorkDay(k) ? "لم يحضروا" : "لم يحضروا (عطلة)"], [left, "انصرفوا"], [leave, "إجازة / عذر"]
+    ].map(([n, l]) => `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+
+    const list = active.filter((t) => !q || (t.name + " " + (t.subject || "")).toLowerCase().includes(q));
+    if (!db.teachers.length) {
+      $("#todayGrid").innerHTML = `<div class="card empty" style="grid-column:1/-1">لا يوجد أساتذة بعد. أضفهم من تبويب «الأساتذة».</div>`;
+      return;
+    }
+    if (!list.length) { $("#todayGrid").innerHTML = `<div class="empty" style="grid-column:1/-1">لا توجد نتائج</div>`; return; }
+
+    $("#todayGrid").innerHTML = list.map((t) => {
+      const a = analyze(k, t.id), r = a.r || {};
+      let btn;
+      if (r.leave) btn = `<button class="btn" disabled>إجازة / عذر</button>`;
+      else if (!r.in) btn = `<button class="btn ok" data-act="in" data-id="${t.id}">تسجيل الحضور</button>`;
+      else if (!r.out) btn = `<button class="btn primary" data-act="out" data-id="${t.id}">تسجيل الانصراف</button>`;
+      else btn = `<button class="btn" disabled>تم تسجيل الحضور والانصراف</button>`;
+      return `<div class="t-card">
+        <div><div class="name">${esc(t.name)}</div><div class="meta">${esc(t.subject || "")}</div></div>
+        <div><span class="badge ${a.cls}">${esc(a.status)}</span></div>
+        <div class="times"><span>حضور: <b>${r.in || "--:--"}</b></span><span>انصراف: <b>${r.out || "--:--"}</b></span></div>
+        ${btn}
+      </div>`;
+    }).join("");
+  }
+  $("#todaySearch").addEventListener("input", renderToday);
+  $("#todayGrid").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-act]"); if (!b) return;
+    const k = todayKey(), id = b.dataset.id, t = db.teachers.find((x) => x.id === id);
+    const r = Object.assign({}, rec(k, id));
+    const time = nowHM();
+    if (b.dataset.act === "in") {
+      if (r.in) return;
+      r.in = time; setRec(k, id, r); toast(`تم تسجيل حضور ${t.name} الساعة ${time}`);
+    } else {
+      if (!r.in || r.out) return;
+      if (!confirm(`تأكيد انصراف ${t.name} الساعة ${time}؟`)) return;
+      r.out = time; setRec(k, id, r); toast(`تم تسجيل انصراف ${t.name} الساعة ${time}`);
+    }
+    renderToday();
+  });
+
+  // ---------- السجل اليومي ----------
+  function logRows(k) {
+    const ids = new Set(db.teachers.filter((t) => t.active !== false).map((t) => t.id));
+    Object.keys(db.records[k] || {}).forEach((id) => ids.add(id)); // يشمل أساتذة غير نشطين لهم سجل
+    return db.teachers.filter((t) => ids.has(t.id)).map((t) => ({ t, a: analyze(k, t.id) }));
+  }
+  function renderLog() {
+    const inp = $("#logDate"); if (!inp.value) inp.value = todayKey();
+    const k = inp.value;
+    $("#logInfo").textContent = fmtDate(k) + (isWorkDay(k) ? "" : " (يوم عطلة)");
+    const rows = logRows(k);
+    if (!rows.length) { $("#logTable").innerHTML = `<tr><td class="empty">لا يوجد أساتذة</td></tr>`; return; }
+    $("#logTable").innerHTML = `<thead><tr><th>#</th><th>الأستاذ</th><th>المادة</th><th>الحضور</th><th>الانصراف</th><th>ساعات العمل</th><th>الحالة</th><th>ملاحظة</th><th class="no-print"></th></tr></thead><tbody>` +
+      rows.map(({ t, a }, i) => {
+        const r = a.r || {};
+        return `<tr><td>${i + 1}</td><td>${esc(t.name)}</td><td>${esc(t.subject || "")}</td>
+          <td class="num">${r.in || "—"}</td><td class="num">${r.out || "—"}</td><td>${fmtDur(a.worked)}</td>
+          <td><span class="badge ${a.cls}">${esc(a.status)}</span></td><td>${esc(r.note || "")}</td>
+          <td class="no-print"><button class="btn sm" data-edit="${t.id}">تعديل</button></td></tr>`;
+      }).join("") + "</tbody>";
+  }
+  $("#logDate").addEventListener("change", renderLog);
+  $("#logPrev").addEventListener("click", () => { $("#logDate").value = addDays($("#logDate").value || todayKey(), -1); renderLog(); });
+  $("#logNext").addEventListener("click", () => { $("#logDate").value = addDays($("#logDate").value || todayKey(), 1); renderLog(); });
+  $("#logCsv").addEventListener("click", () => {
+    const k = $("#logDate").value;
+    const rows = [["الأستاذ", "المادة", "التاريخ", "الحضور", "الانصراف", "ساعات العمل", "الحالة", "ملاحظة"]];
+    logRows(k).forEach(({ t, a }) => { const r = a.r || {}; rows.push([t.name, t.subject || "", k, r.in || "", r.out || "", fmtDur(a.worked), a.status, r.note || ""]); });
+    downloadCsv(`سجل-الحضور-${k}.csv`, rows);
+  });
+
+  // تعديل سجل
+  let editing = null;
+  $("#logTable").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-edit]"); if (!b) return;
+    const k = $("#logDate").value, id = b.dataset.edit, t = db.teachers.find((x) => x.id === id);
+    const r = rec(k, id) || {};
+    editing = { k, id };
+    const f = $("#editForm");
+    $("#editTitle").textContent = `${t.name} — ${k}`;
+    f.kind.value = r.leave ? "leave" : r.in ? "present" : "none";
+    f.in.value = r.in || ""; f.out.value = r.out || ""; f.note.value = r.note || "";
+    syncEditKind();
+    $("#editDlg").showModal();
+  });
+  function syncEditKind() { $("#editTimes").classList.toggle("hidden", $("#editForm").kind.value !== "present"); }
+  $("#editForm").kind.addEventListener("change", syncEditKind);
+  $("#editDlg").addEventListener("close", () => {
+    if ($("#editDlg").returnValue !== "save" || !editing) return;
+    const f = $("#editForm"), note = f.note.value.trim();
+    let r = null;
+    if (f.kind.value === "leave") r = { leave: true, note };
+    else if (f.kind.value === "present") {
+      if (!f.in.value) { toast("أدخل وقت الحضور"); return; }
+      if (f.out.value && toMin(f.out.value) < toMin(f.in.value)) { toast("وقت الانصراف قبل وقت الحضور!"); return; }
+      r = { in: f.in.value, out: f.out.value || "", note };
+    } else if (note) r = { note };
+    setRec(editing.k, editing.id, r);
+    editing = null; toast("تم الحفظ"); renderLog();
+  });
+
+  // ---------- التقارير ----------
+  function monthRange(offset) {
+    const d = new Date(); const s = new Date(d.getFullYear(), d.getMonth() + offset, 1);
+    const e = new Date(d.getFullYear(), d.getMonth() + offset + 1, 0);
+    return [dateKey(s), dateKey(e)];
+  }
+  function reportData() {
+    const from = $("#repFrom").value, to = $("#repTo").value;
+    if (!from || !to || from > to) return null;
+    const end = to < todayKey() ? to : todayKey();
+    const days = [];
+    for (let k = from; k <= end; k = addDays(k, 1)) days.push(k);
+    const rows = db.teachers.filter((t) => t.active !== false || days.some((k) => rec(k, t.id))).map((t) => {
+      const x = { t, work: 0, present: 0, absent: 0, leave: 0, late: 0, lateMin: 0, early: 0, minutes: 0 };
+      days.forEach((k) => {
+        const a = analyze(k, t.id);
+        if (a.before) return;
+        if (isWorkDay(k)) x.work++;
+        if (a.r && a.r.leave) x.leave++;
+        else if (a.r && a.r.in) {
+          x.present++;
+          if (a.late) { x.late++; x.lateMin += a.late; }
+          if (a.early) x.early++;
+          if (a.worked > 0) x.minutes += a.worked;
+        } else if (a.absent) x.absent++;
+      });
+      x.rate = x.work ? Math.round((x.present / Math.max(x.work - x.leave, 1)) * 100) : 0;
+      return x;
+    });
+    return { from, to, end, rows };
+  }
+  function renderReport() {
+    if (!$("#repFrom").value) { const [s, e] = monthRange(0); $("#repFrom").value = s; $("#repTo").value = e; }
+    const d = reportData();
+    if (!d) { $("#repInfo").textContent = "اختر فترة صحيحة"; $("#repTable").innerHTML = ""; return; }
+    $("#repInfo").textContent = `من ${fmtDate(d.from)} إلى ${fmtDate(d.to)}` + (d.end < d.to ? ` (محسوب حتى اليوم)` : "");
+    if (!d.rows.length) { $("#repTable").innerHTML = `<tr><td class="empty">لا يوجد أساتذة</td></tr>`; return; }
+    $("#repTable").innerHTML = `<thead><tr><th>الأستاذ</th><th>المادة</th><th>أيام العمل</th><th>حضور</th><th>غياب</th><th>إجازة/عذر</th><th>مرات التأخير</th><th>مجموع التأخير</th><th>انصراف مبكر</th><th>مجموع الساعات</th><th>نسبة الحضور</th></tr></thead><tbody>` +
+      d.rows.map((x) => `<tr><td>${esc(x.t.name)}</td><td>${esc(x.t.subject || "")}</td><td>${x.work}</td><td>${x.present}</td>
+        <td>${x.absent ? `<span class="badge b-bad">${x.absent}</span>` : 0}</td><td>${x.leave}</td>
+        <td>${x.late ? `<span class="badge b-warn">${x.late}</span>` : 0}</td><td>${x.lateMin ? x.lateMin + " د" : "—"}</td>
+        <td>${x.early}</td><td>${fmtDur(x.minutes)}</td><td>${x.work ? x.rate + "%" : "—"}</td></tr>`).join("") + "</tbody>";
+  }
+  $("#repFrom").addEventListener("change", renderReport);
+  $("#repTo").addEventListener("change", renderReport);
+  $("#repMonth").addEventListener("click", () => { const [s, e] = monthRange(0); $("#repFrom").value = s; $("#repTo").value = e; renderReport(); });
+  $("#repLastMonth").addEventListener("click", () => { const [s, e] = monthRange(-1); $("#repFrom").value = s; $("#repTo").value = e; renderReport(); });
+  $("#repCsv").addEventListener("click", () => {
+    const d = reportData(); if (!d) return;
+    const rows = [["الأستاذ", "المادة", "أيام العمل", "حضور", "غياب", "إجازة/عذر", "مرات التأخير", "مجموع التأخير (دقائق)", "انصراف مبكر", "مجموع الساعات", "نسبة الحضور"]];
+    d.rows.forEach((x) => rows.push([x.t.name, x.t.subject || "", x.work, x.present, x.absent, x.leave, x.late, x.lateMin, x.early, (x.minutes / 60).toFixed(2), x.work ? x.rate + "%" : ""]));
+    downloadCsv(`تقرير-الحضور-${d.from}-${d.to}.csv`, rows);
+  });
+
+  // ---------- الأساتذة ----------
+  function renderTeachers() {
+    if (!db.teachers.length) { $("#teachersTable").innerHTML = `<tr><td class="empty">لا يوجد أساتذة بعد</td></tr>`; return; }
+    $("#teachersTable").innerHTML = `<thead><tr><th>#</th><th>الاسم</th><th>المادة</th><th>الهاتف</th><th>بدء العمل</th><th>الحالة</th><th></th></tr></thead><tbody>` +
+      db.teachers.map((t, i) => `<tr><td>${i + 1}</td><td>${esc(t.name)}</td><td>${esc(t.subject || "")}</td><td class="num">${esc(t.phone || "")}</td><td class="num">${esc(t.since || "")}</td>
+        <td>${t.active !== false ? `<span class="badge b-ok">نشط</span>` : `<span class="badge b-muted">غير نشط</span>`}</td>
+        <td><button class="btn sm" data-tedit="${t.id}">تعديل</button> <button class="btn sm bad" data-tdel="${t.id}">حذف</button></td></tr>`).join("") + "</tbody>";
+  }
+  $("#addTeacher").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = e.target, name = f.name.value.trim(); if (!name) return;
+    if (db.teachers.some((t) => t.name === name) && !confirm("يوجد أستاذ بنفس الاسم. إضافته مع ذلك؟")) return;
+    db.teachers.push({ id: uid(), name, subject: f.subject.value.trim(), phone: f.phone.value.trim(), since: todayKey(), active: true });
+    save(); f.reset(); f.name.focus(); toast(`تمت إضافة ${name}`); renderTeachers();
+  });
+  let editingTeacher = null;
+  $("#teachersTable").addEventListener("click", (e) => {
+    const ed = e.target.closest("[data-tedit]"), del = e.target.closest("[data-tdel]");
+    if (ed) {
+      const t = db.teachers.find((x) => x.id === ed.dataset.tedit); editingTeacher = t;
+      const f = $("#teacherForm");
+      f.name.value = t.name; f.subject.value = t.subject || ""; f.phone.value = t.phone || ""; f.since.value = t.since || ""; f.active.checked = t.active !== false;
+      $("#teacherDlg").showModal();
+    } else if (del) {
+      const t = db.teachers.find((x) => x.id === del.dataset.tdel);
+      if (!confirm(`حذف ${t.name} نهائياً مع كل سجلاته؟\n(يمكنك بدلاً من ذلك جعله «غير نشط» للاحتفاظ بسجلاته)`)) return;
+      db.teachers = db.teachers.filter((x) => x.id !== t.id);
+      Object.keys(db.records).forEach((k) => setRec(k, t.id, null));
+      save(); renderTeachers(); toast("تم الحذف");
+    }
+  });
+  $("#teacherDlg").addEventListener("close", () => {
+    if ($("#teacherDlg").returnValue !== "save" || !editingTeacher) return;
+    const f = $("#teacherForm");
+    Object.assign(editingTeacher, { name: f.name.value.trim() || editingTeacher.name, subject: f.subject.value.trim(), phone: f.phone.value.trim(), since: f.since.value, active: f.active.checked });
+    editingTeacher = null; save(); renderTeachers(); toast("تم الحفظ");
+  });
+
+  // ---------- الإعدادات ----------
+  function renderSettings() {
+    const f = $("#settingsForm"), s = db.settings;
+    f.schoolName.value = s.schoolName; f.start.value = s.start; f.end.value = s.end; f.grace.value = s.grace; f.adminPin.value = s.adminPin;
+    $("#daysBox").innerHTML = DAY_NAMES.map((n, i) => `<label><input type="checkbox" value="${i}" ${s.workDays.includes(i) ? "checked" : ""}> ${n}</label>`).join("");
+  }
+  $("#settingsForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = e.target;
+    if (toMin(f.end.value) <= toMin(f.start.value)) { toast("نهاية الدوام يجب أن تكون بعد بدايته"); return; }
+    Object.assign(db.settings, {
+      schoolName: f.schoolName.value.trim(), start: f.start.value, end: f.end.value,
+      grace: Math.max(0, parseInt(f.grace.value, 10) || 0), adminPin: f.adminPin.value,
+      workDays: [...$$("#daysBox input:checked")].map((c) => Number(c.value))
+    });
+    if (db.settings.adminPin) { unlocked = true; sessionStorage.setItem("ta.unlocked", "1"); }
+    save(); renderHeader(); toast("تم حفظ الإعدادات");
+  });
+  $("#backupBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+    downloadBlob(`نسخة-احتياطية-الحضور-${todayKey()}.json`, blob);
+  });
+  $("#restoreInput").addEventListener("change", async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!data || !Array.isArray(data.teachers) || typeof data.records !== "object") throw 0;
+      if (!confirm("سيتم استبدال كل البيانات الحالية بالنسخة الاحتياطية. متابعة؟")) return;
+      localStorage.setItem(KEY, JSON.stringify(data)); load(); renderHeader(); show("settings"); toast("تم استرجاع النسخة");
+    } catch { toast("الملف غير صالح"); }
+    finally { e.target.value = ""; }
+  });
+  $("#wipeBtn").addEventListener("click", () => {
+    if (!confirm("حذف كل الأساتذة والسجلات والإعدادات نهائياً؟")) return;
+    if (prompt("اكتب كلمة «حذف» للتأكيد") !== "حذف") return;
+    db = defaults(); save(); renderHeader(); show("settings"); toast("تم حذف كل البيانات");
+  });
+
+  // ---------- التصدير ----------
+  function downloadBlob(name, blob) {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  function downloadCsv(name, rows) {
+    const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    downloadBlob(name, new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" })); // BOM ليظهر النص العربي في Excel
+  }
+
+  // ---------- البدء ----------
+  load();
+  renderHeader();
+  tickClock(); setInterval(tickClock, 1000);
+  setInterval(() => { if (current === "today") renderToday(); }, 60000);
+  show("today");
+})();
+</script>
+</body>
+</html>
