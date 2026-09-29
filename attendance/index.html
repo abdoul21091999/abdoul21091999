@@ -142,7 +142,36 @@
 
   .lock { max-width: 360px; margin: 30px auto; text-align: center; }
 
+  /* المسح بـ QR */
+  .scan-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; }
+  @media (max-width: 760px) { .scan-grid { grid-template-columns: 1fr; } }
+  .video-box { position: relative; background: #000; border-radius: var(--radius); overflow: hidden; aspect-ratio: 4 / 3; }
+  .video-box video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .video-box .frame { position: absolute; inset: 18%; border: 3px solid rgba(255,255,255,.85); border-radius: 14px; box-shadow: 0 0 0 999px rgba(0,0,0,.25); pointer-events: none; }
+  .video-box .cam-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; color: #fff; background: rgba(0,0,0,.6); font-weight: 700; }
+  .scan-result { border-radius: var(--radius); padding: 18px; text-align: center; min-height: 130px; display: flex; flex-direction: column; justify-content: center; gap: 4px; border: 2px solid var(--border); background: var(--surface-2); }
+  .scan-result .big { font-size: 1.5rem; font-weight: 800; }
+  .scan-result.ok { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+  .scan-result.out { background: var(--info-bg); border-color: var(--info); color: var(--info); }
+  .scan-result.warn { background: var(--warn-bg); border-color: var(--warn); color: var(--warn); }
+  .scan-result.bad { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+  .scan-log { list-style: none; margin: 0; padding: 0; font-size: .93rem; }
+  .scan-log li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .scan-log li b { font-variant-numeric: tabular-nums; }
+  .qr-preview { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+  .qr-preview svg { width: 220px; height: 220px; background: #fff; padding: 6px; border-radius: 8px; }
+
+  #printArea { display: none; }
+  .qr-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8mm; }
+  .qr-card { border: 1px dashed #999; border-radius: 4mm; padding: 5mm; text-align: center; break-inside: avoid; color: #000; background: #fff; }
+  .qr-card .school { font-size: 10pt; color: #444; }
+  .qr-card svg { width: 42mm; height: 42mm; display: block; margin: 3mm auto; }
+  .qr-card .tname { font-size: 13pt; font-weight: 800; }
+  .qr-card .tsub { font-size: 10pt; color: #444; }
+
   @media print {
+    body.print-cards .wrap, body.print-cards .toast { display: none !important; }
+    body.print-cards #printArea { display: block; }
     nav.tabs, .toolbar, .no-print, .clock { display: none !important; }
     body { background: #fff; color: #000; }
     .card { border: 0; box-shadow: none; padding: 0; }
@@ -164,6 +193,7 @@
 
   <nav class="tabs" role="tablist">
     <button data-tab="today" class="active">الحضور اليوم</button>
+    <button data-tab="scan">المسح بـ QR</button>
     <button data-tab="log">السجل اليومي</button>
     <button data-tab="report">التقارير</button>
     <button data-tab="teachers">الأساتذة</button>
@@ -179,6 +209,36 @@
       </label>
     </div>
     <div class="grid-teachers" id="todayGrid"></div>
+  </section>
+
+  <!-- المسح بـ QR -->
+  <section id="tab-scan" class="hidden">
+    <div class="card">
+      <div class="scan-grid">
+        <div>
+          <div class="video-box">
+            <video id="scanVideo" playsinline muted></video>
+            <div class="frame"></div>
+            <div class="cam-msg" id="camMsg">الكاميرا متوقفة</div>
+          </div>
+          <div class="toolbar" style="margin-top:10px">
+            <button class="btn primary" id="camStart">تشغيل الكاميرا</button>
+            <button class="btn" id="camStop">إيقاف</button>
+            <button class="btn" id="camSwitch">تبديل الكاميرا</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="scan-result" id="scanResult"><div class="big">وجّه بطاقة QR نحو الكاميرا</div><div>يُسجَّل الحضور عند أول مسح، والانصراف عند المسح الثاني</div></div>
+          <label class="f">قارئ QR خارجي (USB / بلوتوث) — اترك المؤشر هنا وامسح البطاقة
+            <input id="scanInput" autocomplete="off" placeholder="في انتظار المسح…">
+          </label>
+          <div>
+            <h2 style="margin:4px 0 6px;font-size:1rem">آخر عمليات المسح</h2>
+            <ul class="scan-log" id="scanLog"><li class="muted">لا توجد عمليات بعد</li></ul>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- السجل -->
@@ -226,6 +286,11 @@
       </form>
     </div>
     <div class="card">
+      <h2>بطاقات QR</h2>
+      <p class="muted" style="margin-top:0">لكل أستاذ رمز QR خاص به. اطبع البطاقات ووزّعها، أو أرسل صورة الرمز لكل أستاذ على هاتفه ليعرضها أمام الكاميرا.</p>
+      <button class="btn primary" id="printAllCards">طباعة بطاقات كل الأساتذة</button>
+    </div>
+    <div class="card">
       <h2>قائمة الأساتذة</h2>
       <div class="table-wrap"><table id="teachersTable"></table></div>
     </div>
@@ -246,7 +311,15 @@
           <div class="muted" style="margin-bottom:6px">أيام العمل</div>
           <div class="days" id="daysBox"></div>
         </div>
-        <label class="f">كلمة سر الإدارة (اختيارية — تحمي كل الصفحات ما عدا «الحضور اليوم»)
+        <div class="row2">
+          <label class="f">أقل مدة بين الحضور والانصراف عند المسح (دقائق)
+            <input name="scanGap" type="number" min="0" max="600">
+          </label>
+          <label class="f">التسجيل اليدوي بالأزرار في «الحضور اليوم»
+            <select name="manual"><option value="1">مسموح</option><option value="0">غير مسموح (QR فقط)</option></select>
+          </label>
+        </div>
+        <label class="f">كلمة سر الإدارة (اختيارية — تحمي كل الصفحات ما عدا «الحضور اليوم» و«المسح بـ QR»)
           <input name="adminPin" type="password" autocomplete="new-password" placeholder="اتركها فارغة لإلغاء الحماية">
         </label>
         <div><button class="btn primary">حفظ الإعدادات</button></div>
@@ -307,6 +380,7 @@
     <label class="f">الهاتف <input name="phone"></label>
     <label class="f">تاريخ بدء العمل (لا يُحسب غياب قبله) <input name="since" type="date"></label>
     <label class="f" style="flex-direction:row;align-items:center;gap:8px"><input name="active" type="checkbox" style="width:auto"> نشط (يظهر في قائمة الحضور)</label>
+    <label class="f" style="flex-direction:row;align-items:center;gap:8px"><input name="regen" type="checkbox" style="width:auto"> إنشاء رمز QR جديد (البطاقة القديمة لن تعمل بعد الآن)</label>
     <div class="actions">
       <button class="btn primary" value="save">حفظ</button>
       <button class="btn" value="cancel" formnovalidate>إلغاء</button>
@@ -314,7 +388,22 @@
   </form>
 </dialog>
 
+<!-- نافذة بطاقة QR -->
+<dialog id="qrDlg">
+  <form method="dialog">
+    <div class="qr-preview" id="qrPreview"></div>
+    <div class="actions" style="justify-content:center;flex-wrap:wrap">
+      <button class="btn primary" type="button" id="qrPrint">طباعة</button>
+      <button class="btn" type="button" id="qrDownload">تنزيل صورة</button>
+      <button class="btn" value="cancel">إغلاق</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="printArea"></div>
 <div class="toast" id="toast"></div>
+<script src="lib/qrcode.js"></script>
+<script src="lib/jsQR.js"></script>
 
 <script>
 (() => {
@@ -326,7 +415,7 @@
   const LOCALE = "ar-u-nu-latn";
 
   const defaults = () => ({
-    settings: { schoolName: "", start: "08:00", end: "14:00", grace: 10, workDays: [1, 2, 3, 4, 5], adminPin: "" },
+    settings: { schoolName: "", start: "08:00", end: "14:00", grace: 10, workDays: [1, 2, 3, 4, 5], adminPin: "", scanGap: 30, manual: true },
     teachers: [],
     records: {} // { "YYYY-MM-DD": { teacherId: { in, out, leave, note } } }
   });
@@ -341,6 +430,14 @@
     db.settings = Object.assign(d.settings, db.settings || {});
     db.teachers = db.teachers || [];
     db.records = db.records || {};
+    let changed = false;
+    db.teachers.forEach((t) => { if (!t.token) { t.token = newToken(); changed = true; } });
+    if (changed) save();
+  }
+  // رمز سري عشوائي لكل أستاذ يوضع داخل الـ QR
+  function newToken() {
+    const a = new Uint8Array(8); crypto.getRandomValues(a);
+    return [...a].map((b) => b.toString(36).padStart(2, "0")).join("").slice(0, 12).toUpperCase();
   }
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(db)); }
@@ -426,14 +523,15 @@
   let current = "today";
   let unlocked = sessionStorage.getItem("ta.unlocked") === "1";
   function show(tab) {
+    if (current === "scan" && tab !== "scan") stopCamera();
     current = tab;
     $$("nav.tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
     $$("section[id^=tab-]").forEach((s) => s.classList.add("hidden"));
-    const locked = tab !== "today" && db.settings.adminPin && !unlocked;
+    const locked = tab !== "today" && tab !== "scan" && db.settings.adminPin && !unlocked;
     $("#lockView").classList.toggle("hidden", !locked);
     if (locked) { $("#unlockPin").value = ""; $("#unlockPin").focus(); return; }
     $("#tab-" + tab).classList.remove("hidden");
-    ({ today: renderToday, log: renderLog, report: renderReport, teachers: renderTeachers, settings: renderSettings })[tab]();
+    ({ today: renderToday, scan: renderScan, log: renderLog, report: renderReport, teachers: renderTeachers, settings: renderSettings })[tab]();
   }
   $$("nav.tabs button").forEach((b) => b.addEventListener("click", () => show(b.dataset.tab)));
   $("#unlockForm").addEventListener("submit", (e) => {
@@ -470,7 +568,8 @@
     $("#todayGrid").innerHTML = list.map((t) => {
       const a = analyze(k, t.id), r = a.r || {};
       let btn;
-      if (r.leave) btn = `<button class="btn" disabled>إجازة / عذر</button>`;
+      if (!db.settings.manual) btn = "";
+      else if (r.leave) btn = `<button class="btn" disabled>إجازة / عذر</button>`;
       else if (!r.in) btn = `<button class="btn ok" data-act="in" data-id="${t.id}">تسجيل الحضور</button>`;
       else if (!r.out) btn = `<button class="btn primary" data-act="out" data-id="${t.id}">تسجيل الانصراف</button>`;
       else btn = `<button class="btn" disabled>تم تسجيل الحضور والانصراف</button>`;
@@ -484,7 +583,7 @@
   }
   $("#todaySearch").addEventListener("input", renderToday);
   $("#todayGrid").addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-act]"); if (!b) return;
+    const b = e.target.closest("button[data-act]"); if (!b || !db.settings.manual) return;
     const k = todayKey(), id = b.dataset.id, t = db.teachers.find((x) => x.id === id);
     const r = Object.assign({}, rec(k, id));
     const time = nowHM();
@@ -620,22 +719,23 @@
     $("#teachersTable").innerHTML = `<thead><tr><th>#</th><th>الاسم</th><th>المادة</th><th>الهاتف</th><th>بدء العمل</th><th>الحالة</th><th></th></tr></thead><tbody>` +
       db.teachers.map((t, i) => `<tr><td>${i + 1}</td><td>${esc(t.name)}</td><td>${esc(t.subject || "")}</td><td class="num">${esc(t.phone || "")}</td><td class="num">${esc(t.since || "")}</td>
         <td>${t.active !== false ? `<span class="badge b-ok">نشط</span>` : `<span class="badge b-muted">غير نشط</span>`}</td>
-        <td><button class="btn sm" data-tedit="${t.id}">تعديل</button> <button class="btn sm bad" data-tdel="${t.id}">حذف</button></td></tr>`).join("") + "</tbody>";
+        <td><button class="btn sm" data-tqr="${t.id}">بطاقة QR</button> <button class="btn sm" data-tedit="${t.id}">تعديل</button> <button class="btn sm bad" data-tdel="${t.id}">حذف</button></td></tr>`).join("") + "</tbody>";
   }
   $("#addTeacher").addEventListener("submit", (e) => {
     e.preventDefault();
     const f = e.target, name = f.name.value.trim(); if (!name) return;
     if (db.teachers.some((t) => t.name === name) && !confirm("يوجد أستاذ بنفس الاسم. إضافته مع ذلك؟")) return;
-    db.teachers.push({ id: uid(), name, subject: f.subject.value.trim(), phone: f.phone.value.trim(), since: todayKey(), active: true });
+    db.teachers.push({ id: uid(), name, subject: f.subject.value.trim(), phone: f.phone.value.trim(), since: todayKey(), token: newToken(), active: true });
     save(); f.reset(); f.name.focus(); toast(`تمت إضافة ${name}`); renderTeachers();
   });
   let editingTeacher = null;
   $("#teachersTable").addEventListener("click", (e) => {
-    const ed = e.target.closest("[data-tedit]"), del = e.target.closest("[data-tdel]");
-    if (ed) {
+    const ed = e.target.closest("[data-tedit]"), del = e.target.closest("[data-tdel]"), qr = e.target.closest("[data-tqr]");
+    if (qr) openQr(db.teachers.find((x) => x.id === qr.dataset.tqr));
+    else if (ed) {
       const t = db.teachers.find((x) => x.id === ed.dataset.tedit); editingTeacher = t;
       const f = $("#teacherForm");
-      f.name.value = t.name; f.subject.value = t.subject || ""; f.phone.value = t.phone || ""; f.since.value = t.since || ""; f.active.checked = t.active !== false;
+      f.name.value = t.name; f.subject.value = t.subject || ""; f.phone.value = t.phone || ""; f.since.value = t.since || ""; f.active.checked = t.active !== false; f.regen.checked = false;
       $("#teacherDlg").showModal();
     } else if (del) {
       const t = db.teachers.find((x) => x.id === del.dataset.tdel);
@@ -649,13 +749,18 @@
     if ($("#teacherDlg").returnValue !== "save" || !editingTeacher) return;
     const f = $("#teacherForm");
     Object.assign(editingTeacher, { name: f.name.value.trim() || editingTeacher.name, subject: f.subject.value.trim(), phone: f.phone.value.trim(), since: f.since.value, active: f.active.checked });
-    editingTeacher = null; save(); renderTeachers(); toast("تم الحفظ");
+    const regen = f.regen.checked;
+    if (regen) editingTeacher.token = newToken();
+    const t = editingTeacher;
+    editingTeacher = null; save(); renderTeachers();
+    if (regen) { toast("تم إنشاء رمز جديد — اطبع البطاقة الجديدة"); openQr(t); } else toast("تم الحفظ");
   });
 
   // ---------- الإعدادات ----------
   function renderSettings() {
     const f = $("#settingsForm"), s = db.settings;
     f.schoolName.value = s.schoolName; f.start.value = s.start; f.end.value = s.end; f.grace.value = s.grace; f.adminPin.value = s.adminPin;
+    f.scanGap.value = s.scanGap; f.manual.value = s.manual ? "1" : "0";
     $("#daysBox").innerHTML = DAY_NAMES.map((n, i) => `<label><input type="checkbox" value="${i}" ${s.workDays.includes(i) ? "checked" : ""}> ${n}</label>`).join("");
   }
   $("#settingsForm").addEventListener("submit", (e) => {
@@ -665,6 +770,7 @@
     Object.assign(db.settings, {
       schoolName: f.schoolName.value.trim(), start: f.start.value, end: f.end.value,
       grace: Math.max(0, parseInt(f.grace.value, 10) || 0), adminPin: f.adminPin.value,
+      scanGap: Math.max(0, parseInt(f.scanGap.value, 10) || 0), manual: f.manual.value === "1",
       workDays: [...$$("#daysBox input:checked")].map((c) => Number(c.value))
     });
     if (db.settings.adminPin) { unlocked = true; sessionStorage.setItem("ta.unlocked", "1"); }
@@ -680,7 +786,7 @@
       const data = JSON.parse(await file.text());
       if (!data || !Array.isArray(data.teachers) || typeof data.records !== "object") throw 0;
       if (!confirm("سيتم استبدال كل البيانات الحالية بالنسخة الاحتياطية. متابعة؟")) return;
-      localStorage.setItem(KEY, JSON.stringify(data)); load(); renderHeader(); show("settings"); toast("تم استرجاع النسخة");
+      localStorage.setItem(KEY, JSON.stringify(data)); load(); lastScan = {}; renderHeader(); show("settings"); toast("تم استرجاع النسخة");
     } catch { toast("الملف غير صالح"); }
     finally { e.target.value = ""; }
   });
@@ -689,6 +795,168 @@
     if (prompt("اكتب كلمة «حذف» للتأكيد") !== "حذف") return;
     db = defaults(); save(); renderHeader(); show("settings"); toast("تم حذف كل البيانات");
   });
+
+  // ---------- رموز QR ----------
+  const QR_PREFIX = "TA:";
+  const qrText = (t) => QR_PREFIX + t.token;
+  function makeQr(text) { const q = qrcode(0, "M"); q.addData(text); q.make(); return q; }
+  function qrSvg(t) { return makeQr(qrText(t)).createSvgTag({ cellSize: 4, margin: 2, scalable: true }); }
+  function cardHtml(t) {
+    return `<div class="qr-card"><div class="school">${esc(db.settings.schoolName || "بطاقة حضور الأستاذ")}</div>
+      ${qrSvg(t)}<div class="tname">${esc(t.name)}</div><div class="tsub">${esc(t.subject || "")}</div></div>`;
+  }
+  function printCards(list) {
+    if (!list.length) { toast("لا يوجد أساتذة"); return; }
+    $("#printArea").innerHTML = `<div class="qr-cards">${list.map(cardHtml).join("")}</div>`;
+    document.body.classList.add("print-cards");
+    window.print();
+  }
+  window.addEventListener("afterprint", () => { document.body.classList.remove("print-cards"); $("#printArea").innerHTML = ""; });
+  $("#printAllCards").addEventListener("click", () => printCards(db.teachers.filter((t) => t.active !== false)));
+
+  let qrTeacher = null;
+  function openQr(t) {
+    qrTeacher = t;
+    $("#qrPreview").innerHTML = `${qrSvg(t)}<div style="font-weight:800;font-size:1.1rem">${esc(t.name)}</div><div class="muted">${esc(t.subject || "")}</div>`;
+    $("#qrDlg").showModal();
+  }
+  $("#qrPrint").addEventListener("click", () => { $("#qrDlg").close(); printCards([qrTeacher]); });
+  $("#qrDownload").addEventListener("click", () => {
+    // صورة PNG يمكن إرسالها للأستاذ (واتساب مثلاً) ليعرضها من هاتفه
+    const t = qrTeacher, q = makeQr(qrText(t)), n = q.getModuleCount();
+    const W = 600, cell = Math.floor(440 / (n + 4)), size = cell * (n + 4), x0 = (W - size) / 2, y0 = 90;
+    const c = document.createElement("canvas"); c.width = W; c.height = y0 + size + 130;
+    const g = c.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = "#000";
+    for (let r = 0; r < n; r++) for (let col = 0; col < n; col++)
+      if (q.isDark(r, col)) g.fillRect(x0 + (col + 2) * cell, y0 + (r + 2) * cell, cell, cell);
+    g.direction = "rtl"; g.textAlign = "center";
+    g.fillStyle = "#555"; g.font = "28px Tajawal, sans-serif"; g.fillText(db.settings.schoolName || "بطاقة حضور الأستاذ", W / 2, 55);
+    g.fillStyle = "#000"; g.font = "bold 38px Tajawal, sans-serif"; g.fillText(t.name, W / 2, y0 + size + 55);
+    g.fillStyle = "#555"; g.font = "28px Tajawal, sans-serif"; g.fillText(t.subject || "", W / 2, y0 + size + 100);
+    c.toBlob((b) => downloadBlob(`QR-${t.name}.png`, b), "image/png");
+  });
+
+  // ---------- المسح ----------
+  let stream = null, facing = "environment", scanning = false, lastScan = {}, resultTimer = null;
+  const scanCanvas = document.createElement("canvas");
+  const scanCtx = scanCanvas.getContext("2d", { willReadFrequently: true });
+  const scanHistory = [];
+
+  function renderScan() {
+    $("#scanInput").focus();
+    if (!stream) startCamera();
+  }
+  async function startCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      $("#camMsg").textContent = "هذا المتصفح لا يدعم الكاميرا هنا. افتح البرنامج عبر رابط https أو استعمل قارئ QR خارجي.";
+      $("#camMsg").classList.remove("hidden"); return;
+    }
+    stopCamera();
+    $("#camMsg").textContent = "جارٍ تشغيل الكاميرا…"; $("#camMsg").classList.remove("hidden");
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      if (current !== "scan") { stopCamera(); return; }
+      const v = $("#scanVideo"); v.srcObject = stream; await v.play();
+      $("#camMsg").classList.add("hidden");
+      scanning = true; requestAnimationFrame(scanLoop);
+    } catch (err) {
+      stream = null;
+      $("#camMsg").textContent = err && err.name === "NotAllowedError"
+        ? "لم يُسمح باستعمال الكاميرا. اسمح بها من إعدادات المتصفح ثم اضغط «تشغيل الكاميرا»."
+        : "تعذّر تشغيل الكاميرا. تأكد من وجود كاميرا متصلة.";
+    }
+  }
+  function stopCamera() {
+    scanning = false;
+    if (stream) { stream.getTracks().forEach((tr) => tr.stop()); stream = null; }
+    const v = $("#scanVideo"); v.srcObject = null;
+    $("#camMsg").textContent = "الكاميرا متوقفة"; $("#camMsg").classList.remove("hidden");
+  }
+  let lastFrame = 0;
+  function scanLoop(ts) {
+    if (!scanning) return;
+    requestAnimationFrame(scanLoop);
+    if (ts - lastFrame < 150) return; // حوالي 6 صور في الثانية تكفي
+    lastFrame = ts;
+    const v = $("#scanVideo");
+    if (v.readyState < 2 || !v.videoWidth) return;
+    const scale = Math.min(1, 640 / v.videoWidth);
+    scanCanvas.width = Math.round(v.videoWidth * scale); scanCanvas.height = Math.round(v.videoHeight * scale);
+    scanCtx.drawImage(v, 0, 0, scanCanvas.width, scanCanvas.height);
+    const img = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+    const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
+    if (code && code.data) handleScan(code.data);
+  }
+  $("#camStart").addEventListener("click", startCamera);
+  $("#camStop").addEventListener("click", stopCamera);
+  $("#camSwitch").addEventListener("click", () => { facing = facing === "environment" ? "user" : "environment"; startCamera(); });
+  $("#scanInput").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault(); const v = e.target.value; e.target.value = ""; if (v.trim()) handleScan(v);
+  });
+
+  function handleScan(text) {
+    text = text.trim();
+    const now = Date.now();
+    // الكاميرا ترى نفس البطاقة عدة مرات في الثانية: نتجاهل التكرار خلال 5 ثوان
+    if (lastScan[text] && now - lastScan[text] < 5000) return;
+    lastScan[text] = now;
+
+    const token = text.toUpperCase().startsWith(QR_PREFIX) ? text.slice(QR_PREFIX.length).toUpperCase() : null;
+    const t = token && db.teachers.find((x) => x.token === token);
+    if (!t) return showResult("bad", "رمز غير معروف", "هذه البطاقة غير مسجلة أو تم إلغاؤها");
+    if (t.active === false) return showResult("bad", t.name, "هذا الأستاذ غير نشط");
+
+    const k = todayKey(), time = nowHM(), r = Object.assign({}, rec(k, t.id));
+    if (r.leave) return showResult("warn", t.name, "مسجّل في إجازة / عذر اليوم");
+    if (!r.in) {
+      r.in = time; setRec(k, t.id, r);
+      const a = analyze(k, t.id);
+      logScan(t, "حضور", time);
+      return showResult("ok", `مرحباً ${t.name}`, `تم تسجيل الحضور الساعة ${time}` + (a.late ? ` — متأخر ${a.late} دقيقة` : ""));
+    }
+    if (!r.out) {
+      const gap = toMin(time) - toMin(r.in);
+      if (gap < Number(db.settings.scanGap || 0))
+        return showResult("warn", t.name, `حضورك مسجّل مسبقاً الساعة ${r.in}. يمكن تسجيل الانصراف بعد ${db.settings.scanGap - gap} دقيقة`);
+      r.out = time; setRec(k, t.id, r);
+      logScan(t, "انصراف", time);
+      return showResult("out", `مع السلامة ${t.name}`, `تم تسجيل الانصراف الساعة ${time} — مدة العمل ${fmtDur(gap)}`);
+    }
+    showResult("warn", t.name, `تم تسجيل الحضور (${r.in}) والانصراف (${r.out}) اليوم مسبقاً`);
+  }
+  function showResult(kind, title, msg) {
+    const box = $("#scanResult");
+    box.className = "scan-result " + kind;
+    box.innerHTML = `<div class="big">${esc(title)}</div><div>${esc(msg)}</div>`;
+    beep(kind);
+    clearTimeout(resultTimer);
+    resultTimer = setTimeout(() => {
+      box.className = "scan-result";
+      box.innerHTML = `<div class="big">وجّه بطاقة QR نحو الكاميرا</div><div>يُسجَّل الحضور عند أول مسح، والانصراف عند المسح الثاني</div>`;
+    }, 5000);
+  }
+  function logScan(t, what, time) {
+    scanHistory.unshift({ name: t.name, what, time });
+    scanHistory.length = Math.min(scanHistory.length, 12);
+    $("#scanLog").innerHTML = scanHistory.map((h) => `<li><span>${esc(h.name)} — ${h.what}</span><b>${h.time}</b></li>`).join("");
+  }
+  let audio;
+  function beep(kind) {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      const tones = { ok: [880, 1320], out: [1320, 880], warn: [600], bad: [300, 300] }[kind] || [800];
+      tones.forEach((f, i) => {
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.frequency.value = f; o.connect(g); g.connect(audio.destination);
+        const t0 = audio.currentTime + i * 0.16;
+        g.gain.setValueAtTime(0.18, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14);
+        o.start(t0); o.stop(t0 + 0.15);
+      });
+    } catch { /* الصوت غير ضروري */ }
+  }
 
   // ---------- التصدير ----------
   function downloadBlob(name, blob) {
