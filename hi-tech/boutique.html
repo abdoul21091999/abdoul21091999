@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Boutique — Hi-Tech | iPhone, Android, Mac, PlayStation, Accessoires</title>
+  <meta name="description" content="Hi-Tech : vente, échange, installation et réparation d'iPhone, Android, ordinateurs, Apple Watch, AirPods, PlayStation et accessoires. Centre S. Dame Atta N° 27 et 28. Commande sur WhatsApp au 77 531 81 92." />
+  <meta name="theme-color" content="#062a30" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Hi-Tech — General High-Tech, The House of Technology" />
+  <meta property="og:description" content="Apple, Android, ordinateurs, PlayStation et gadgets. Vente · Échange · Installation · Réparation." />
+  <meta property="og:image" content="img/banner.jpg" />
+  <meta property="og:locale" content="fr_SN" />
+  <link rel="icon" href="img/logo.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Orbitron:wght@600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ElectronicsStore",
+    "name": "Hi-Tech",
+    "slogan": "General High-Tech, The House of Technology",
+    "image": "img/banner.jpg",
+    "telephone": ["+221775318192", "+221765318192"],
+    "address": { "@type": "PostalAddress", "streetAddress": "Centre S. Dame Atta N° 27 et 28", "addressCountry": "SN" },
+    "priceRange": "FCFA"
+  }
+  </script>
+</head>
+<body data-page="shop">
+  <a class="skip" href="#main">Aller au contenu</a>
+
+  <div class="topbar">
+    <div class="container">
+      <span>📍 Centre S. Dame Atta N° 27 et 28</span>
+      <span class="topbar__hide">📞 <a href="tel:+221775318192">77 531 81 92</a> · <a href="tel:+221765318192">76 531 81 92</a></span>
+      <span>🔄 Reprise de votre ancien téléphone</span>
+    </div>
+  </div>
+
+  <header class="header">
+    <div class="container header__inner">
+      <a href="index.html" class="logo" aria-label="Hi-Tech, accueil"><img src="img/logo-white.png" alt="Hi-Tech" width="148" height="46" /></a>
+      <nav class="nav" id="nav" aria-label="Navigation principale">
+        <a href="index.html">Accueil</a>
+        <a href="boutique.html" aria-current="page">Boutique</a>
+        <a href="index.html#services">Services</a>
+        <a href="index.html#echange">Échange</a>
+        <a href="index.html#reparation">Réparation</a>
+        <a href="index.html#contact">Contact</a>
+      </nav>
+      <form class="search-form" action="boutique.html" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label class="sr-only" for="q">Rechercher un produit</label>
+        <input id="q" name="q" type="search" placeholder="iPhone 17, PS5, AirPods…" />
+      </form>
+      <div class="header__actions">
+        <a class="btn btn--wa btn--sm header__wa" data-wa="Bonjour Hi-Tech !" data-icon="whatsapp">WhatsApp</a>
+        <button type="button" class="cart-btn" data-cart-open aria-label="Ouvrir le panier" data-icon="cart"><span class="cart-btn__count" hidden>0</span></button>
+        <button type="button" class="burger" aria-label="Menu" aria-controls="nav" aria-expanded="false"><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="container">
+        <div class="crumbs"><a href="index.html">Accueil</a> / Boutique</div>
+        <h1>La Boutique Hi-Tech</h1>
+        <p>Apple · Android · Ordinateurs · Accessoires · PlayStation · Toutes sortes de gadgets</p>
+      </div>
+    </section>
+
+    <div class="shop-tools">
+      <div class="container">
+        <div class="shop-tools__row">
+          <div class="shop-search">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <label class="sr-only" for="shopSearch">Rechercher</label>
+            <input id="shopSearch" type="search" placeholder="Rechercher un produit, une marque…" />
+          </div>
+          <div class="shop-selects">
+            <label class="sr-only" for="brandFilter">Marque</label>
+            <select id="brandFilter"><option value="">Toutes marques</option></select>
+            <label class="sr-only" for="condFilter">État</label>
+            <select id="condFilter"><option value="">Tous états</option><option value="new">Neuf</option><option value="refurb">Reconditionné</option></select>
+            <label class="sr-only" for="shopSort">Trier</label>
+            <select id="shopSort"><option value="">Pertinence</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option><option value="name">Nom A → Z</option></select>
+          </div>
+        </div>
+        <div class="chips" id="catChips" role="group" aria-label="Catégories" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <section class="container" style="padding-bottom:72px">
+      <div class="shop-meta"><h2 id="shopTitle">Tous nos produits</h2><span class="muted" id="shopCount" aria-live="polite"></span></div>
+      <div class="products" id="shopGrid"></div>
+      <div class="panel panel--teal" style="margin-top:48px;text-align:center">
+        <h3>Vous ne trouvez pas votre produit ?</h3>
+        <p>Notre stock évolue chaque semaine. Dites-nous ce que vous cherchez, nous vous le trouvons.</p>
+        <a class="btn btn--wa" data-wa="Bonjour Hi-Tech, je recherche un produit : " data-icon="whatsapp">Demander sur WhatsApp</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <img src="img/logo-white.png" alt="Hi-Tech" width="168" height="52" />
+          <p>General High-Tech, The House of Technology. Apple, Android, ordinateurs, PlayStation et toutes sortes de gadgets.</p>
+        </div>
+        <div>
+          <h4>Boutique</h4>
+          <ul>
+            <li><a href="boutique.html?cat=iphone">iPhone</a></li>
+            <li><a href="boutique.html?cat=android">Android</a></li>
+            <li><a href="boutique.html?cat=ordinateur">Ordinateurs</a></li>
+            <li><a href="boutique.html?cat=gaming">PlayStation</a></li>
+            <li><a href="boutique.html?cat=accessoires">Accessoires</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Services</h4>
+          <ul>
+            <li><a href="boutique.html">Vente</a></li>
+            <li><a href="index.html#echange">Échange</a></li>
+            <li><a href="index.html#reparation">Installation</a></li>
+            <li><a href="index.html#reparation">Réparation</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contact</h4>
+          <ul>
+            <li>📍 Centre S. Dame Atta N° 27 et 28</li>
+            <li>📞 <a href="tel:+221775318192">77 531 81 92</a></li>
+            <li>📞 <a href="tel:+221765318192">76 531 81 92</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© <span data-year></span> Hi-Tech. Tous droits réservés.</span>
+        <span>Welcome to the House of High-Tech</span>
+      </div>
+    </div>
+  </footer>
+
+  <a class="wa-float" data-wa="Bonjour Hi-Tech !" aria-label="Nous écrire sur WhatsApp" data-icon="whatsapp"></a>
+
+  <!-- Panier -->
+  <div class="layer" id="cartDrawer" hidden>
+    <div class="layer__backdrop" data-close></div>
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+      <div class="drawer__head"><h2 id="cartTitle">Mon panier</h2><button type="button" class="close" data-close aria-label="Fermer">×</button></div>
+      <div class="drawer__body" id="cartItems"></div>
+      <div class="drawer__foot">
+        <div class="drawer__total"><span>Total estimé</span><strong id="cartTotal">0 FCFA</strong></div>
+        <div class="form-row">
+          <div class="field"><label for="cartName">Votre nom</label><input id="cartName" autocomplete="name" /></div>
+          <div class="field"><label for="cartMode">Réception</label><select id="cartMode"><option>Retrait en boutique</option><option>Livraison</option></select></div>
+        </div>
+        <a href="#" class="btn btn--wa btn--block" id="cartCheckout" data-icon="whatsapp">Commander sur WhatsApp</a>
+        <button type="button" class="link-btn" id="cartClear">Vider le panier</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Fiche produit -->
+  <div class="layer" id="productModal" hidden>
+    <div class="layer__backdrop" data-close></div>
+    <div class="modal">
+      <div class="modal__box" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
+        <button type="button" class="close" data-close aria-label="Fermer">×</button>
+        <div class="modal__content"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/products.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
