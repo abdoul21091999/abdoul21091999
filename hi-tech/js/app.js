@@ -128,6 +128,7 @@
       <div class="product__body">
         <span class="product__cat">${esc(p.brand)} · ${esc(catOf(p.cat).label)}</span>
         <h3 class="product__name"><button type="button" data-open="${p.id}">${esc(p.name)}</button></h3>
+        ${p.options && p.options.length > 1 && p.price ? `<span class="product__from">À partir de</span>` : ""}
         <div class="product__price">
           <strong>${fcfa(p.price)}</strong>
           ${p.oldPrice ? `<s>${fcfa(p.oldPrice)}</s>` : ""}
@@ -222,6 +223,16 @@
   const clear = $("#cartClear");
   if (clear) clear.addEventListener("click", () => { cart = []; saveCart(); });
 
+  /* Photo manquante : on affiche l'icône de la catégorie à la place */
+  document.addEventListener("error", (e) => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement) || img.dataset.fallback) return;
+    img.dataset.fallback = "1";
+    const id = (img.closest("[data-id]") || {}).dataset;
+    const p = id && PRODUCTS.find((x) => x.id === id.id);
+    img.outerHTML = `<div class="media-ph">${icon(p ? catOf(p.cat).icon : "plug")}<span>${p ? esc(p.brand) : ""}</span></div>`;
+  }, true);
+
   /* ---------- Navigation ---------- */
   const header = $(".header");
   const onScroll = () => header && header.classList.toggle("is-scrolled", window.scrollY > 10);
@@ -246,7 +257,7 @@
   /* ---------- Accueil : catégories + produits vedettes ---------- */
   const catGrid = $("#catGrid");
   if (catGrid) {
-    const imgs = { iphone: "img/iphone.jpg", ordinateur: "img/macbook.jpg", montre: "img/watch.jpg", audio: "img/casque.jpg", gaming: "img/ps5.jpg" };
+    const imgs = { iphone: "img/p/iphone-17-pro-max.jpg", android: "img/p/galaxy-s25-ultra.jpg", ordinateur: "img/p/macbook-air.jpg", montre: "img/p/apple-watch.jpg", audio: "img/p/airpods-max.jpg", gaming: "img/p/playstation-5.jpg", accessoires: "img/p/airpods-4.jpg" };
     catGrid.innerHTML = CATEGORIES.map((c) => {
       const n = PRODUCTS.filter((p) => p.cat === c.id).length;
       return `<a class="cat reveal" href="boutique.html?cat=${c.id}">
@@ -276,6 +287,8 @@
       chips = $("#catChips"), brandSel = $("#brandFilter"), condSel = $("#condFilter"), count = $("#shopCount");
     const params = new URLSearchParams(location.search);
     let cat = params.get("cat") || "all";
+    let series = params.get("series") || "";
+    const seriesBox = $("#seriesChips");
     if (params.get("q")) search.value = params.get("q");
 
     chips.innerHTML = `<button type="button" class="chip" data-cat="all">Tout</button>` +
@@ -285,12 +298,18 @@
     const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
     function draw() {
       $$(".chip", chips).forEach((c) => { c.classList.toggle("is-active", c.dataset.cat === cat); c.setAttribute("aria-pressed", c.dataset.cat === cat); });
+      const sList = [...new Set(PRODUCTS.filter((p) => p.cat === cat && p.series).map((p) => p.series))];
+      if (!sList.includes(series)) series = "";
+      seriesBox.hidden = sList.length < 2;
+      seriesBox.innerHTML = `<button type="button" class="chip chip--sm ${series ? "" : "is-active"}" data-series="">Tous</button>` +
+        sList.map((x) => `<button type="button" class="chip chip--sm ${x === series ? "is-active" : ""}" data-series="${esc(x)}" aria-pressed="${x === series}">${esc(x)}</button>`).join("");
       const q = norm(search.value.trim());
       let list = PRODUCTS.filter((p) =>
         (cat === "all" || p.cat === cat) &&
+        (!series || p.series === series) &&
         (!brandSel.value || p.brand === brandSel.value) &&
         (!condSel.value || (condSel.value === "refurb" ? p.badge === "Reconditionné" : p.badge !== "Reconditionné")) &&
-        (!q || norm(`${p.name} ${p.brand} ${catOf(p.cat).label} ${p.desc || ""}`).includes(q)));
+        (!q || norm(`${p.name} ${p.brand} ${p.series || ""} ${catOf(p.cat).label} ${p.desc || ""}`).includes(q)));
       if (sort.value === "asc") list.sort((a, b) => a.price - b.price);
       if (sort.value === "desc") list.sort((a, b) => b.price - a.price);
       if (sort.value === "name") list.sort((a, b) => a.name.localeCompare(b.name));
@@ -298,12 +317,18 @@
       grid.innerHTML = list.length ? list.map(card).join("") :
         `<div class="empty">Aucun produit ne correspond à votre recherche.<br/><a class="btn btn--wa" target="_blank" rel="noopener" href="${waLink("Bonjour Hi-Tech, je recherche : " + search.value)}">${icon("whatsapp")} Demander sur WhatsApp</a></div>`;
       observeReveal();
-      const t = $("#shopTitle"); if (t) t.textContent = cat === "all" ? "Tous nos produits" : catOf(cat).label;
+      const t = $("#shopTitle"); if (t) t.textContent = cat === "all" ? "Tous nos produits" : (series || catOf(cat).label);
     }
     chips.addEventListener("click", (e) => {
       const c = e.target.closest(".chip"); if (!c) return;
-      cat = c.dataset.cat;
-      const u = new URL(location); cat === "all" ? u.searchParams.delete("cat") : u.searchParams.set("cat", cat); history.replaceState(null, "", u);
+      cat = c.dataset.cat; series = "";
+      const u = new URL(location); cat === "all" ? u.searchParams.delete("cat") : u.searchParams.set("cat", cat); u.searchParams.delete("series"); history.replaceState(null, "", u);
+      draw();
+    });
+    seriesBox.addEventListener("click", (e) => {
+      const c = e.target.closest("[data-series]"); if (!c) return;
+      series = c.dataset.series;
+      const u = new URL(location); series ? u.searchParams.set("series", series) : u.searchParams.delete("series"); history.replaceState(null, "", u);
       draw();
     });
     [search, sort, brandSel, condSel].forEach((el) => el.addEventListener("input", draw));
