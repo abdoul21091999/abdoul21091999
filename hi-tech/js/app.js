@@ -110,11 +110,11 @@
   }
 
   /* ---------- Rendu produit (style samsung.com) ---------- */
-  // Visuel : rendu vectoriel dans la couleur choisie, sinon photo, sinon icône
+  // Visuel : photo officielle de la couleur choisie, sinon photo du produit, sinon icône
   function media(p, small, ci) {
     const col = p.colors && p.colors[ci || 0];
-    if (p.render && col && typeof RENDER !== "undefined") return RENDER.svg(p.render, col.hex);
-    if (p.img) return `<img src="${p.img}" alt="${esc(p.name)}" loading="lazy" />`;
+    const src = (col && col.img) || p.img;
+    if (src) return `<img src="${src}" alt="${esc(p.name)}${col ? " " + esc(col.name) : ""}" loading="lazy" />`;
     return `<div class="media-ph ${small ? "media-ph--sm" : ""}">${icon(catOf(p.cat).icon)}<span>${esc(p.brand)}</span></div>`;
   }
 
@@ -206,7 +206,7 @@
     if (key === "ci") {
       $$("[data-swatch]", box).forEach((b) => { const on = +b.dataset.swatch === i; b.classList.toggle("is-active", on); b.setAttribute("aria-checked", on); });
       const n = $("[data-color-name]", box); if (n && p.colors[i]) n.textContent = p.colors[i].name;
-      const m = $("[data-media]", box); if (m && p.render) m.innerHTML = media(p, false, i);
+      const m = $("[data-media]", box); if (m) m.innerHTML = media(p, false, i);
     } else {
       $$("[data-cap]", box).forEach((b) => { const on = +b.dataset.cap === i; b.classList.toggle("is-active", on); b.setAttribute("aria-checked", on); });
     }
@@ -308,7 +308,7 @@
   const catGrid = $("#catGrid");
   if (catGrid) {
     // Visuel de chaque catégorie : rendu d'un produit phare ou photo
-    const vis = { iphone: "ip17pm", android: "s25u", ordinateur: "mba13", tablette: "ipadair", montre: "awultra", audio: "apmax", gaming: "ps5", accessoires: "ap4" };
+    const vis = { iphone: "ip18p", android: "s26u", ordinateur: "mba13", tablette: "ipadair", montre: "aw12", audio: "apmax", gaming: "ps5", accessoires: "chg20" };
     catGrid.innerHTML = CATEGORIES.map((c) => {
       const n = PRODUCTS.filter((p) => p.cat === c.id).length;
       const p = PRODUCTS.find((x) => x.id === vis[c.id]);

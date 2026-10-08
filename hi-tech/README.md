@@ -24,12 +24,11 @@ sur GitHub Pages, Netlify ou Vercel.
   **indicatifs** et doivent être vérifiés par la boutique. `price: 0` affiche « Prix sur demande ».
 - **Numéro WhatsApp** : `WHATSAPP_NUMBER` en haut de `js/products.js`.
 - **Valeurs de reprise** : objet `BASE` dans `js/app.js` (section « Estimation de reprise »).
-- **Visuels produit (style samsung.com)** : les smartphones, tablettes, ordinateurs et montres
-  sont dessinés en vectoriel par `js/renders.js` (dos + face de l'appareil). Les **couleurs**
-  de chaque modèle se règlent dans le bloc `LOOKS` en bas de `js/products.js` : chaque pastille
-  redessine l'appareil dans sa couleur. Pour utiliser une vraie photo à la place, retirez le
-  produit de `LOOKS` et indiquez `img: "img/p/nom.jpg"`.
-- **Photos** (audio, PlayStation) : dossier `img/p/`, carré 1000×1000 sur fond clair.
+- **Photos produit** : photos officielles des fabricants (Apple, Samsung, Xiaomi, Google, Sony,
+  HP, Dell, Lenovo, ASUS), une par couleur, dans `img/p/<marque>/`. Toutes sont au même format
+  (carré 600×600, produit centré sur fond `#f4f4f4`). Dans `js/products.js`, le champ `colors`
+  associe chaque pastille de couleur à sa photo : `{ name: "Noir", hex: "#3c3c3c", img: "img/p/..." }`.
+  Pour un produit à une seule photo, utilisez `img: "img/p/..."`.
   Pour préparer une nouvelle photo au même style : `python3 outils/preparer-photos.py photos_brutes img/p`.
 - **Gammes** (Galaxy S, Galaxy A, Galaxy Z Fold / Flip, Xiaomi / Redmi…) : champ `series` de chaque
   produit — elles apparaissent comme sous-filtres dans la boutique.
