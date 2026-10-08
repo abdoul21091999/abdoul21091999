@@ -320,10 +320,11 @@
     if (/^(index|boutique|credits)\.html/.test(raw)) { e.preventDefault(); location.href = pageUrl(raw); } // autre page du site
   });
   // index.html?s=reparation → défile jusqu'à la section
-  window.addEventListener("load", () => {
+  function goSection() {
     const s = qparams().get("s"), el = s && document.getElementById(s);
-    if (el) setTimeout(() => el.scrollIntoView({ block: "start" }), 150);
-  });
+    if (el) [100, 700, 1500].forEach((t) => setTimeout(() => el.scrollIntoView({ block: "start" }), t));
+  }
+  if (document.readyState === "complete") goSection(); else window.addEventListener("load", goSection);
 
   /* ---------- Navigation ---------- */
   const header = $(".header");
