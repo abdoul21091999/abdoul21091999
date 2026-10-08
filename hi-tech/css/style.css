@@ -33,6 +33,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+[id] { scroll-margin-top: 84px; }   /* sections visibles sous l'en-tête fixe */
 body {
   margin: 0; font-family: var(--font); font-size: 17px; line-height: 1.55;
   color: var(--ink); background: var(--bg); overflow-x: hidden;
