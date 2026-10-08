@@ -30,6 +30,13 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const waLink = (text) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 
+  // Ouvre WhatsApp ; si le navigateur bloque le nouvel onglet (fréquent sur mobile), on y va directement
+  function openWa(url) {
+    let w = null;
+    try { w = window.open(url, "_blank"); } catch (e) {}
+    if (w) { try { w.opener = null; } catch (e) {} } else location.href = url;
+  }
+
   function toast(msg) {
     let t = $(".toast");
     if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
@@ -268,7 +275,7 @@
   if (checkout) checkout.addEventListener("click", (e) => {
     e.preventDefault();
     if (!cart.length) return;
-    window.open(waLink(checkoutMessage()), "_blank", "noopener");
+    openWa(waLink(checkoutMessage()));
   });
   const clear = $("#cartClear");
   if (clear) clear.addEventListener("click", () => { cart = []; saveCart(); });
@@ -282,6 +289,41 @@
     const p = id && PRODUCTS.find((x) => x.id === id.id);
     img.outerHTML = `<div class="media-ph">${icon(p ? catOf(p.cat).icon : "plug")}<span>${p ? esc(p.brand) : ""}</span></div>`;
   }, true);
+
+  /* ---------- Liens robustes (fonctionnent aussi sur les sites de prévisualisation) ---------- */
+  // Paramètres lus après le DERNIER « ? » de l'adresse (htmlpreview ajoute son propre « ? »)
+  function qparams() {
+    const q = location.href.split("#")[0], i = q.lastIndexOf("?");
+    return new URLSearchParams(i >= 0 ? q.slice(i + 1) : "");
+  }
+  // Adresse d'une autre page du site, en gardant le même hébergement
+  function pageUrl(target) {
+    const cur = location.href.split("#")[0];
+    const m = cur.match(/^(.*\/)(?:index|boutique|credits)\.html(?:\?[^?]*)?$/);
+    return m ? m[1] + target : new URL(target, location.href).href;
+  }
+  function setParams(fn) {
+    try {
+      const p = qparams(); fn(p);
+      const q = location.href.split("#")[0], i = q.lastIndexOf("?"), s = p.toString();
+      const base = i >= 0 && q.slice(i + 1).includes("=") ? q.slice(0, i) : q;
+      history.replaceState(null, "", base + (s ? "?" + s : ""));
+    } catch (e) {}
+  }
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a[href]");
+    if (!a || e.defaultPrevented || a.target === "_blank") return;
+    const raw = a.getAttribute("href");
+    const h = raw.lastIndexOf("#"), id = h >= 0 ? raw.slice(h + 1) : "";
+    const el = id && document.getElementById(id);
+    if (el) { e.preventDefault(); el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }   // ancre de la page
+    if (/^(index|boutique|credits)\.html/.test(raw)) { e.preventDefault(); location.href = pageUrl(raw); } // autre page du site
+  });
+  // index.html?s=reparation → défile jusqu'à la section
+  window.addEventListener("load", () => {
+    const s = qparams().get("s"), el = s && document.getElementById(s);
+    if (el) setTimeout(() => el.scrollIntoView({ block: "start" }), 150);
+  });
 
   /* ---------- Navigation ---------- */
   const header = $(".header");
@@ -302,6 +344,7 @@
   $$(".search-form").forEach((f) => f.addEventListener("submit", (e) => {
     const q = $("input", f).value.trim();
     if (document.body.dataset.page === "shop") { e.preventDefault(); const s = $("#shopSearch"); s.value = q; s.dispatchEvent(new Event("input")); s.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    else { e.preventDefault(); location.href = pageUrl("boutique.html" + (q ? "?q=" + encodeURIComponent(q) : "")); }
   }));
 
   /* ---------- Accueil : catégories + produits vedettes ---------- */
@@ -337,7 +380,7 @@
   if (document.body.dataset.page === "shop") {
     const grid = $("#shopGrid"), search = $("#shopSearch"), sort = $("#shopSort"),
       chips = $("#catChips"), brandSel = $("#brandFilter"), condSel = $("#condFilter"), count = $("#shopCount");
-    const params = new URLSearchParams(location.search);
+    const params = qparams();
     let cat = params.get("cat") || "all";
     let series = params.get("series") || "";
     const seriesBox = $("#seriesChips");
@@ -374,13 +417,13 @@
     chips.addEventListener("click", (e) => {
       const c = e.target.closest(".chip"); if (!c) return;
       cat = c.dataset.cat; series = "";
-      const u = new URL(location); cat === "all" ? u.searchParams.delete("cat") : u.searchParams.set("cat", cat); u.searchParams.delete("series"); history.replaceState(null, "", u);
+      setParams((u) => { cat === "all" ? u.delete("cat") : u.set("cat", cat); u.delete("series"); });
       draw();
     });
     seriesBox.addEventListener("click", (e) => {
       const c = e.target.closest("[data-series]"); if (!c) return;
       series = c.dataset.series;
-      const u = new URL(location); series ? u.searchParams.set("series", series) : u.searchParams.delete("series"); history.replaceState(null, "", u);
+      setParams((u) => { series ? u.set("series", series) : u.delete("series"); });
       draw();
     });
     [search, sort, brandSel, condSel].forEach((el) => el.addEventListener("input", draw));
@@ -414,7 +457,7 @@
     const d = new FormData(repair);
     if (!d.get("name") || !d.get("device")) { toast("Merci d'indiquer votre nom et votre appareil."); return; }
     const msg = `Bonjour Hi-Tech, je souhaite un rendez-vous.\nService : ${d.get("service")}\nAppareil : ${d.get("device")}\nProblème : ${d.get("issue") || "-"}\nNom : ${d.get("name")}\nTéléphone : ${d.get("phone") || "-"}`;
-    window.open(waLink(msg), "_blank", "noopener");
+    openWa(waLink(msg));
   });
 
   /* ---------- FAQ ---------- */
