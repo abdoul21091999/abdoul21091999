@@ -24,13 +24,13 @@ sur GitHub Pages, Netlify ou Vercel.
   **indicatifs** et doivent être vérifiés par la boutique. `price: 0` affiche « Prix sur demande ».
 - **Numéro WhatsApp** : `WHATSAPP_NUMBER` en haut de `js/products.js`.
 - **Valeurs de reprise** : objet `BASE` dans `js/app.js` (section « Estimation de reprise »).
-- **Photos produit** : dossier `img/p/`, toutes au même format (carré 1000×1000, produit détouré
-  et centré sur fond gris clair `#f5f5f7`, comme sur les sites Apple et Samsung).
-  Ce sont des photos libres de droits (Wikimedia Commons, voir `credits.html`) : pour un rendu
-  encore plus pro, remplacez-les par les photos officielles de vos fournisseurs.
-  Pour préparer une nouvelle photo au même style : `python3 outils/preparer-photos.py photos_brutes img/p`
-  (détourage automatique), puis indiquez `img: "img/p/nom.jpg"` dans `js/products.js`.
-  Un produit sans photo affiche automatiquement une icône sobre.
+- **Visuels produit (style samsung.com)** : les smartphones, tablettes, ordinateurs et montres
+  sont dessinés en vectoriel par `js/renders.js` (dos + face de l'appareil). Les **couleurs**
+  de chaque modèle se règlent dans le bloc `LOOKS` en bas de `js/products.js` : chaque pastille
+  redessine l'appareil dans sa couleur. Pour utiliser une vraie photo à la place, retirez le
+  produit de `LOOKS` et indiquez `img: "img/p/nom.jpg"`.
+- **Photos** (audio, PlayStation) : dossier `img/p/`, carré 1000×1000 sur fond clair.
+  Pour préparer une nouvelle photo au même style : `python3 outils/preparer-photos.py photos_brutes img/p`.
 - **Gammes** (Galaxy S, Galaxy A, Galaxy Z Fold / Flip, Xiaomi / Redmi…) : champ `series` de chaque
   produit — elles apparaissent comme sous-filtres dans la boutique.
 - **Carte** : l'iframe Google Maps dans `index.html` (section Contact) — remplacez par le lien

@@ -47,12 +47,12 @@
   try { cart = JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch (e) { cart = []; }
   const saveCart = () => { try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch (e) {} renderCart(); };
 
-  function addToCart(id, option, qty = 1) {
+  function addToCart(id, option, qty = 1, ci = 0) {
     const p = PRODUCTS.find((x) => x.id === id);
     if (!p) return;
     const key = id + "|" + (option || "");
     const line = cart.find((l) => l.key === key);
-    if (line) line.qty += qty; else cart.push({ key, id, option: option || "", qty });
+    if (line) line.qty += qty; else cart.push({ key, id, option: option || "", qty, ci });
     saveCart();
     toast(`${p.name} ajouté au panier`);
     const badge = $(".cart-btn__count");
@@ -71,7 +71,7 @@
         const p = PRODUCTS.find((x) => x.id === l.id);
         if (!p) return "";
         return `<div class="cart-line" data-key="${esc(l.key)}">
-          <div class="cart-line__media">${media(p, true)}</div>
+          <div class="cart-line__media">${media(p, true, l.ci)}</div>
           <div class="cart-line__info">
             <strong>${esc(p.name)}</strong>
             ${l.option ? `<span class="muted">${esc(l.option)}</span>` : ""}
@@ -109,8 +109,11 @@
     return lines.join("\n");
   }
 
-  /* ---------- Rendu produit ---------- */
-  function media(p, small) {
+  /* ---------- Rendu produit (style samsung.com) ---------- */
+  // Visuel : rendu vectoriel dans la couleur choisie, sinon photo, sinon icône
+  function media(p, small, ci) {
+    const col = p.colors && p.colors[ci || 0];
+    if (p.render && col && typeof RENDER !== "undefined") return RENDER.svg(p.render, col.hex);
     if (p.img) return `<img src="${p.img}" alt="${esc(p.name)}" loading="lazy" />`;
     return `<div class="media-ph ${small ? "media-ph--sm" : ""}">${icon(catOf(p.cat).icon)}<span>${esc(p.brand)}</span></div>`;
   }
@@ -119,57 +122,95 @@
     return { "Promo": "badge--hot", "Nouveau": "badge--new", "Reconditionné": "badge--refurb" }[b] || "";
   }
 
+  // Choix courant d'une carte / fiche (couleur + capacité)
+  const sel = (box) => ({ ci: +(box.dataset.ci || 0), oi: +(box.dataset.oi || 0) });
+  function choiceLabel(p, box) {
+    const { ci, oi } = sel(box);
+    return [p.options && p.options[oi], p.colors && p.colors[ci] && p.colors[ci].name].filter(Boolean).join(" · ");
+  }
+  function waFor(p, box) {
+    const c = choiceLabel(p, box);
+    return waLink(`Bonjour Hi-Tech, je souhaite commander : ${p.name}${c ? " (" + c + ")" : ""} — ${fcfa(p.price)}. Est-il disponible ?`);
+  }
+
+  function choices(p) {
+    let h = "";
+    if (p.colors && p.colors.length) {
+      h += `<div class="pick__label">Couleur : <span data-color-name>${esc(p.colors[0].name)}</span></div>
+        <div class="swatches" role="radiogroup" aria-label="Couleur">${p.colors.map((c, i) =>
+          `<button type="button" class="swatch ${i ? "" : "is-active"}" data-swatch="${i}" role="radio" aria-checked="${!i}" aria-label="${esc(c.name)}" title="${esc(c.name)}" style="--c:${c.hex}"></button>`).join("")}</div>`;
+    }
+    if (p.options && p.options.length) {
+      h += `<div class="caps" role="radiogroup" aria-label="Option">${p.options.map((o, i) =>
+        `<button type="button" class="cap ${i ? "" : "is-active"}" data-cap="${i}" role="radio" aria-checked="${!i}">${esc(o)}</button>`).join("")}</div>`;
+    }
+    return h;
+  }
+
   function card(p) {
-    return `<article class="product reveal" data-id="${p.id}">
+    return `<article class="product reveal" data-id="${p.id}" data-ci="0" data-oi="0">
       <button type="button" class="product__media" data-open="${p.id}" aria-label="Voir ${esc(p.name)}">
         ${p.badge ? `<span class="badge ${badgeClass(p.badge)}">${esc(p.badge)}</span>` : ""}
-        ${media(p)}
+        <span class="product__visual" data-media>${media(p)}</span>
       </button>
       <div class="product__body">
-        <span class="product__cat">${esc(p.brand)} · ${esc(catOf(p.cat).label)}</span>
         <h3 class="product__name"><button type="button" data-open="${p.id}">${esc(p.name)}</button></h3>
-        ${p.options && p.options.length > 1 && p.price ? `<span class="product__from">À partir de</span>` : ""}
+        ${choices(p)}
         <div class="product__price">
+          ${p.options && p.options.length > 1 && p.price ? `<span class="product__from">À partir de</span>` : ""}
           <strong>${fcfa(p.price)}</strong>
           ${p.oldPrice ? `<s>${fcfa(p.oldPrice)}</s>` : ""}
         </div>
         <div class="product__actions">
-          <button type="button" class="btn btn--primary btn--sm" data-add="${p.id}">${icon("cart")} Ajouter</button>
-          <a class="btn btn--wa btn--sm btn--icon" href="${waLink(`Bonjour Hi-Tech, je suis intéressé(e) par : ${p.name} (${fcfa(p.price)}). Est-il disponible ?`)}" target="_blank" rel="noopener" aria-label="Commander ${esc(p.name)} sur WhatsApp">${icon("whatsapp")}</a>
+          <button type="button" class="btn btn--black" data-add="${p.id}">Commander</button>
+          <a class="btn btn--line" data-wa-product href="${waLink(`Bonjour Hi-Tech, je suis intéressé(e) par : ${p.name} (${fcfa(p.price)}). Est-il disponible ?`)}" target="_blank" rel="noopener">${icon("whatsapp")} WhatsApp</a>
         </div>
       </div>
     </article>`;
   }
 
   /* ---------- Fenêtre produit ---------- */
-  function openProduct(id) {
+  function openProduct(id, from) {
     const p = PRODUCTS.find((x) => x.id === id);
     const modal = $("#productModal");
     if (!p || !modal) return;
+    const st = from ? sel(from) : { ci: 0, oi: 0 };
     $(".modal__content", modal).innerHTML = `
-      <div class="pm">
-        <div class="pm__media">${p.badge ? `<span class="badge ${badgeClass(p.badge)}">${esc(p.badge)}</span>` : ""}${media(p)}</div>
+      <div class="pm" data-id="${p.id}" data-ci="0" data-oi="0">
+        <div class="pm__media">${p.badge ? `<span class="badge ${badgeClass(p.badge)}">${esc(p.badge)}</span>` : ""}<span class="product__visual" data-media>${media(p)}</span></div>
         <div class="pm__info">
           <span class="product__cat">${esc(p.brand)} · ${esc(catOf(p.cat).label)}</span>
           <h2 id="pmTitle">${esc(p.name)}</h2>
           <div class="product__price product__price--lg"><strong>${fcfa(p.price)}</strong>${p.oldPrice ? `<s>${fcfa(p.oldPrice)}</s>` : ""}</div>
           <p>${esc(p.desc || "")}</p>
-          ${p.options ? `<fieldset class="pm__opts"><legend>Choisir une option</legend>${p.options.map((o, i) => `<label class="chip-radio"><input type="radio" name="pmOpt" value="${esc(o)}" ${i === 0 ? "checked" : ""}/><span>${esc(o)}</span></label>`).join("")}</fieldset>` : ""}
+          ${choices(p)}
           <ul class="pm__perks">
             <li>✓ Garantie boutique</li><li>✓ Produit testé avant remise</li><li>✓ Reprise de votre ancien appareil possible</li>
           </ul>
           <div class="pm__actions">
-            <button type="button" class="btn btn--primary" id="pmAdd">${icon("cart")} Ajouter au panier</button>
-            <a class="btn btn--wa" id="pmWa" target="_blank" rel="noopener">${icon("whatsapp")} Commander sur WhatsApp</a>
+            <button type="button" class="btn btn--black" data-add="${p.id}">${icon("cart")} Ajouter au panier</button>
+            <a class="btn btn--wa" data-wa-product target="_blank" rel="noopener">${icon("whatsapp")} Commander sur WhatsApp</a>
           </div>
         </div>
       </div>`;
-    const opt = () => { const r = $('input[name="pmOpt"]:checked', modal); return r ? r.value : ""; };
-    const updWa = () => { $("#pmWa").href = waLink(`Bonjour Hi-Tech, je souhaite commander : ${p.name}${opt() ? " (" + opt() + ")" : ""} — ${fcfa(p.price)}. Est-il disponible ?`); };
-    updWa();
-    $$('input[name="pmOpt"]', modal).forEach((r) => r.addEventListener("change", updWa));
-    $("#pmAdd").addEventListener("click", () => { addToCart(p.id, opt()); closeModal(); });
+    const box = $(".pm", modal);
+    pick(box, "ci", st.ci); pick(box, "oi", st.oi);
     openLayer(modal);
+  }
+
+  // Applique un choix (couleur ou capacité) à une carte / fiche
+  function pick(box, key, i) {
+    const p = PRODUCTS.find((x) => x.id === box.dataset.id);
+    if (!p) return;
+    box.dataset[key] = i;
+    if (key === "ci") {
+      $$("[data-swatch]", box).forEach((b) => { const on = +b.dataset.swatch === i; b.classList.toggle("is-active", on); b.setAttribute("aria-checked", on); });
+      const n = $("[data-color-name]", box); if (n && p.colors[i]) n.textContent = p.colors[i].name;
+      const m = $("[data-media]", box); if (m && p.render) m.innerHTML = media(p, false, i);
+    } else {
+      $$("[data-cap]", box).forEach((b) => { const on = +b.dataset.cap === i; b.classList.toggle("is-active", on); b.setAttribute("aria-checked", on); });
+    }
+    const wa = $("[data-wa-product]", box); if (wa) wa.href = waFor(p, box);
   }
 
   /* ---------- Couches (modal / tiroir) ---------- */
@@ -193,14 +234,23 @@
 
   /* ---------- Délégation d'évènements ---------- */
   document.addEventListener("click", (e) => {
+    const sw = e.target.closest("[data-swatch]"), cp = e.target.closest("[data-cap]");
+    if (sw || cp) {
+      const box = (sw || cp).closest("[data-id]");
+      if (box) pick(box, sw ? "ci" : "oi", +(sw ? sw.dataset.swatch : cp.dataset.cap));
+      return;
+    }
     const add = e.target.closest("[data-add]");
     if (add) {
-      const p = PRODUCTS.find((x) => x.id === add.dataset.add);
-      if (p && p.options && p.options.length > 1) openProduct(p.id); else addToCart(add.dataset.add, p && p.options ? p.options[0] : "");
+      const box = add.closest("[data-id]"), p = PRODUCTS.find((x) => x.id === add.dataset.add);
+      if (!p) return;
+      const { ci } = box ? sel(box) : { ci: 0 };
+      addToCart(p.id, box ? choiceLabel(p, box) : (p.options ? p.options[0] : ""), 1, ci);
+      if (add.closest("#productModal")) closeModal();
       return;
     }
     const open = e.target.closest("[data-open]");
-    if (open) { openProduct(open.dataset.open); return; }
+    if (open) { openProduct(open.dataset.open, open.closest("[data-id]")); return; }
     if (e.target.closest("[data-cart-open]")) { openLayer($("#cartDrawer")); return; }
     if (e.target.closest("[data-close]")) { closeLayer(e.target.closest(".layer")); return; }
     const line = e.target.closest(".cart-line");
@@ -257,11 +307,13 @@
   /* ---------- Accueil : catégories + produits vedettes ---------- */
   const catGrid = $("#catGrid");
   if (catGrid) {
-    const imgs = { iphone: "img/p/iphone-17-pro-max.jpg", android: "img/p/galaxy-s25-ultra.jpg", ordinateur: "img/p/macbook-air.jpg", montre: "img/p/apple-watch.jpg", audio: "img/p/airpods-max.jpg", gaming: "img/p/playstation-5.jpg", accessoires: "img/p/airpods-4.jpg" };
+    // Visuel de chaque catégorie : rendu d'un produit phare ou photo
+    const vis = { iphone: "ip17pm", android: "s25u", ordinateur: "mba13", tablette: "ipadair", montre: "awultra", audio: "apmax", gaming: "ps5", accessoires: "ap4" };
     catGrid.innerHTML = CATEGORIES.map((c) => {
       const n = PRODUCTS.filter((p) => p.cat === c.id).length;
+      const p = PRODUCTS.find((x) => x.id === vis[c.id]);
       return `<a class="cat reveal" href="boutique.html?cat=${c.id}">
-        <span class="cat__media">${imgs[c.id] ? `<img src="${imgs[c.id]}" alt="" loading="lazy"/>` : icon(c.icon, "ico--xl")}</span>
+        <span class="cat__media">${p ? media(p) : icon(c.icon, "ico--xl")}</span>
         <span class="cat__label">${c.label}</span><span class="cat__count">${n} produit${n > 1 ? "s" : ""}</span>
       </a>`;
     }).join("");
@@ -396,6 +448,7 @@
   $$("[data-wa]").forEach((a) => { a.href = waLink(a.dataset.wa || "Bonjour Hi-Tech !"); a.target = "_blank"; a.rel = "noopener"; });
   $$("[data-year]").forEach((y) => (y.textContent = new Date().getFullYear()));
   $$("[data-icon]").forEach((el) => el.insertAdjacentHTML("afterbegin", icon(el.dataset.icon)));
+  $$("[data-render-id]").forEach((el) => { const p = PRODUCTS.find((x) => x.id === el.dataset.renderId); if (p) el.innerHTML = media(p); });
   renderCart();
   observeReveal();
 })();
