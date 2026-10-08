@@ -1,0 +1,15 @@
+# Hébergement Netlify du site Hi-Tech (dossier hi-tech/, site statique sans compilation)
+[build]
+  base = "hi-tech"
+  publish = "."
+  command = ""
+
+# Photos et fichiers versionnés (?v=) : mis en cache longtemps pour un site rapide
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
