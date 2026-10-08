@@ -322,7 +322,15 @@
   // index.html?s=reparation → défile jusqu'à la section
   function goSection() {
     const s = qparams().get("s"), el = s && document.getElementById(s);
-    if (el) [100, 700, 1500].forEach((t) => setTimeout(() => el.scrollIntoView({ block: "start" }), t));
+    if (!el) return;
+    // certains hébergeurs remettent la page en haut après le chargement : on insiste quelques secondes
+    let n = 0;
+    const stop = () => clearInterval(t);
+    const t = setInterval(() => {
+      if (Math.abs(el.getBoundingClientRect().top - 84) > 40) el.scrollIntoView({ block: "start" });
+      if (++n > 16) stop();
+    }, 250);
+    ["wheel", "touchstart", "keydown"].forEach((ev) => window.addEventListener(ev, stop, { once: true, passive: true }));
   }
   if (document.readyState === "complete") goSection(); else window.addEventListener("load", goSection);
 
