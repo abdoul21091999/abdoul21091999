@@ -1,0 +1,18 @@
+{
+  "ordre": 1490,
+  "cat": "audio",
+  "series": "Casques",
+  "brand": "Beats",
+  "name": "Beats Solo 4",
+  "price": 150000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu ardoise",
+      "hex": "#6d8fb3",
+      "img": "img/p/autres/beatssolo4-bleu-ardoise.jpg"
+    }
+  ],
+  "desc": "Léger, pliable, 50 h d'autonomie.",
+  "dispo": true
+}

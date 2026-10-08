@@ -1,0 +1,21 @@
+{
+  "ordre": 1370,
+  "cat": "tablette",
+  "series": "Galaxy Tab",
+  "brand": "Samsung",
+  "name": "Galaxy Tab S11",
+  "price": 560000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Gris",
+      "hex": "#75787b",
+      "img": "img/p/samsung/tabs11-gris.jpg"
+    }
+  ],
+  "options": [
+    "128 Go"
+  ],
+  "desc": "Écran AMOLED, S Pen inclus.",
+  "dispo": true
+}

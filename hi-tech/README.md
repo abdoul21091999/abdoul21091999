@@ -20,8 +20,17 @@ sur GitHub Pages, Netlify ou Vercel.
 - Bouton WhatsApp flottant, design responsive (mobile d'abord), accessible.
 
 ## Modifier le site
-- **Produits et prix** : `js/products.js` (un produit = une ligne). Les prix actuels sont
-  **indicatifs** et doivent être vérifiés par la boutique. `price: 0` affiche « Prix sur demande ».
+
+### Espace vendeur (recommandé) — `/admin`
+Le vendeur gère produits, prix, photos et disponibilité depuis son téléphone, sans code :
+voir **[GUIDE-VENDEUR.md](GUIDE-VENDEUR.md)** (mise en place unique + mode d'emploi).
+Chaque produit est une fiche `data/produits/<identifiant>.json` ; Netlify les assemble dans
+`data/produits.json` (`node outils/construire-catalogue.mjs`) à chaque modification.
+
+### À la main
+- **Produits et prix** : une fiche par produit dans `data/produits/` (ou via `/admin`). Les prix
+  actuels sont **indicatifs** et doivent être vérifiés par la boutique. `price: 0` affiche « Prix sur demande ».
+  Après une modification à la main, lancez `node outils/construire-catalogue.mjs`.
 - **Numéro WhatsApp** : `WHATSAPP_NUMBER` en haut de `js/products.js`.
 - **Valeurs de reprise** : objet `BASE` dans `js/app.js` (section « Estimation de reprise »).
 - **Photos produit** : photos officielles des fabricants (Apple, Samsung, Xiaomi, Google, Sony,

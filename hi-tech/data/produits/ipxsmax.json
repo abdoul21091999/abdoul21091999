@@ -1,0 +1,32 @@
+{
+  "ordre": 330,
+  "cat": "iphone",
+  "series": "iPhone X / XS / XR",
+  "brand": "Apple",
+  "name": "iPhone XS Max",
+  "price": 130000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Or",
+      "hex": "#f5dcc4",
+      "img": "img/p/apple/ipxsmax-or.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#e3e4e5",
+      "img": "img/p/apple/ipxsmax-argent.jpg"
+    },
+    {
+      "name": "Gris sidéral",
+      "hex": "#4b4c4e",
+      "img": "img/p/apple/ipxsmax-gris-sideral.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "256 Go"
+  ],
+  "desc": "Grand écran OLED 6,5 pouces, Face ID.",
+  "dispo": true
+}

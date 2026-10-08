@@ -1,0 +1,27 @@
+{
+  "ordre": 130,
+  "cat": "iphone",
+  "series": "iPhone 16",
+  "brand": "Apple",
+  "name": "iPhone 16e",
+  "price": 390000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Blanc",
+      "hex": "#f5f5f0",
+      "img": "img/p/apple/ip16e-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#2b2b2d",
+      "img": "img/p/apple/ip16e-noir.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Puce A18 et caméra 48 Mpx à petit prix.",
+  "dispo": true
+}

@@ -1,0 +1,32 @@
+{
+  "ordre": 1380,
+  "cat": "tablette",
+  "series": "Galaxy Tab",
+  "brand": "Samsung",
+  "name": "Galaxy Tab S10 FE",
+  "price": 340000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#aabdd4",
+      "img": "img/p/samsung/tabs10fe-bleu.jpg"
+    },
+    {
+      "name": "Gris",
+      "hex": "#75787b",
+      "img": "img/p/samsung/tabs10fe-gris.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#c7c8ca",
+      "img": "img/p/samsung/tabs10fe-argent.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Grand écran, S Pen inclus, IP68.",
+  "dispo": true
+}

@@ -1,0 +1,34 @@
+{
+  "ordre": 1280,
+  "cat": "ordinateur",
+  "series": "MacBook",
+  "brand": "Apple",
+  "name": "MacBook Air 13\"",
+  "price": 720000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu ciel",
+      "hex": "#c5d3e0",
+      "img": "img/p/apple/mba13-bleu-ciel.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#d9dadc",
+      "img": "img/p/apple/mba13-argent.jpg"
+    },
+    {
+      "name": "Lumière stellaire",
+      "hex": "#e8e1d4",
+      "img": "img/p/apple/mba13-lumiere-stellaire.jpg"
+    },
+    {
+      "name": "Minuit",
+      "hex": "#2e3640",
+      "img": "img/p/apple/mba13-minuit.jpg"
+    }
+  ],
+  "desc": "Ultra-fin, silencieux, jusqu'à 18 h d'autonomie.",
+  "featured": true,
+  "dispo": true
+}

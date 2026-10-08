@@ -1,0 +1,23 @@
+{
+  "ordre": 1210,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova Y72",
+  "price": 115000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Vert",
+      "hex": "#5f8f74",
+      "img": "img/p/huawei/hwny72-vert.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwny72-noir.jpg"
+    }
+  ],
+  "desc": "Batterie 6000 mAh, grand écran.",
+  "dispo": true
+}

@@ -1,0 +1,27 @@
+{
+  "ordre": 610,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S20 Ultra",
+  "price": 200000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Gris cosmique",
+      "hex": "#7d7f82",
+      "img": "img/p/samsung/s20u-gris-cosmique.jpg"
+    },
+    {
+      "name": "Noir cosmique",
+      "hex": "#1f1f21",
+      "img": "img/p/samsung/s20u-noir-cosmique.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Caméra 108 Mpx, zoom 100x.",
+  "dispo": true
+}

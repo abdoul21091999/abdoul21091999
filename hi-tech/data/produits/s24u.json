@@ -1,0 +1,38 @@
+{
+  "ordre": 450,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S24 Ultra",
+  "price": 520000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Titane gris",
+      "hex": "#aca49b",
+      "img": "img/p/samsung/s24u-titane-gris.jpg"
+    },
+    {
+      "name": "Titane violet",
+      "hex": "#4d4e5f",
+      "img": "img/p/samsung/s24u-titane-violet.jpg"
+    },
+    {
+      "name": "Titane noir",
+      "hex": "#62605f",
+      "img": "img/p/samsung/s24u-titane-noir.jpg"
+    },
+    {
+      "name": "Titane jaune",
+      "hex": "#f0e1b9",
+      "img": "img/p/samsung/s24u-titane-jaune.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "Titane, S Pen, zoom 100x, Galaxy AI.",
+  "dispo": true
+}

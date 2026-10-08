@@ -1,0 +1,37 @@
+{
+  "ordre": 470,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S24",
+  "price": 340000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Jaune ambre",
+      "hex": "#f1ead4",
+      "img": "img/p/samsung/s24-jaune-ambre.jpg"
+    },
+    {
+      "name": "Noir onyx",
+      "hex": "#4a4a4d",
+      "img": "img/p/samsung/s24-noir-onyx.jpg"
+    },
+    {
+      "name": "Prune cobalt",
+      "hex": "#52566d",
+      "img": "img/p/samsung/s24-prune-cobalt.jpg"
+    },
+    {
+      "name": "Gris marbre",
+      "hex": "#c5c3c3",
+      "img": "img/p/samsung/s24-gris-marbre.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Compact, Galaxy AI, triple caméra.",
+  "dispo": true
+}

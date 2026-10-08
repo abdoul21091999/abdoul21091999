@@ -1,0 +1,21 @@
+{
+  "ordre": 660,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S10e",
+  "price": 80000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Jaune canari",
+      "hex": "#f6e15b",
+      "img": "img/p/samsung/s10e-jaune-canari.jpg"
+    }
+  ],
+  "options": [
+    "128 Go"
+  ],
+  "desc": "Compact, double caméra, petit prix.",
+  "dispo": true
+}

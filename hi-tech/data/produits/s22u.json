@@ -1,0 +1,49 @@
+{
+  "ordre": 530,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S22 Ultra",
+  "price": 320000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bordeaux",
+      "hex": "#654d57",
+      "img": "img/p/samsung/s22u-bordeaux.jpg"
+    },
+    {
+      "name": "Noir fantôme",
+      "hex": "#000000",
+      "img": "img/p/samsung/s22u-noir-fantome.jpg"
+    },
+    {
+      "name": "Vert",
+      "hex": "#587876",
+      "img": "img/p/samsung/s22u-vert.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#6d7073",
+      "img": "img/p/samsung/s22u-graphite.jpg"
+    },
+    {
+      "name": "Bleu ciel",
+      "hex": "#b8c9e1",
+      "img": "img/p/samsung/s22u-bleu-ciel.jpg"
+    },
+    {
+      "name": "Blanc fantôme",
+      "hex": "#e9e9e7",
+      "img": "img/p/samsung/s22u-blanc-fantome.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "S Pen intégré, zoom 100x.",
+  "dispo": true
+}

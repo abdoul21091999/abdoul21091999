@@ -1,0 +1,37 @@
+{
+  "ordre": 500,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S23+",
+  "price": 320000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Vert",
+      "hex": "#5f645a",
+      "img": "img/p/samsung/s23p-vert.jpg"
+    },
+    {
+      "name": "Noir fantôme",
+      "hex": "#211e16",
+      "img": "img/p/samsung/s23p-noir-fantome.jpg"
+    },
+    {
+      "name": "Lavande",
+      "hex": "#d4c7d9",
+      "img": "img/p/samsung/s23p-lavande.jpg"
+    },
+    {
+      "name": "Crème",
+      "hex": "#f0eae0",
+      "img": "img/p/samsung/s23p-creme.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go"
+  ],
+  "desc": "Grand écran, Snapdragon 8 Gen 2.",
+  "dispo": true
+}

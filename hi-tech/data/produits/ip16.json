@@ -1,0 +1,42 @@
+{
+  "ordre": 120,
+  "cat": "iphone",
+  "series": "iPhone 16",
+  "brand": "Apple",
+  "name": "iPhone 16",
+  "price": 480000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Outremer",
+      "hex": "#a1b2f7",
+      "img": "img/p/apple/ip16-outremer.jpg"
+    },
+    {
+      "name": "Sarcelle",
+      "hex": "#b5d7d4",
+      "img": "img/p/apple/ip16-sarcelle.jpg"
+    },
+    {
+      "name": "Rose",
+      "hex": "#f3b2dd",
+      "img": "img/p/apple/ip16-rose.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#fafafa",
+      "img": "img/p/apple/ip16-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#4a4e50",
+      "img": "img/p/apple/ip16-noir.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Puce A18, bouton Action, caméra Fusion 48 Mpx.",
+  "dispo": true
+}

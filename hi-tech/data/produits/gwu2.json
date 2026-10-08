@@ -1,0 +1,23 @@
+{
+  "ordre": 1440,
+  "cat": "montre",
+  "series": "Galaxy Watch",
+  "brand": "Samsung",
+  "name": "Galaxy Watch Ultra 2",
+  "price": 420000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Argent Titane",
+      "hex": "#6d6e72",
+      "img": "img/p/samsung/gwu2-argent-titane.jpg"
+    },
+    {
+      "name": "Gris titane",
+      "hex": "#404347",
+      "img": "img/p/samsung/gwu2-gris-titane.jpg"
+    }
+  ],
+  "desc": "Titane, autonomie longue durée, pour l'aventure.",
+  "dispo": true
+}

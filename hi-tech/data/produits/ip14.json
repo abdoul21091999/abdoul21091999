@@ -1,0 +1,37 @@
+{
+  "ordre": 210,
+  "cat": "iphone",
+  "series": "iPhone 14",
+  "brand": "Apple",
+  "name": "iPhone 14",
+  "price": 300000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#a0b4c7",
+      "img": "img/p/apple/ip14-bleu.jpg"
+    },
+    {
+      "name": "Mauve",
+      "hex": "#e5ddea",
+      "img": "img/p/apple/ip14-mauve.jpg"
+    },
+    {
+      "name": "Lumière stellaire",
+      "hex": "#f2ece4",
+      "img": "img/p/apple/ip14-lumiere-stellaire.jpg"
+    },
+    {
+      "name": "Minuit",
+      "hex": "#232a31",
+      "img": "img/p/apple/ip14-minuit.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Puce A15, double caméra, détection des accidents.",
+  "dispo": true
+}

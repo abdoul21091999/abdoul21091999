@@ -1,0 +1,42 @@
+{
+  "ordre": 220,
+  "cat": "iphone",
+  "series": "iPhone 13",
+  "brand": "Apple",
+  "name": "iPhone 13 Pro Max",
+  "price": 350000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu alpin",
+      "hex": "#a7c1d9",
+      "img": "img/p/apple/ip13pm-bleu-alpin.jpg"
+    },
+    {
+      "name": "Vert alpin",
+      "hex": "#576856",
+      "img": "img/p/apple/ip13pm-vert-alpin.jpg"
+    },
+    {
+      "name": "Or",
+      "hex": "#f5dcc4",
+      "img": "img/p/apple/ip13pm-or.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#e3e4e5",
+      "img": "img/p/apple/ip13pm-argent.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#52514f",
+      "img": "img/p/apple/ip13pm-graphite.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Écran ProMotion 120 Hz, triple caméra.",
+  "dispo": true
+}

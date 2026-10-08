@@ -1,0 +1,32 @@
+{
+  "ordre": 580,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S21+",
+  "price": 190000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Violet fantôme",
+      "hex": "#a99bd6",
+      "img": "img/p/samsung/s21p-violet-fantome.jpg"
+    },
+    {
+      "name": "Argent fantôme",
+      "hex": "#d7dde6",
+      "img": "img/p/samsung/s21p-argent-fantome.jpg"
+    },
+    {
+      "name": "Noir fantôme",
+      "hex": "#1f1f21",
+      "img": "img/p/samsung/s21p-noir-fantome.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Grand écran 120 Hz, 5G.",
+  "dispo": true
+}

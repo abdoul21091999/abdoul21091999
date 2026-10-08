@@ -1,0 +1,37 @@
+{
+  "ordre": 480,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S24 FE",
+  "price": 290000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#bcd5ea",
+      "img": "img/p/samsung/s24fe-bleu.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#4d4c4a",
+      "img": "img/p/samsung/s24fe-graphite.jpg"
+    },
+    {
+      "name": "Gris Marbre",
+      "hex": "#c5c3c3",
+      "img": "img/p/samsung/s24fe-gris-marbre.jpg"
+    },
+    {
+      "name": "Menthe",
+      "hex": "#c7e9e2",
+      "img": "img/p/samsung/s24fe-menthe.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Écran 6,7 pouces, Galaxy AI, triple caméra.",
+  "dispo": true
+}

@@ -1,15 +1,20 @@
-# Hébergement Netlify du site Hi-Tech (dossier hi-tech/, site statique sans compilation)
+# Hébergement Netlify du site Hi-Tech (dossier hi-tech/)
+# À chaque modification (ex. depuis /admin), le catalogue est réassemblé puis publié.
 [build]
   base = "hi-tech"
   publish = "."
-  command = ""
+  command = "node outils/construire-catalogue.mjs"
 
 # Photos et fichiers versionnés (?v=) : mis en cache longtemps pour un site rapide
 [[headers]]
   for = "/img/*"
   [headers.values]
-    Cache-Control = "public, max-age=604800"
+    Cache-Control = "public, max-age=86400"
 [[headers]]
   for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+[[headers]]
+  for = "/data/*"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"

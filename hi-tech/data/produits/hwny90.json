@@ -1,0 +1,33 @@
+{
+  "ordre": 1230,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova Y90",
+  "price": 100000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#5a7fb8",
+      "img": "img/p/huawei/hwny90-bleu.jpg"
+    },
+    {
+      "name": "Vert",
+      "hex": "#5f8f74",
+      "img": "img/p/huawei/hwny90-vert.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f2f2f0",
+      "img": "img/p/huawei/hwny90-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwny90-noir.jpg"
+    }
+  ],
+  "desc": "Grand écran FullView, charge 40 W.",
+  "dispo": true
+}

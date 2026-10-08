@@ -1,0 +1,12 @@
+{
+  "ordre": 820,
+  "cat": "android",
+  "series": "Redmi",
+  "brand": "Xiaomi",
+  "name": "Redmi Note 15",
+  "price": 170000,
+  "badge": "Neuf",
+  "img": "img/p/xiaomi/rn15-photo.jpg",
+  "desc": "Grand écran AMOLED, grosse batterie.",
+  "dispo": true
+}

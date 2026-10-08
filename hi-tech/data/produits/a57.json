@@ -1,0 +1,37 @@
+{
+  "ordre": 670,
+  "cat": "android",
+  "series": "Galaxy A",
+  "brand": "Samsung",
+  "name": "Galaxy A57 5G",
+  "price": 260000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Bleu Marine",
+      "hex": "#383e4e",
+      "img": "img/p/samsung/a57-bleu-marine.jpg"
+    },
+    {
+      "name": "Gris",
+      "hex": "#7e7d80",
+      "img": "img/p/samsung/a57-gris.jpg"
+    },
+    {
+      "name": "Lilas",
+      "hex": "#a7b2e7",
+      "img": "img/p/samsung/a57-lilas.jpg"
+    },
+    {
+      "name": "Bleu Glacé",
+      "hex": "#c8d8eb",
+      "img": "img/p/samsung/a57-bleu-glace.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Super AMOLED 120 Hz, triple caméra 50 Mpx, 5G.",
+  "dispo": true
+}

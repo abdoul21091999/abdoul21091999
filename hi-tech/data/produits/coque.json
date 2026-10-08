@@ -1,0 +1,15 @@
+{
+  "ordre": 1600,
+  "cat": "accessoires",
+  "brand": "Hi-Tech",
+  "name": "Coque + verre trempé",
+  "price": 7500,
+  "badge": "Pack",
+  "options": [
+    "iPhone",
+    "Samsung",
+    "Autre modèle"
+  ],
+  "desc": "Protection complète, pose du verre offerte en boutique.",
+  "dispo": true
+}

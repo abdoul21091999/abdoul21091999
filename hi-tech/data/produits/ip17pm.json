@@ -1,0 +1,34 @@
+{
+  "ordre": 50,
+  "cat": "iphone",
+  "series": "iPhone 17",
+  "brand": "Apple",
+  "name": "iPhone 17 Pro Max",
+  "price": 950000,
+  "oldPrice": 1050000,
+  "badge": "Promo",
+  "colors": [
+    {
+      "name": "Orange cosmique",
+      "hex": "#e2783c",
+      "img": "img/p/apple/ip17pm-orange-cosmique.jpg"
+    },
+    {
+      "name": "Bleu intense",
+      "hex": "#33415f",
+      "img": "img/p/apple/ip17pm-bleu-intense.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#dcdcdc",
+      "img": "img/p/apple/ip17pm-argent.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "Puce A19 Pro, triple caméra 48 Mpx, autonomie record.",
+  "dispo": true
+}

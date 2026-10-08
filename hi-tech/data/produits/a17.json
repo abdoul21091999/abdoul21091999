@@ -1,0 +1,31 @@
+{
+  "ordre": 700,
+  "cat": "android",
+  "series": "Galaxy A",
+  "brand": "Samsung",
+  "name": "Galaxy A17 5G",
+  "price": 120000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#404145",
+      "img": "img/p/samsung/a17-noir.jpg"
+    },
+    {
+      "name": "Bleu",
+      "hex": "#004680",
+      "img": "img/p/samsung/a17-bleu.jpg"
+    },
+    {
+      "name": "Gris",
+      "hex": "#9b9ca1",
+      "img": "img/p/samsung/a17-gris.jpg"
+    }
+  ],
+  "options": [
+    "128 Go"
+  ],
+  "desc": "Grand écran, batterie 5000 mAh.",
+  "dispo": true
+}

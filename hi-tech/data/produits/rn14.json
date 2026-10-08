@@ -1,0 +1,12 @@
+{
+  "ordre": 970,
+  "cat": "android",
+  "series": "Redmi",
+  "brand": "Xiaomi",
+  "name": "Redmi Note 14",
+  "price": 140000,
+  "badge": "Neuf",
+  "img": "img/p/xiaomi/rn14-photo.jpg",
+  "desc": "Grand écran AMOLED, grosse batterie.",
+  "dispo": true
+}

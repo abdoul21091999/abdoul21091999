@@ -1,0 +1,12 @@
+{
+  "ordre": 1330,
+  "cat": "ordinateur",
+  "series": "PC Windows",
+  "brand": "Lenovo",
+  "name": "ThinkPad X13",
+  "price": 650000,
+  "badge": "Neuf",
+  "img": "img/p/autres/thinkpad-photo.jpg",
+  "desc": "Le PC pro compact, robuste et léger.",
+  "dispo": true
+}

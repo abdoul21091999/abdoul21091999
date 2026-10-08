@@ -1,0 +1,12 @@
+{
+  "ordre": 1000,
+  "cat": "android",
+  "series": "Redmi",
+  "brand": "Xiaomi",
+  "name": "Redmi Note 13",
+  "price": 110000,
+  "badge": "Reconditionné",
+  "img": "img/p/xiaomi/rn13-photo.jpg",
+  "desc": "Écran AMOLED 120 Hz.",
+  "dispo": true
+}

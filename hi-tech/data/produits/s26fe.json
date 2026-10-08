@@ -1,0 +1,32 @@
+{
+  "ordre": 420,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S26 FE",
+  "price": 420000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Pistache",
+      "hex": "#bdcfce",
+      "img": "img/p/samsung/s26fe-pistache.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#494d53",
+      "img": "img/p/samsung/s26fe-graphite.jpg"
+    },
+    {
+      "name": "Myrtille",
+      "hex": "#666e91",
+      "img": "img/p/samsung/s26fe-myrtille.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "L'expérience Galaxy S à prix doux.",
+  "dispo": true
+}

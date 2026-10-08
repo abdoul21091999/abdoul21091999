@@ -1,0 +1,27 @@
+{
+  "ordre": 1390,
+  "cat": "tablette",
+  "series": "Galaxy Tab",
+  "brand": "Samsung",
+  "name": "Galaxy Tab A11",
+  "price": 150000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Gris",
+      "hex": "#75787b",
+      "img": "img/p/samsung/taba11-gris.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#c7c8ca",
+      "img": "img/p/samsung/taba11-argent.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "128 Go"
+  ],
+  "desc": "La tablette familiale accessible.",
+  "dispo": true
+}

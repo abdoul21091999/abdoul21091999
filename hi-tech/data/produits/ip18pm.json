@@ -1,0 +1,39 @@
+{
+  "ordre": 10,
+  "cat": "iphone",
+  "series": "iPhone 18",
+  "brand": "Apple",
+  "name": "iPhone 18 Pro Max",
+  "price": 1250000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Bordeaux",
+      "hex": "#4d1821",
+      "img": "img/p/apple/ip18pm-bordeaux.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#f7f7f7",
+      "img": "img/p/apple/ip18pm-argent.jpg"
+    },
+    {
+      "name": "Glacier",
+      "hex": "#e8f2ff",
+      "img": "img/p/apple/ip18pm-glacier.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#3c3c3c",
+      "img": "img/p/apple/ip18pm-noir.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "Le plus grand écran et la meilleure autonomie jamais vus sur un iPhone.",
+  "featured": true,
+  "dispo": true
+}

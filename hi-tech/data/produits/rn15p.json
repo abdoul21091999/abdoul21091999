@@ -1,0 +1,12 @@
+{
+  "ordre": 810,
+  "cat": "android",
+  "series": "Redmi",
+  "brand": "Xiaomi",
+  "name": "Redmi Note 15 Pro",
+  "price": 230000,
+  "badge": "Neuf",
+  "img": "img/p/xiaomi/rn15p-photo.jpg",
+  "desc": "Écran AMOLED 120 Hz, caméra 200 Mpx.",
+  "dispo": true
+}

@@ -1,0 +1,23 @@
+{
+  "ordre": 1300,
+  "cat": "ordinateur",
+  "series": "MacBook",
+  "brand": "Apple",
+  "name": "MacBook Pro 14\"",
+  "price": 1450000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Noir sidéral",
+      "hex": "#2e2f31",
+      "img": "img/p/apple/mbp14-noir-sideral.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#d9dadc",
+      "img": "img/p/apple/mbp14-argent.jpg"
+    }
+  ],
+  "desc": "Puissance pro, écran XDR, ports HDMI et SD.",
+  "dispo": true
+}

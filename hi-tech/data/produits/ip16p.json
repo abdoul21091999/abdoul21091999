@@ -1,0 +1,38 @@
+{
+  "ordre": 100,
+  "cat": "iphone",
+  "series": "iPhone 16",
+  "brand": "Apple",
+  "name": "iPhone 16 Pro",
+  "price": 650000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Titane désert",
+      "hex": "#bfa48f",
+      "img": "img/p/apple/ip16p-titane-desert.jpg"
+    },
+    {
+      "name": "Titane naturel",
+      "hex": "#bab4a9",
+      "img": "img/p/apple/ip16p-titane-naturel.jpg"
+    },
+    {
+      "name": "Titane blanc",
+      "hex": "#f2f1ed",
+      "img": "img/p/apple/ip16p-titane-blanc.jpg"
+    },
+    {
+      "name": "Titane noir",
+      "hex": "#3c3c3d",
+      "img": "img/p/apple/ip16p-titane-noir.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go",
+    "512 Go"
+  ],
+  "desc": "Titane, triple caméra 48 Mpx, puce A18 Pro.",
+  "dispo": true
+}

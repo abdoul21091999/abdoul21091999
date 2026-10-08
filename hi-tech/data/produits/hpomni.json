@@ -1,0 +1,12 @@
+{
+  "ordre": 1310,
+  "cat": "ordinateur",
+  "series": "PC Windows",
+  "brand": "HP",
+  "name": "HP OmniBook 17",
+  "price": 450000,
+  "badge": "Neuf",
+  "img": "img/p/autres/hpomni-photo.jpg",
+  "desc": "Grand écran 17,3\", idéal pour le bureau et les études.",
+  "dispo": true
+}

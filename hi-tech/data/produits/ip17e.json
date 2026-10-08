@@ -1,0 +1,32 @@
+{
+  "ordre": 80,
+  "cat": "iphone",
+  "series": "iPhone 17",
+  "brand": "Apple",
+  "name": "iPhone 17e",
+  "price": 430000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Rose pâle",
+      "hex": "#fce7e6",
+      "img": "img/p/apple/ip17e-rose-pale.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#fafafa",
+      "img": "img/p/apple/ip17e-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#4a4e50",
+      "img": "img/p/apple/ip17e-noir.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "L'essentiel de l'iPhone à petit prix.",
+  "dispo": true
+}

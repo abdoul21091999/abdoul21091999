@@ -1,0 +1,36 @@
+{
+  "ordre": 410,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S26",
+  "price": 650000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Violet de cobalt",
+      "hex": "#686884",
+      "img": "img/p/samsung/s26-violet-de-cobalt.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#494d53",
+      "img": "img/p/samsung/s26-noir.jpg"
+    },
+    {
+      "name": "Bleu Ciel",
+      "hex": "#b3cbd9",
+      "img": "img/p/samsung/s26-bleu-ciel.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f3f4f5",
+      "img": "img/p/samsung/s26-blanc.jpg"
+    }
+  ],
+  "options": [
+    "256 Go"
+  ],
+  "desc": "Compact et puissant, Galaxy AI.",
+  "dispo": true
+}

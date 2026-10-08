@@ -1,0 +1,21 @@
+{
+  "ordre": 620,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S20+",
+  "price": 160000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu nuage",
+      "hex": "#b5d3ea",
+      "img": "img/p/samsung/s20p-bleu-nuage.jpg"
+    }
+  ],
+  "options": [
+    "128 Go"
+  ],
+  "desc": "Écran 6,7 pouces 120 Hz, quadruple caméra.",
+  "dispo": true
+}

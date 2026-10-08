@@ -1,0 +1,23 @@
+{
+  "ordre": 1220,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova Y91",
+  "price": 120000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Argent",
+      "hex": "#d5d7da",
+      "img": "img/p/huawei/hwny91-argent.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwny91-noir.jpg"
+    }
+  ],
+  "desc": "Écran 6,95 pouces, batterie 7000 mAh.",
+  "dispo": true
+}

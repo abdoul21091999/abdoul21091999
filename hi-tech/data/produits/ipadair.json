@@ -1,0 +1,33 @@
+{
+  "ordre": 1350,
+  "cat": "tablette",
+  "series": "iPad",
+  "brand": "Apple",
+  "name": "iPad Air 11\"",
+  "price": 480000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#9bb6d1",
+      "img": "img/p/apple/ipadair-bleu.jpg"
+    },
+    {
+      "name": "Violet",
+      "hex": "#c7bde0",
+      "img": "img/p/apple/ipadair-violet.jpg"
+    },
+    {
+      "name": "Gris sidéral",
+      "hex": "#5e5f63",
+      "img": "img/p/apple/ipadair-gris-sideral.jpg"
+    },
+    {
+      "name": "Lumière stellaire",
+      "hex": "#ece6dc",
+      "img": "img/p/apple/ipadair-lumiere-stellaire.jpg"
+    }
+  ],
+  "desc": "Puce M, compatible Apple Pencil Pro.",
+  "dispo": true
+}

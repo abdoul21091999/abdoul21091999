@@ -1,0 +1,27 @@
+{
+  "ordre": 360,
+  "cat": "iphone",
+  "series": "iPhone X / XS / XR",
+  "brand": "Apple",
+  "name": "iPhone X",
+  "price": 90000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Argent",
+      "hex": "#e3e4e5",
+      "img": "img/p/apple/ipx-argent.jpg"
+    },
+    {
+      "name": "Gris sidéral",
+      "hex": "#4b4c4e",
+      "img": "img/p/apple/ipx-gris-sideral.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "256 Go"
+  ],
+  "desc": "Le premier iPhone sans bouton, Face ID.",
+  "dispo": true
+}

@@ -1,0 +1,32 @@
+{
+  "ordre": 370,
+  "cat": "iphone",
+  "series": "iPhone SE",
+  "brand": "Apple",
+  "name": "iPhone SE (2022)",
+  "price": 120000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Minuit",
+      "hex": "#232a31",
+      "img": "img/p/apple/ipse3-minuit.jpg"
+    },
+    {
+      "name": "Lumière stellaire",
+      "hex": "#f2ece4",
+      "img": "img/p/apple/ipse3-lumiere-stellaire.jpg"
+    },
+    {
+      "name": "(PRODUCT)RED",
+      "hex": "#ba0c2e",
+      "img": "img/p/apple/ipse3-product-red.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "128 Go"
+  ],
+  "desc": "Puce A15, Touch ID, 5G, format compact.",
+  "dispo": true
+}

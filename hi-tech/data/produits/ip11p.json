@@ -1,0 +1,37 @@
+{
+  "ordre": 310,
+  "cat": "iphone",
+  "series": "iPhone 11",
+  "brand": "Apple",
+  "name": "iPhone 11 Pro",
+  "price": 170000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Vert nuit",
+      "hex": "#4e5851",
+      "img": "img/p/apple/ip11p-vert-nuit.jpg"
+    },
+    {
+      "name": "Or",
+      "hex": "#f5dcc4",
+      "img": "img/p/apple/ip11p-or.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#e3e4e5",
+      "img": "img/p/apple/ip11p-argent.jpg"
+    },
+    {
+      "name": "Gris sidéral",
+      "hex": "#4b4c4e",
+      "img": "img/p/apple/ip11p-gris-sideral.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "256 Go"
+  ],
+  "desc": "Triple caméra, écran OLED.",
+  "dispo": true
+}

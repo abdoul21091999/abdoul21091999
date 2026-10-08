@@ -1,0 +1,23 @@
+{
+  "ordre": 1500,
+  "cat": "audio",
+  "series": "Écouteurs",
+  "brand": "Samsung",
+  "name": "Galaxy Buds4 Pro",
+  "price": 165000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Blanc",
+      "hex": "#f3f4f5",
+      "img": "img/p/samsung/buds4p-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#494d53",
+      "img": "img/p/samsung/buds4p-noir.jpg"
+    }
+  ],
+  "desc": "Son Hi-Fi, réduction de bruit intelligente.",
+  "dispo": true
+}

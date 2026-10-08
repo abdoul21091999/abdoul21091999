@@ -1,0 +1,42 @@
+{
+  "ordre": 110,
+  "cat": "iphone",
+  "series": "iPhone 16",
+  "brand": "Apple",
+  "name": "iPhone 16 Plus",
+  "price": 540000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Outremer",
+      "hex": "#9aadf6",
+      "img": "img/p/apple/ip16plus-outremer.jpg"
+    },
+    {
+      "name": "Sarcelle",
+      "hex": "#b0d4d2",
+      "img": "img/p/apple/ip16plus-sarcelle.jpg"
+    },
+    {
+      "name": "Rose",
+      "hex": "#f9d9d5",
+      "img": "img/p/apple/ip16plus-rose.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f5f5f0",
+      "img": "img/p/apple/ip16plus-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#2b2b2d",
+      "img": "img/p/apple/ip16plus-noir.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Grand écran 6,7 pouces, autonomie record.",
+  "dispo": true
+}

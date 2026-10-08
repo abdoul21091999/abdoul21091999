@@ -1,0 +1,42 @@
+{
+  "ordre": 600,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S20 FE",
+  "price": 140000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Lavande nuage",
+      "hex": "#d0acd0",
+      "img": "img/p/samsung/s20fe-lavande-nuage.jpg"
+    },
+    {
+      "name": "Bleu marine nuage",
+      "hex": "#485167",
+      "img": "img/p/samsung/s20fe-bleu-marine-nuage.jpg"
+    },
+    {
+      "name": "Menthe nuage",
+      "hex": "#b6cfd0",
+      "img": "img/p/samsung/s20fe-menthe-nuage.jpg"
+    },
+    {
+      "name": "Rouge nuage",
+      "hex": "#b73438",
+      "img": "img/p/samsung/s20fe-rouge-nuage.jpg"
+    },
+    {
+      "name": "Blanc nuage",
+      "hex": "#f0f0f1",
+      "img": "img/p/samsung/s20fe-blanc-nuage.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Écran 120 Hz, triple caméra, plusieurs couleurs.",
+  "dispo": true
+}

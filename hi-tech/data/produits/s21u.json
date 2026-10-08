@@ -1,0 +1,28 @@
+{
+  "ordre": 570,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S21 Ultra",
+  "price": 260000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Noir fantôme",
+      "hex": "#1f1f21",
+      "img": "img/p/samsung/s21u-noir-fantome.jpg"
+    },
+    {
+      "name": "Argent fantôme",
+      "hex": "#d7dde6",
+      "img": "img/p/samsung/s21u-argent-fantome.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go",
+    "512 Go"
+  ],
+  "desc": "Caméra 108 Mpx, zoom 100x, compatible S Pen.",
+  "dispo": true
+}

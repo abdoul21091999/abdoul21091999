@@ -1,0 +1,38 @@
+{
+  "ordre": 40,
+  "cat": "iphone",
+  "series": "iPhone Duo / Air",
+  "brand": "Apple",
+  "name": "iPhone Air",
+  "price": 850000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu ciel",
+      "hex": "#e5f2fa",
+      "img": "img/p/apple/ipair-bleu-ciel.jpg"
+    },
+    {
+      "name": "Or clair",
+      "hex": "#faf3e5",
+      "img": "img/p/apple/ipair-or-clair.jpg"
+    },
+    {
+      "name": "Blanc nuage",
+      "hex": "#fcfcfc",
+      "img": "img/p/apple/ipair-blanc-nuage.jpg"
+    },
+    {
+      "name": "Noir sidéral",
+      "hex": "#131313",
+      "img": "img/p/apple/ipair-noir-sideral.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "L'iPhone le plus fin jamais conçu.",
+  "dispo": true
+}

@@ -1,0 +1,37 @@
+{
+  "ordre": 510,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S23",
+  "price": 270000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Crème",
+      "hex": "#f0eae0",
+      "img": "img/p/samsung/s23-creme.jpg"
+    },
+    {
+      "name": "Noir fantôme",
+      "hex": "#211e16",
+      "img": "img/p/samsung/s23-noir-fantome.jpg"
+    },
+    {
+      "name": "Vert",
+      "hex": "#5f645a",
+      "img": "img/p/samsung/s23-vert.jpg"
+    },
+    {
+      "name": "Lavande",
+      "hex": "#d4c7d9",
+      "img": "img/p/samsung/s23-lavande.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Compact et puissant, très bonne autonomie.",
+  "dispo": true
+}

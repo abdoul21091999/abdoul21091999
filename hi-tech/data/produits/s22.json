@@ -1,0 +1,42 @@
+{
+  "ordre": 550,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S22",
+  "price": 200000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Blanc fantôme",
+      "hex": "#e9e9e7",
+      "img": "img/p/samsung/s22-blanc-fantome.jpg"
+    },
+    {
+      "name": "Noir fantôme",
+      "hex": "#000000",
+      "img": "img/p/samsung/s22-noir-fantome.jpg"
+    },
+    {
+      "name": "Vert",
+      "hex": "#587876",
+      "img": "img/p/samsung/s22-vert.jpg"
+    },
+    {
+      "name": "Violet Bora",
+      "hex": "#b2a1cd",
+      "img": "img/p/samsung/s22-violet-bora.jpg"
+    },
+    {
+      "name": "Or rose",
+      "hex": "#e3d2cf",
+      "img": "img/p/samsung/s22-or-rose.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Compact, écran 120 Hz, triple caméra.",
+  "dispo": true
+}

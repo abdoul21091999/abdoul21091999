@@ -1,0 +1,42 @@
+{
+  "ordre": 70,
+  "cat": "iphone",
+  "series": "iPhone 17",
+  "brand": "Apple",
+  "name": "iPhone 17",
+  "price": 620000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu brume",
+      "hex": "#a9bdde",
+      "img": "img/p/apple/ip17-bleu-brume.jpg"
+    },
+    {
+      "name": "Lavande",
+      "hex": "#e8d8f2",
+      "img": "img/p/apple/ip17-lavande.jpg"
+    },
+    {
+      "name": "Sauge",
+      "hex": "#b9c69c",
+      "img": "img/p/apple/ip17-sauge.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#fcfcfc",
+      "img": "img/p/apple/ip17-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#444647",
+      "img": "img/p/apple/ip17-noir.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go"
+  ],
+  "desc": "Écran ProMotion, caméra 48 Mpx, puce A19.",
+  "dispo": true
+}

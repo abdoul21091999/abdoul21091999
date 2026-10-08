@@ -1,0 +1,32 @@
+{
+  "ordre": 740,
+  "cat": "android",
+  "series": "Galaxy Z Fold / Flip",
+  "brand": "Samsung",
+  "name": "Galaxy Z Flip8",
+  "price": 650000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Rose",
+      "hex": "#efc2e1",
+      "img": "img/p/samsung/flip8-rose.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#5f6367",
+      "img": "img/p/samsung/flip8-graphite.jpg"
+    },
+    {
+      "name": "Crème",
+      "hex": "#f1f1ee",
+      "img": "img/p/samsung/flip8-creme.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go"
+  ],
+  "desc": "Format clapet compact, grand écran externe.",
+  "dispo": true
+}

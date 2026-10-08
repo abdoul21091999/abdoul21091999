@@ -1,0 +1,28 @@
+{
+  "ordre": 1120,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei Mate X6",
+  "price": 1400000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwmx6-noir.jpg"
+    },
+    {
+      "name": "Gris",
+      "hex": "#8c8f93",
+      "img": "img/p/huawei/hwmx6-gris.jpg"
+    },
+    {
+      "name": "Rouge",
+      "hex": "#9e2b2f",
+      "img": "img/p/huawei/hwmx6-rouge.jpg"
+    }
+  ],
+  "desc": "Pliable ultra-fin, grand écran intérieur.",
+  "dispo": true
+}

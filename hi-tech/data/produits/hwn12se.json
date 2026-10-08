@@ -1,0 +1,28 @@
+{
+  "ordre": 1170,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova 12 SE",
+  "price": 180000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Vert",
+      "hex": "#5f8f74",
+      "img": "img/p/huawei/hwn12se-vert.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwn12se-noir.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f2f2f0",
+      "img": "img/p/huawei/hwn12se-blanc.jpg"
+    }
+  ],
+  "desc": "Caméra 108 Mpx, charge 66 W.",
+  "dispo": true
+}

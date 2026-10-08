@@ -1,0 +1,34 @@
+{
+  "ordre": 720,
+  "cat": "android",
+  "series": "Galaxy Z Fold / Flip",
+  "brand": "Samsung",
+  "name": "Galaxy Z Fold8 Ultra",
+  "price": 1500000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Ombre Violet",
+      "hex": "#4f4f5c",
+      "img": "img/p/samsung/fold8u-ombre-violet.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#5f6367",
+      "img": "img/p/samsung/fold8u-graphite.jpg"
+    },
+    {
+      "name": "Crème",
+      "hex": "#f1f1ee",
+      "img": "img/p/samsung/fold8u-creme.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "Le pliable ultime : grand écran, S Pen, zoom 200 Mpx.",
+  "featured": true,
+  "dispo": true
+}

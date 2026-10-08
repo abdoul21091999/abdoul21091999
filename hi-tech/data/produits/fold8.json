@@ -1,0 +1,33 @@
+{
+  "ordre": 730,
+  "cat": "android",
+  "series": "Galaxy Z Fold / Flip",
+  "brand": "Samsung",
+  "name": "Galaxy Z Fold8",
+  "price": 1250000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Lavande",
+      "hex": "#bcb7ca",
+      "img": "img/p/samsung/fold8-lavande.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#5f6367",
+      "img": "img/p/samsung/fold8-graphite.jpg"
+    },
+    {
+      "name": "Crème",
+      "hex": "#f1f1ee",
+      "img": "img/p/samsung/fold8-creme.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "Un smartphone qui s'ouvre en tablette.",
+  "dispo": true
+}

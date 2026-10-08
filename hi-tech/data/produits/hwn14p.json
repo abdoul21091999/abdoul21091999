@@ -1,0 +1,33 @@
+{
+  "ordre": 1130,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova 14 Pro",
+  "price": 420000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu cristal",
+      "hex": "#a9c8e8",
+      "img": "img/p/huawei/hwn14p-bleu-cristal.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwn14p-noir.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f2f2f0",
+      "img": "img/p/huawei/hwn14p-blanc.jpg"
+    },
+    {
+      "name": "Rose",
+      "hex": "#f2c9d2",
+      "img": "img/p/huawei/hwn14p-rose.jpg"
+    }
+  ],
+  "desc": "Selfie 50 Mpx, charge 100 W.",
+  "dispo": true
+}

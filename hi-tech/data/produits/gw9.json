@@ -1,0 +1,23 @@
+{
+  "ordre": 1430,
+  "cat": "montre",
+  "series": "Galaxy Watch",
+  "brand": "Samsung",
+  "name": "Galaxy Watch9",
+  "price": 220000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Argent",
+      "hex": "#9c9f9c",
+      "img": "img/p/samsung/gw9-argent.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#404347",
+      "img": "img/p/samsung/gw9-graphite.jpg"
+    }
+  ],
+  "desc": "Suivi santé et sommeil, Galaxy AI.",
+  "dispo": true
+}

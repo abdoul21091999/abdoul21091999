@@ -1,0 +1,32 @@
+{
+  "ordre": 760,
+  "cat": "android",
+  "series": "Galaxy Z Fold / Flip",
+  "brand": "Samsung",
+  "name": "Galaxy Z Flip7",
+  "price": 520000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Ombre bleue",
+      "hex": "#3c5b8a",
+      "img": "img/p/samsung/flip7-ombre-bleue.jpg"
+    },
+    {
+      "name": "Noir de jais",
+      "hex": "#494a4d",
+      "img": "img/p/samsung/flip7-noir-de-jais.jpg"
+    },
+    {
+      "name": "Rouge corail",
+      "hex": "#ee6779",
+      "img": "img/p/samsung/flip7-rouge-corail.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go"
+  ],
+  "desc": "Écran externe plein format, Galaxy AI.",
+  "dispo": true
+}

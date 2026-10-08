@@ -1,0 +1,23 @@
+{
+  "ordre": 1180,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova 11 Pro",
+  "price": 220000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Vert",
+      "hex": "#5f8f74",
+      "img": "img/p/huawei/hwn11p-vert.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwn11p-noir.jpg"
+    }
+  ],
+  "desc": "Double caméra selfie, charge 100 W.",
+  "dispo": true
+}

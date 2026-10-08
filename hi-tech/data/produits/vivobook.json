@@ -1,0 +1,12 @@
+{
+  "ordre": 1340,
+  "cat": "ordinateur",
+  "series": "PC Windows",
+  "brand": "ASUS",
+  "name": "ASUS Vivobook 14",
+  "price": 310000,
+  "badge": "Neuf",
+  "img": "img/p/autres/vivobook-photo.jpg",
+  "desc": "Écran Full HD, parfait pour le quotidien.",
+  "dispo": true
+}

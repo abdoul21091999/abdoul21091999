@@ -1,0 +1,19 @@
+{
+  "ordre": 1450,
+  "cat": "audio",
+  "series": "AirPods",
+  "brand": "Apple",
+  "name": "AirPods Pro 3",
+  "price": 195000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Blanc",
+      "hex": "#f5f5f5",
+      "img": "img/p/apple/app3-blanc.jpg"
+    }
+  ],
+  "desc": "Réduction de bruit active, audio spatial, suivi cardiaque.",
+  "featured": true,
+  "dispo": true
+}

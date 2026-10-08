@@ -1,0 +1,28 @@
+{
+  "ordre": 1150,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova 13 Pro",
+  "price": 330000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Vert",
+      "hex": "#5f8f74",
+      "img": "img/p/huawei/hwn13p-vert.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwn13p-noir.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f2f2f0",
+      "img": "img/p/huawei/hwn13p-blanc.jpg"
+    }
+  ],
+  "desc": "Double caméra selfie, charge 100 W.",
+  "dispo": true
+}

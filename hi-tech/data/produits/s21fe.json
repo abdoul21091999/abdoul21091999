@@ -1,0 +1,37 @@
+{
+  "ordre": 560,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S21 FE",
+  "price": 170000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Olive",
+      "hex": "#a3ac9b",
+      "img": "img/p/samsung/s21fe-olive.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#494d53",
+      "img": "img/p/samsung/s21fe-graphite.jpg"
+    },
+    {
+      "name": "Lavande",
+      "hex": "#bfb1d2",
+      "img": "img/p/samsung/s21fe-lavande.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f5f7f6",
+      "img": "img/p/samsung/s21fe-blanc.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Écran 120 Hz, triple caméra, 5G.",
+  "dispo": true
+}

@@ -1,0 +1,21 @@
+{
+  "ordre": 630,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S20",
+  "price": 140000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Rose nuage",
+      "hex": "#f3c8d2",
+      "img": "img/p/samsung/s20-rose-nuage.jpg"
+    }
+  ],
+  "options": [
+    "128 Go"
+  ],
+  "desc": "Écran 120 Hz, triple caméra.",
+  "dispo": true
+}

@@ -1,0 +1,37 @@
+{
+  "ordre": 200,
+  "cat": "iphone",
+  "series": "iPhone 14",
+  "brand": "Apple",
+  "name": "iPhone 14 Plus",
+  "price": 330000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#a0b4c7",
+      "img": "img/p/apple/ip14plus-bleu.jpg"
+    },
+    {
+      "name": "Mauve",
+      "hex": "#e5ddea",
+      "img": "img/p/apple/ip14plus-mauve.jpg"
+    },
+    {
+      "name": "Lumière stellaire",
+      "hex": "#f2ece4",
+      "img": "img/p/apple/ip14plus-lumiere-stellaire.jpg"
+    },
+    {
+      "name": "Minuit",
+      "hex": "#232a31",
+      "img": "img/p/apple/ip14plus-minuit.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Grand écran 6,7 pouces, excellente autonomie.",
+  "dispo": true
+}

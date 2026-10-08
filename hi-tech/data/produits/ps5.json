@@ -1,0 +1,12 @@
+{
+  "ordre": 1540,
+  "cat": "gaming",
+  "brand": "Sony",
+  "name": "PlayStation 5",
+  "price": 380000,
+  "badge": "Neuf",
+  "img": "img/p/autres/ps5-photo.jpg",
+  "desc": "Jeux en 4K, SSD ultra-rapide, manette DualSense incluse.",
+  "featured": true,
+  "dispo": true
+}

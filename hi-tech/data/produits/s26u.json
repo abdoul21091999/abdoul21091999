@@ -1,0 +1,39 @@
+{
+  "badge": "Nouveau",
+  "brand": "Samsung",
+  "price": 980000,
+  "name": "Galaxy S26 Ultra",
+  "dispo": true,
+  "featured": true,
+  "colors": [
+    {
+      "name": "Bleu ciel",
+      "hex": "#b3cbd9",
+      "img": "img/p/samsung/s26u-bleu-ciel.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#494d53",
+      "img": "img/p/samsung/s26u-noir.jpg"
+    },
+    {
+      "name": "Cobalt Violet",
+      "hex": "#686884",
+      "img": "img/p/samsung/s26u-cobalt-violet.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f3f4f5",
+      "img": "img/p/samsung/s26u-blanc.jpg"
+    }
+  ],
+  "desc": "S Pen intégré, zoom 100x, Galaxy AI.",
+  "ordre": 390,
+  "cat": "android",
+  "series": "Galaxy S",
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ]
+}

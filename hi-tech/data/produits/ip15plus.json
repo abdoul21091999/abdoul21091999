@@ -1,0 +1,42 @@
+{
+  "ordre": 160,
+  "cat": "iphone",
+  "series": "iPhone 15",
+  "brand": "Apple",
+  "name": "iPhone 15 Plus",
+  "price": 480000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#d4e4ed",
+      "img": "img/p/apple/ip15plus-bleu.jpg"
+    },
+    {
+      "name": "Rose",
+      "hex": "#f6dadc",
+      "img": "img/p/apple/ip15plus-rose.jpg"
+    },
+    {
+      "name": "Jaune",
+      "hex": "#f9e5c2",
+      "img": "img/p/apple/ip15plus-jaune.jpg"
+    },
+    {
+      "name": "Vert",
+      "hex": "#e3e9d9",
+      "img": "img/p/apple/ip15plus-vert.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#2b2b2d",
+      "img": "img/p/apple/ip15plus-noir.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Dynamic Island, grand écran 6,7 pouces, USB-C.",
+  "dispo": true
+}

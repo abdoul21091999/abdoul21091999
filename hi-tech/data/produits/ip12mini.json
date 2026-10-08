@@ -1,0 +1,42 @@
+{
+  "ordre": 290,
+  "cat": "iphone",
+  "series": "iPhone 12",
+  "brand": "Apple",
+  "name": "iPhone 12 mini",
+  "price": 150000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#023b63",
+      "img": "img/p/apple/ip12mini-bleu.jpg"
+    },
+    {
+      "name": "Vert",
+      "hex": "#d8efd5",
+      "img": "img/p/apple/ip12mini-vert.jpg"
+    },
+    {
+      "name": "(PRODUCT)RED",
+      "hex": "#ba0c2e",
+      "img": "img/p/apple/ip12mini-product-red.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f5f5f0",
+      "img": "img/p/apple/ip12mini-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#2b2b2d",
+      "img": "img/p/apple/ip12mini-noir.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "128 Go"
+  ],
+  "desc": "Compact, écran OLED, 5G.",
+  "dispo": true
+}

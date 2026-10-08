@@ -1,0 +1,37 @@
+{
+  "ordre": 590,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S21",
+  "price": 160000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Violet fantôme",
+      "hex": "#a99bd6",
+      "img": "img/p/samsung/s21-violet-fantome.jpg"
+    },
+    {
+      "name": "Rose fantôme",
+      "hex": "#f0c4b5",
+      "img": "img/p/samsung/s21-rose-fantome.jpg"
+    },
+    {
+      "name": "Gris fantôme",
+      "hex": "#5a5b5e",
+      "img": "img/p/samsung/s21-gris-fantome.jpg"
+    },
+    {
+      "name": "Blanc fantôme",
+      "hex": "#f2f2f2",
+      "img": "img/p/samsung/s21-blanc-fantome.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Écran 120 Hz, triple caméra, 5G.",
+  "dispo": true
+}

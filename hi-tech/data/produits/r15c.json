@@ -1,0 +1,12 @@
+{
+  "ordre": 1010,
+  "cat": "android",
+  "series": "Redmi",
+  "brand": "Xiaomi",
+  "name": "Redmi 15C",
+  "price": 85000,
+  "badge": "Neuf",
+  "img": "img/p/xiaomi/r15c-photo.jpg",
+  "desc": "Grand écran, grosse batterie, petit prix.",
+  "dispo": true
+}

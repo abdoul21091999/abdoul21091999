@@ -1,0 +1,42 @@
+{
+  "ordre": 230,
+  "cat": "iphone",
+  "series": "iPhone 13",
+  "brand": "Apple",
+  "name": "iPhone 13 Pro",
+  "price": 300000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu alpin",
+      "hex": "#a7c1d9",
+      "img": "img/p/apple/ip13p-bleu-alpin.jpg"
+    },
+    {
+      "name": "Vert alpin",
+      "hex": "#576856",
+      "img": "img/p/apple/ip13p-vert-alpin.jpg"
+    },
+    {
+      "name": "Or",
+      "hex": "#f5dcc4",
+      "img": "img/p/apple/ip13p-or.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#e3e4e5",
+      "img": "img/p/apple/ip13p-argent.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#52514f",
+      "img": "img/p/apple/ip13p-graphite.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Écran ProMotion 120 Hz, triple caméra.",
+  "dispo": true
+}

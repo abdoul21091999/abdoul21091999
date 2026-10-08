@@ -1,0 +1,37 @@
+{
+  "ordre": 90,
+  "cat": "iphone",
+  "series": "iPhone 16",
+  "brand": "Apple",
+  "name": "iPhone 16 Pro Max",
+  "price": 720000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Titane désert",
+      "hex": "#bfa48f",
+      "img": "img/p/apple/ip16pm-titane-desert.jpg"
+    },
+    {
+      "name": "Titane naturel",
+      "hex": "#bab4a9",
+      "img": "img/p/apple/ip16pm-titane-naturel.jpg"
+    },
+    {
+      "name": "Titane blanc",
+      "hex": "#f2f1ed",
+      "img": "img/p/apple/ip16pm-titane-blanc.jpg"
+    },
+    {
+      "name": "Titane noir",
+      "hex": "#3c3c3d",
+      "img": "img/p/apple/ip16pm-titane-noir.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go"
+  ],
+  "desc": "Écran 6,9 pouces, titane, puce A18 Pro.",
+  "dispo": true
+}

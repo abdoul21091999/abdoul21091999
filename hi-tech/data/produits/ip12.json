@@ -1,0 +1,43 @@
+{
+  "ordre": 280,
+  "cat": "iphone",
+  "series": "iPhone 12",
+  "brand": "Apple",
+  "name": "iPhone 12",
+  "price": 180000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#023b63",
+      "img": "img/p/apple/ip12-bleu.jpg"
+    },
+    {
+      "name": "Vert",
+      "hex": "#d8efd5",
+      "img": "img/p/apple/ip12-vert.jpg"
+    },
+    {
+      "name": "(PRODUCT)RED",
+      "hex": "#ba0c2e",
+      "img": "img/p/apple/ip12-product-red.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f5f5f0",
+      "img": "img/p/apple/ip12-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#2b2b2d",
+      "img": "img/p/apple/ip12-noir.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Écran OLED, 5G, MagSafe.",
+  "dispo": true
+}

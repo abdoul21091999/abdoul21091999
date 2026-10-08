@@ -1,0 +1,38 @@
+{
+  "ordre": 490,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S23 Ultra",
+  "price": 420000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Noir fantôme",
+      "hex": "#211e16",
+      "img": "img/p/samsung/s23u-noir-fantome.jpg"
+    },
+    {
+      "name": "Vert",
+      "hex": "#5f645a",
+      "img": "img/p/samsung/s23u-vert.jpg"
+    },
+    {
+      "name": "Lavande",
+      "hex": "#d4c7d9",
+      "img": "img/p/samsung/s23u-lavande.jpg"
+    },
+    {
+      "name": "Crème",
+      "hex": "#f0eae0",
+      "img": "img/p/samsung/s23u-creme.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "Caméra 200 Mpx, S Pen intégré.",
+  "dispo": true
+}

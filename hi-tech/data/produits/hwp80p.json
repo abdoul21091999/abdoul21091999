@@ -1,0 +1,28 @@
+{
+  "ordre": 1100,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei Pura 80 Pro",
+  "price": 850000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwp80p-noir.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f2f2f0",
+      "img": "img/p/huawei/hwp80p-blanc.jpg"
+    },
+    {
+      "name": "Rouge",
+      "hex": "#9e2b2f",
+      "img": "img/p/huawei/hwp80p-rouge.jpg"
+    }
+  ],
+  "desc": "Photographie XMAGE, écran lumineux.",
+  "dispo": true
+}

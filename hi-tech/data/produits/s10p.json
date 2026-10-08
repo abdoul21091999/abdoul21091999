@@ -1,0 +1,22 @@
+{
+  "ordre": 640,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S10+",
+  "price": 110000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Noir céramique",
+      "hex": "#1c1c1e",
+      "img": "img/p/samsung/s10p-noir-ceramique.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "512 Go"
+  ],
+  "desc": "Écran Infinity-O 6,4 pouces, triple caméra.",
+  "dispo": true
+}

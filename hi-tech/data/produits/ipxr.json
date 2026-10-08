@@ -1,0 +1,47 @@
+{
+  "ordre": 350,
+  "cat": "iphone",
+  "series": "iPhone X / XS / XR",
+  "brand": "Apple",
+  "name": "iPhone XR",
+  "price": 110000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "(PRODUCT)RED",
+      "hex": "#ba0c2e",
+      "img": "img/p/apple/ipxr-product-red.jpg"
+    },
+    {
+      "name": "Bleu",
+      "hex": "#4bb7d8",
+      "img": "img/p/apple/ipxr-bleu.jpg"
+    },
+    {
+      "name": "Jaune",
+      "hex": "#f7d14c",
+      "img": "img/p/apple/ipxr-jaune.jpg"
+    },
+    {
+      "name": "Corail",
+      "hex": "#f2735a",
+      "img": "img/p/apple/ipxr-corail.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f5f5f0",
+      "img": "img/p/apple/ipxr-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#2b2b2d",
+      "img": "img/p/apple/ipxr-noir.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "128 Go"
+  ],
+  "desc": "Écran 6,1 pouces, Face ID, six couleurs.",
+  "dispo": true
+}

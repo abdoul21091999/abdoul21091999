@@ -1,0 +1,18 @@
+{
+  "ordre": 1460,
+  "cat": "audio",
+  "series": "AirPods",
+  "brand": "Apple",
+  "name": "AirPods 4 (réduction de bruit)",
+  "price": 120000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Blanc",
+      "hex": "#f5f5f5",
+      "img": "img/p/apple/ap4-blanc.jpg"
+    }
+  ],
+  "desc": "Confort ouvert, réduction de bruit active, USB-C.",
+  "dispo": true
+}

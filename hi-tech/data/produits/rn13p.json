@@ -1,0 +1,12 @@
+{
+  "ordre": 990,
+  "cat": "android",
+  "series": "Redmi",
+  "brand": "Xiaomi",
+  "name": "Redmi Note 13 Pro",
+  "price": 150000,
+  "badge": "Reconditionné",
+  "img": "img/p/xiaomi/rn13p-photo.jpg",
+  "desc": "Caméra 200 Mpx, écran AMOLED.",
+  "dispo": true
+}

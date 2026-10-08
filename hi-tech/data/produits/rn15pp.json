@@ -1,0 +1,12 @@
+{
+  "ordre": 800,
+  "cat": "android",
+  "series": "Redmi",
+  "brand": "Xiaomi",
+  "name": "Redmi Note 15 Pro+ 5G",
+  "price": 300000,
+  "badge": "Neuf",
+  "img": "img/p/xiaomi/rn15pp-photo.jpg",
+  "desc": "Caméra 200 Mpx, charge 120 W, IP68.",
+  "dispo": true
+}

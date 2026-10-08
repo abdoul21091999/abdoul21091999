@@ -1,0 +1,32 @@
+{
+  "ordre": 340,
+  "cat": "iphone",
+  "series": "iPhone X / XS / XR",
+  "brand": "Apple",
+  "name": "iPhone XS",
+  "price": 110000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Or",
+      "hex": "#f5dcc4",
+      "img": "img/p/apple/ipxs-or.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#e3e4e5",
+      "img": "img/p/apple/ipxs-argent.jpg"
+    },
+    {
+      "name": "Gris sidéral",
+      "hex": "#4b4c4e",
+      "img": "img/p/apple/ipxs-gris-sideral.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "256 Go"
+  ],
+  "desc": "Écran OLED, Face ID, double caméra.",
+  "dispo": true
+}

@@ -1,0 +1,28 @@
+{
+  "ordre": 30,
+  "cat": "iphone",
+  "series": "iPhone Duo / Air",
+  "brand": "Apple",
+  "name": "iPhone Duo",
+  "price": 1650000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Ciel nocturne",
+      "hex": "#394452",
+      "img": "img/p/apple/ipduo-ciel-nocturne.jpg"
+    },
+    {
+      "name": "Blanc étoile",
+      "hex": "#f7f6f5",
+      "img": "img/p/apple/ipduo-blanc-etoile.jpg"
+    }
+  ],
+  "options": [
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "Le premier iPhone pliable : un grand écran qui se glisse dans la poche.",
+  "featured": true,
+  "dispo": true
+}

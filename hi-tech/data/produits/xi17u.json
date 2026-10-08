@@ -1,0 +1,13 @@
+{
+  "ordre": 770,
+  "cat": "android",
+  "series": "Xiaomi",
+  "brand": "Xiaomi",
+  "name": "Xiaomi 17 Ultra",
+  "price": 850000,
+  "badge": "Nouveau",
+  "img": "img/p/xiaomi/xi17u-photo.jpg",
+  "desc": "Photo Leica 1 pouce, quadruple caméra.",
+  "featured": true,
+  "dispo": true
+}

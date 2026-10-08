@@ -1,0 +1,32 @@
+{
+  "ordre": 710,
+  "cat": "android",
+  "series": "Galaxy A",
+  "brand": "Samsung",
+  "name": "Galaxy A07",
+  "price": 75000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Prune Clair",
+      "hex": "#b6c0d6",
+      "img": "img/p/samsung/a07-prune-clair.jpg"
+    },
+    {
+      "name": "Vert",
+      "hex": "#304e53",
+      "img": "img/p/samsung/a07-vert.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#4a4f59",
+      "img": "img/p/samsung/a07-noir.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "128 Go"
+  ],
+  "desc": "Le Galaxy essentiel à petit prix.",
+  "dispo": true
+}

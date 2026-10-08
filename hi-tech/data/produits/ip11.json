@@ -1,0 +1,47 @@
+{
+  "ordre": 320,
+  "cat": "iphone",
+  "series": "iPhone 11",
+  "brand": "Apple",
+  "name": "iPhone 11",
+  "price": 140000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Mauve",
+      "hex": "#d1cde3",
+      "img": "img/p/apple/ip11-mauve.jpg"
+    },
+    {
+      "name": "Vert",
+      "hex": "#aee1cd",
+      "img": "img/p/apple/ip11-vert.jpg"
+    },
+    {
+      "name": "Jaune",
+      "hex": "#f7d14c",
+      "img": "img/p/apple/ip11-jaune.jpg"
+    },
+    {
+      "name": "(PRODUCT)RED",
+      "hex": "#ba0c2e",
+      "img": "img/p/apple/ip11-product-red.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f5f5f0",
+      "img": "img/p/apple/ip11-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#2b2b2d",
+      "img": "img/p/apple/ip11-noir.jpg"
+    }
+  ],
+  "options": [
+    "64 Go",
+    "128 Go"
+  ],
+  "desc": "Double caméra, très bonne autonomie.",
+  "dispo": true
+}

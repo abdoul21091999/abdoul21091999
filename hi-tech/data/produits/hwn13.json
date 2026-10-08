@@ -1,0 +1,28 @@
+{
+  "ordre": 1160,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova 13",
+  "price": 260000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Vert",
+      "hex": "#5f8f74",
+      "img": "img/p/huawei/hwn13-vert.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwn13-noir.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f2f2f0",
+      "img": "img/p/huawei/hwn13-blanc.jpg"
+    }
+  ],
+  "desc": "Écran 120 Hz, charge rapide.",
+  "dispo": true
+}

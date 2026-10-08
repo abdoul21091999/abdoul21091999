@@ -1,0 +1,23 @@
+{
+  "ordre": 1410,
+  "cat": "montre",
+  "series": "Apple Watch",
+  "brand": "Apple",
+  "name": "Apple Watch Ultra 4",
+  "price": 650000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Titane naturel",
+      "hex": "#b8b2a6",
+      "img": "img/p/apple/awultra-titane-naturel.jpg"
+    },
+    {
+      "name": "Titane noir",
+      "hex": "#2f3032",
+      "img": "img/p/apple/awultra-titane-noir.jpg"
+    }
+  ],
+  "desc": "Titane, GPS double fréquence, autonomie XXL.",
+  "dispo": true
+}

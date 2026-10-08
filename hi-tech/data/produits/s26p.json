@@ -1,0 +1,37 @@
+{
+  "ordre": 400,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S26+",
+  "price": 780000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Violet de cobalt",
+      "hex": "#686884",
+      "img": "img/p/samsung/s26p-violet-de-cobalt.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#494d53",
+      "img": "img/p/samsung/s26p-noir.jpg"
+    },
+    {
+      "name": "Bleu Ciel",
+      "hex": "#b3cbd9",
+      "img": "img/p/samsung/s26p-bleu-ciel.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f3f4f5",
+      "img": "img/p/samsung/s26p-blanc.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go"
+  ],
+  "desc": "Grand écran 6,7\", Galaxy AI, charge rapide 45 W.",
+  "dispo": true
+}

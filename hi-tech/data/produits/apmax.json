@@ -1,0 +1,39 @@
+{
+  "ordre": 1470,
+  "cat": "audio",
+  "series": "Casques",
+  "brand": "Apple",
+  "name": "AirPods Max",
+  "price": 390000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Minuit",
+      "hex": "#2d2f33",
+      "img": "img/p/apple/apmax-minuit.jpg"
+    },
+    {
+      "name": "Lumière stellaire",
+      "hex": "#ece6dc",
+      "img": "img/p/apple/apmax-lumiere-stellaire.jpg"
+    },
+    {
+      "name": "Bleu",
+      "hex": "#8ea9c8",
+      "img": "img/p/apple/apmax-bleu.jpg"
+    },
+    {
+      "name": "Violet",
+      "hex": "#c9b7d6",
+      "img": "img/p/apple/apmax-violet.jpg"
+    },
+    {
+      "name": "Orange",
+      "hex": "#efa47a",
+      "img": "img/p/apple/apmax-orange.jpg"
+    }
+  ],
+  "desc": "Son haute fidélité, réduction de bruit active.",
+  "featured": true,
+  "dispo": true
+}

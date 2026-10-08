@@ -3,7 +3,7 @@
    Panier, commande WhatsApp, boutique, échange, réparation
    ========================================================= */
 
-(function () {
+function startApp() {
   "use strict";
 
   /* ---------- Icônes SVG ---------- */
@@ -157,7 +157,7 @@
   function card(p) {
     return `<article class="product reveal" data-id="${p.id}" data-ci="0" data-oi="0">
       <button type="button" class="product__media" data-open="${p.id}" aria-label="Voir ${esc(p.name)}">
-        ${p.badge ? `<span class="badge ${badgeClass(p.badge)}">${esc(p.badge)}</span>` : ""}
+        ${p.dispo === false ? `<span class="badge badge--out">Épuisé</span>` : p.badge ? `<span class="badge ${badgeClass(p.badge)}">${esc(p.badge)}</span>` : ""}
         <span class="product__visual" data-media>${media(p)}</span>
       </button>
       <div class="product__body">
@@ -169,7 +169,7 @@
           ${p.oldPrice ? `<s>${fcfa(p.oldPrice)}</s>` : ""}
         </div>
         <div class="product__actions">
-          <button type="button" class="btn btn--black" data-add="${p.id}">Commander</button>
+          ${p.dispo === false ? `<button type="button" class="btn btn--black" disabled>Épuisé</button>` : `<button type="button" class="btn btn--black" data-add="${p.id}">Commander</button>`}
           <a class="btn btn--line" data-wa-product href="${waLink(`Bonjour Hi-Tech, je suis intéressé(e) par : ${p.name} (${fcfa(p.price)}). Est-il disponible ?`)}" target="_blank" rel="noopener">${icon("whatsapp")} WhatsApp</a>
         </div>
       </div>
@@ -195,7 +195,7 @@
             <li>✓ Garantie boutique</li><li>✓ Produit testé avant remise</li><li>✓ Reprise de votre ancien appareil possible</li>
           </ul>
           <div class="pm__actions">
-            <button type="button" class="btn btn--black" data-add="${p.id}">${icon("cart")} Ajouter au panier</button>
+            ${p.dispo === false ? `<button type="button" class="btn btn--black" disabled>Épuisé — demandez-nous sur WhatsApp</button>` : `<button type="button" class="btn btn--black" data-add="${p.id}">${icon("cart")} Ajouter au panier</button>`}
             <a class="btn btn--wa" data-wa-product target="_blank" rel="noopener">${icon("whatsapp")} Commander sur WhatsApp</a>
           </div>
         </div>
@@ -503,4 +503,11 @@
   $$("[data-render-id]").forEach((el) => { const p = PRODUCTS.find((x) => x.id === el.dataset.renderId); if (p) el.innerHTML = media(p); });
   renderCart();
   observeReveal();
-})();
+}
+
+// Charge le catalogue (data/produits.json) puis démarre le site
+fetch(catalogueUrl(), { cache: "no-cache" })
+  .then((r) => r.json())
+  .then((d) => { PRODUCTS = d.produits || []; })
+  .catch(() => console.warn("Catalogue introuvable"))
+  .finally(startApp);

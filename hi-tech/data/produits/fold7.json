@@ -1,0 +1,34 @@
+{
+  "ordre": 750,
+  "cat": "android",
+  "series": "Galaxy Z Fold / Flip",
+  "brand": "Samsung",
+  "name": "Galaxy Z Fold7",
+  "price": 1000000,
+  "oldPrice": 1150000,
+  "badge": "Promo",
+  "colors": [
+    {
+      "name": "Bleu foncé",
+      "hex": "#3c5b8a",
+      "img": "img/p/samsung/fold7-bleu-fonce.jpg"
+    },
+    {
+      "name": "Noir nocturne",
+      "hex": "#494a4d",
+      "img": "img/p/samsung/fold7-noir-nocturne.jpg"
+    },
+    {
+      "name": "Ombre argentée",
+      "hex": "#b0b7b9",
+      "img": "img/p/samsung/fold7-ombre-argentee.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "Le pliable le plus fin de sa génération.",
+  "dispo": true
+}

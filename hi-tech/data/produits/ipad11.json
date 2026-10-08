@@ -1,0 +1,33 @@
+{
+  "ordre": 1360,
+  "cat": "tablette",
+  "series": "iPad",
+  "brand": "Apple",
+  "name": "iPad 11\"",
+  "price": 290000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#a8c1dd",
+      "img": "img/p/apple/ipad11-bleu.jpg"
+    },
+    {
+      "name": "Rose",
+      "hex": "#f2c4cf",
+      "img": "img/p/apple/ipad11-rose.jpg"
+    },
+    {
+      "name": "Jaune",
+      "hex": "#f2dc85",
+      "img": "img/p/apple/ipad11-jaune.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#e3e4e6",
+      "img": "img/p/apple/ipad11-argent.jpg"
+    }
+  ],
+  "desc": "L'iPad idéal pour les études et les loisirs.",
+  "dispo": true
+}

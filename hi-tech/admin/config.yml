@@ -1,0 +1,86 @@
+# Espace vendeur Hi-Tech (Decap CMS) — voir GUIDE-VENDEUR.md
+# Chaque enregistrement crée une modification sur GitHub ; Netlify republie le site en ~1 minute.
+backend:
+  name: github
+  repo: abdoul21091999/abdoul21091999   # à remplacer par le dépôt définitif (ex. abdoul21091999/general-hitech)
+  branch: ccr-66fa2106-kbtj76            # branche publiée par Netlify
+  commit_messages:
+    create: "Catalogue : ajout de « {{slug}} »"
+    update: "Catalogue : modification de « {{slug}} »"
+    delete: "Catalogue : suppression de « {{slug}} »"
+    uploadMedia: "Photo ajoutée : {{path}}"
+    deleteMedia: "Photo supprimée : {{path}}"
+
+locale: fr
+local_backend: true                      # test sur ordinateur uniquement (npx decap-server) ; ignoré en ligne
+site_url: /
+display_url: /
+logo_url: ../img/logo.jpg
+media_folder: hi-tech/img/uploads        # où sont rangées les photos envoyées
+public_folder: img/uploads
+
+collections:
+  - name: produits
+    label: Produits
+    label_singular: Produit
+    description: "Tous les produits du site. Touchez un produit pour changer son prix, ses photos ou sa disponibilité."
+    folder: hi-tech/data/produits
+    extension: json
+    format: json
+    create: true
+    delete: true
+    identifier_field: name
+    slug: "{{name}}"
+    summary: "{{name}} — {{price}} FCFA"
+    sortable_fields: ["name", "price", "ordre"]
+    view_filters:
+      - { label: iPhone, field: cat, pattern: iphone }
+      - { label: Android, field: cat, pattern: android }
+      - { label: Ordinateurs, field: cat, pattern: ordinateur }
+      - { label: Tablettes, field: cat, pattern: tablette }
+      - { label: Montres, field: cat, pattern: montre }
+      - { label: Audio, field: cat, pattern: audio }
+      - { label: PlayStation, field: cat, pattern: gaming }
+      - { label: Accessoires, field: cat, pattern: accessoires }
+      - { label: "Épuisés", field: dispo, pattern: "false" }
+    view_groups:
+      - { label: Marque, field: brand }
+    fields:
+      - { label: "Nom du produit", name: name, widget: string, hint: "Ex. : iPhone 16 Pro Max" }
+      - label: "Catégorie"
+        name: cat
+        widget: select
+        options:
+          - { label: iPhone, value: iphone }
+          - { label: "Android (Samsung, Xiaomi, Huawei…)", value: android }
+          - { label: Ordinateurs, value: ordinateur }
+          - { label: Tablettes, value: tablette }
+          - { label: Montres, value: montre }
+          - { label: Audio, value: audio }
+          - { label: PlayStation, value: gaming }
+          - { label: Accessoires, value: accessoires }
+      - { label: "Gamme (filtre de la boutique)", name: series, widget: string, required: false, hint: "Ex. : iPhone 16, Galaxy S, Redmi, Huawei… Laisser vide si aucune." }
+      - { label: "Marque", name: brand, widget: string, hint: "Ex. : Apple, Samsung, Xiaomi" }
+      - { label: "Prix (FCFA)", name: price, widget: number, value_type: int, min: 0, hint: "Chiffres seulement, sans espace. 0 = « Prix sur demande »." }
+      - { label: "Ancien prix barré (FCFA)", name: oldPrice, widget: number, value_type: int, required: false, hint: "Optionnel : pour afficher une promotion." }
+      - { label: "Disponible", name: dispo, widget: boolean, default: true, hint: "Décochez si le produit est épuisé : il reste visible avec la mention « Épuisé »." }
+      - label: "Étiquette"
+        name: badge
+        widget: select
+        required: false
+        options: ["Neuf", "Nouveau", "Promo", "Reconditionné", "Original", "Pack"]
+      - { label: "Description courte", name: desc, widget: text, required: false }
+      - { label: "Capacités / variantes", name: options, widget: list, required: false, hint: "Séparez par des virgules. Ex. : 128 Go, 256 Go, 512 Go" }
+      - label: "Couleurs (une photo par couleur)"
+        name: colors
+        widget: list
+        required: false
+        summary: "{{fields.name}}"
+        hint: "Chaque couleur affiche sa propre photo quand le client touche la pastille."
+        fields:
+          - { label: "Nom de la couleur", name: name, widget: string }
+          - { label: "Couleur de la pastille", name: hex, widget: color, required: false }
+          - { label: "Photo", name: img, widget: image, required: false, choose_url: true }
+      - { label: "Photo (si une seule couleur)", name: img, widget: image, required: false, choose_url: true, hint: "Utilisée quand il n'y a pas de couleurs. Conseil : photo carrée sur fond blanc." }
+      - { label: "Produit phare (page d'accueil)", name: featured, widget: boolean, required: false, default: false }
+      - { label: "Ordre d'affichage", name: ordre, widget: number, value_type: int, required: false, hint: "Plus petit = affiché en premier. Ex. : 10, 20, 30…" }

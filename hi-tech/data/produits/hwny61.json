@@ -1,0 +1,28 @@
+{
+  "ordre": 1250,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova Y61",
+  "price": 70000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Vert",
+      "hex": "#5f8f74",
+      "img": "img/p/huawei/hwny61-vert.jpg"
+    },
+    {
+      "name": "Bleu",
+      "hex": "#5a7fb8",
+      "img": "img/p/huawei/hwny61-bleu.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwny61-noir.jpg"
+    }
+  ],
+  "desc": "Écran 6,52 pouces, batterie 5000 mAh.",
+  "dispo": true
+}

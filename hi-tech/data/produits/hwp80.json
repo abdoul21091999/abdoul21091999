@@ -1,0 +1,28 @@
+{
+  "ordre": 1110,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei Pura 80",
+  "price": 600000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwp80-noir.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f2f2f0",
+      "img": "img/p/huawei/hwp80-blanc.jpg"
+    },
+    {
+      "name": "Or",
+      "hex": "#d9c39b",
+      "img": "img/p/huawei/hwp80-or.jpg"
+    }
+  ],
+  "desc": "Design élégant, photographie XMAGE.",
+  "dispo": true
+}

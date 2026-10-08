@@ -1,0 +1,28 @@
+{
+  "ordre": 1140,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova 14",
+  "price": 330000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu cristal",
+      "hex": "#a9c8e8",
+      "img": "img/p/huawei/hwn14-bleu-cristal.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwn14-noir.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f2f2f0",
+      "img": "img/p/huawei/hwn14-blanc.jpg"
+    }
+  ],
+  "desc": "Design soigné, charge rapide.",
+  "dispo": true
+}

@@ -1,0 +1,37 @@
+{
+  "ordre": 680,
+  "cat": "android",
+  "series": "Galaxy A",
+  "brand": "Samsung",
+  "name": "Galaxy A37 5G",
+  "price": 200000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Grisvert",
+      "hex": "#5c707e",
+      "img": "img/p/samsung/a37-grisvert.jpg"
+    },
+    {
+      "name": "Charbon",
+      "hex": "#525257",
+      "img": "img/p/samsung/a37-charbon.jpg"
+    },
+    {
+      "name": "Lavande",
+      "hex": "#bcbde2",
+      "img": "img/p/samsung/a37-lavande.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#f3f4f5",
+      "img": "img/p/samsung/a37-blanc.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Grand écran, charge rapide 45 W, 6 ans de mises à jour.",
+  "dispo": true
+}

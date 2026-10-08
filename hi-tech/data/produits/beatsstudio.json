@@ -1,0 +1,28 @@
+{
+  "ordre": 1480,
+  "cat": "audio",
+  "series": "Casques",
+  "brand": "Beats",
+  "name": "Beats Studio Pro",
+  "price": 210000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#1d1d1f",
+      "img": "img/p/autres/beatsstudio-noir.jpg"
+    },
+    {
+      "name": "Bleu marine",
+      "hex": "#2b3550",
+      "img": "img/p/autres/beatsstudio-bleu-marine.jpg"
+    },
+    {
+      "name": "Sable",
+      "hex": "#e6ddd0",
+      "img": "img/p/autres/beatsstudio-sable.jpg"
+    }
+  ],
+  "desc": "Son Beats signature, réduction de bruit, USB-C.",
+  "dispo": true
+}

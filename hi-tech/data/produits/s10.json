@@ -1,0 +1,27 @@
+{
+  "ordre": 650,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S10",
+  "price": 95000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Vert prisme",
+      "hex": "#2f6a6a",
+      "img": "img/p/samsung/s10-vert-prisme.jpg"
+    },
+    {
+      "name": "Blanc prisme",
+      "hex": "#eef0f3",
+      "img": "img/p/samsung/s10-blanc-prisme.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "512 Go"
+  ],
+  "desc": "Écran Infinity-O, triple caméra.",
+  "dispo": true
+}

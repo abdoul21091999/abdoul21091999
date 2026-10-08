@@ -1,0 +1,42 @@
+{
+  "ordre": 240,
+  "cat": "iphone",
+  "series": "iPhone 13",
+  "brand": "Apple",
+  "name": "iPhone 13",
+  "price": 240000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#276787",
+      "img": "img/p/apple/ip13-bleu.jpg"
+    },
+    {
+      "name": "Rose",
+      "hex": "#f9d9d5",
+      "img": "img/p/apple/ip13-rose.jpg"
+    },
+    {
+      "name": "(PRODUCT)RED",
+      "hex": "#ba0c2e",
+      "img": "img/p/apple/ip13-product-red.jpg"
+    },
+    {
+      "name": "Lumière stellaire",
+      "hex": "#f2ece4",
+      "img": "img/p/apple/ip13-lumiere-stellaire.jpg"
+    },
+    {
+      "name": "Minuit",
+      "hex": "#232a31",
+      "img": "img/p/apple/ip13-minuit.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Puce A15, double caméra, très bonne autonomie.",
+  "dispo": true
+}

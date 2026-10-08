@@ -1,0 +1,33 @@
+{
+  "ordre": 1290,
+  "cat": "ordinateur",
+  "series": "MacBook",
+  "brand": "Apple",
+  "name": "MacBook Air 15\"",
+  "price": 890000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Minuit",
+      "hex": "#2e3640",
+      "img": "img/p/apple/mba15-minuit.jpg"
+    },
+    {
+      "name": "Bleu ciel",
+      "hex": "#c5d3e0",
+      "img": "img/p/apple/mba15-bleu-ciel.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#d9dadc",
+      "img": "img/p/apple/mba15-argent.jpg"
+    },
+    {
+      "name": "Lumière stellaire",
+      "hex": "#e8e1d4",
+      "img": "img/p/apple/mba15-lumiere-stellaire.jpg"
+    }
+  ],
+  "desc": "Grand écran Liquid Retina dans un châssis léger.",
+  "dispo": true
+}

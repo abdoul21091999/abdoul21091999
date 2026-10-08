@@ -1,0 +1,28 @@
+{
+  "ordre": 1190,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova 11",
+  "price": 170000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Vert",
+      "hex": "#5f8f74",
+      "img": "img/p/huawei/hwn11-vert.jpg"
+    },
+    {
+      "name": "Or",
+      "hex": "#d9c39b",
+      "img": "img/p/huawei/hwn11-or.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwn11-noir.jpg"
+    }
+  ],
+  "desc": "Écran 120 Hz, charge 66 W.",
+  "dispo": true
+}

@@ -1,0 +1,23 @@
+{
+  "ordre": 1200,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova Y73",
+  "price": 130000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#5a7fb8",
+      "img": "img/p/huawei/hwny73-bleu.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwny73-noir.jpg"
+    }
+  ],
+  "desc": "Grand écran, très grosse batterie.",
+  "dispo": true
+}

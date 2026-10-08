@@ -1,0 +1,32 @@
+{
+  "ordre": 60,
+  "cat": "iphone",
+  "series": "iPhone 17",
+  "brand": "Apple",
+  "name": "iPhone 17 Pro",
+  "price": 850000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Argent",
+      "hex": "#dcdcdc",
+      "img": "img/p/apple/ip17p-argent.jpg"
+    },
+    {
+      "name": "Orange cosmique",
+      "hex": "#e2783c",
+      "img": "img/p/apple/ip17p-orange-cosmique.jpg"
+    },
+    {
+      "name": "Bleu intense",
+      "hex": "#33415f",
+      "img": "img/p/apple/ip17p-bleu-intense.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go"
+  ],
+  "desc": "Écran ProMotion 120 Hz, téléobjectif 48 Mpx.",
+  "dispo": true
+}

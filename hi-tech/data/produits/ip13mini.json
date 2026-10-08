@@ -1,0 +1,42 @@
+{
+  "ordre": 250,
+  "cat": "iphone",
+  "series": "iPhone 13",
+  "brand": "Apple",
+  "name": "iPhone 13 mini",
+  "price": 210000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#276787",
+      "img": "img/p/apple/ip13mini-bleu.jpg"
+    },
+    {
+      "name": "Rose",
+      "hex": "#f9d9d5",
+      "img": "img/p/apple/ip13mini-rose.jpg"
+    },
+    {
+      "name": "(PRODUCT)RED",
+      "hex": "#ba0c2e",
+      "img": "img/p/apple/ip13mini-product-red.jpg"
+    },
+    {
+      "name": "Lumière stellaire",
+      "hex": "#f2ece4",
+      "img": "img/p/apple/ip13mini-lumiere-stellaire.jpg"
+    },
+    {
+      "name": "Minuit",
+      "hex": "#232a31",
+      "img": "img/p/apple/ip13mini-minuit.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Tout l'iPhone 13 dans un format compact.",
+  "dispo": true
+}

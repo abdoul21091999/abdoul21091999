@@ -1,0 +1,23 @@
+{
+  "ordre": 1240,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei nova Y62",
+  "price": 80000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Bleu",
+      "hex": "#5a7fb8",
+      "img": "img/p/huawei/hwny62-bleu.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwny62-noir.jpg"
+    }
+  ],
+  "desc": "Grand écran, batterie 5000 mAh.",
+  "dispo": true
+}

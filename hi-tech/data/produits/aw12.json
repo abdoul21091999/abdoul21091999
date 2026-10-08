@@ -1,0 +1,34 @@
+{
+  "ordre": 1400,
+  "cat": "montre",
+  "series": "Apple Watch",
+  "brand": "Apple",
+  "name": "Apple Watch Series 12",
+  "price": 360000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Noir de jais",
+      "hex": "#1f1f21",
+      "img": "img/p/apple/aw12-noir-de-jais.jpg"
+    },
+    {
+      "name": "Gris sidéral",
+      "hex": "#5b5d61",
+      "img": "img/p/apple/aw12-gris-sideral.jpg"
+    },
+    {
+      "name": "Or clair",
+      "hex": "#e9d9bd",
+      "img": "img/p/apple/aw12-or-clair.jpg"
+    },
+    {
+      "name": "Bronze foncé",
+      "hex": "#6b5547",
+      "img": "img/p/apple/aw12-bronze-fonce.jpg"
+    }
+  ],
+  "desc": "Suivi santé avancé, écran toujours activé.",
+  "featured": true,
+  "dispo": true
+}

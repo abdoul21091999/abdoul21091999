@@ -1,0 +1,37 @@
+{
+  "ordre": 460,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S24+",
+  "price": 400000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Prune cobalt",
+      "hex": "#52566d",
+      "img": "img/p/samsung/s24p-prune-cobalt.jpg"
+    },
+    {
+      "name": "Noir onyx",
+      "hex": "#4a4a4d",
+      "img": "img/p/samsung/s24p-noir-onyx.jpg"
+    },
+    {
+      "name": "Gris marbre",
+      "hex": "#c5c3c3",
+      "img": "img/p/samsung/s24p-gris-marbre.jpg"
+    },
+    {
+      "name": "Jaune ambre",
+      "hex": "#f1ead4",
+      "img": "img/p/samsung/s24p-jaune-ambre.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go"
+  ],
+  "desc": "Grand écran QHD+ 6,7 pouces, Galaxy AI.",
+  "dispo": true
+}

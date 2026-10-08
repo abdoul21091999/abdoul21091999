@@ -1,0 +1,12 @@
+{
+  "ordre": 1320,
+  "cat": "ordinateur",
+  "series": "PC Windows",
+  "brand": "Dell",
+  "name": "Dell 14",
+  "price": 420000,
+  "badge": "Neuf",
+  "img": "img/p/autres/dell14-photo.jpg",
+  "desc": "Ordinateur 14\" léger et polyvalent.",
+  "dispo": true
+}

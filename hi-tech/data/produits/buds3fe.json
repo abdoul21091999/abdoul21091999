@@ -1,0 +1,23 @@
+{
+  "ordre": 1520,
+  "cat": "audio",
+  "series": "Écouteurs",
+  "brand": "Samsung",
+  "name": "Galaxy Buds3 FE",
+  "price": 70000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#4c525c",
+      "img": "img/p/samsung/buds3fe-noir.jpg"
+    },
+    {
+      "name": "Gris",
+      "hex": "#c8ccca",
+      "img": "img/p/samsung/buds3fe-gris.jpg"
+    }
+  ],
+  "desc": "Réduction de bruit à petit prix.",
+  "dispo": true
+}

@@ -1,0 +1,38 @@
+{
+  "ordre": 20,
+  "cat": "iphone",
+  "series": "iPhone 18",
+  "brand": "Apple",
+  "name": "iPhone 18 Pro",
+  "price": 1100000,
+  "badge": "Nouveau",
+  "colors": [
+    {
+      "name": "Argent",
+      "hex": "#f7f7f7",
+      "img": "img/p/apple/ip18p-argent.jpg"
+    },
+    {
+      "name": "Bordeaux",
+      "hex": "#4d1821",
+      "img": "img/p/apple/ip18p-bordeaux.jpg"
+    },
+    {
+      "name": "Glacier",
+      "hex": "#e8f2ff",
+      "img": "img/p/apple/ip18p-glacier.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#3c3c3c",
+      "img": "img/p/apple/ip18p-noir.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "Puissance pro, triple caméra 48 Mpx, design en aluminium.",
+  "dispo": true
+}

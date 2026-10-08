@@ -1,0 +1,32 @@
+{
+  "ordre": 690,
+  "cat": "android",
+  "series": "Galaxy A",
+  "brand": "Samsung",
+  "name": "Galaxy A27 5G",
+  "price": 165000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Vert clair",
+      "hex": "#c5e9ea",
+      "img": "img/p/samsung/a27-vert-clair.jpg"
+    },
+    {
+      "name": "Bleu",
+      "hex": "#395081",
+      "img": "img/p/samsung/a27-bleu.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#3e4043",
+      "img": "img/p/samsung/a27-noir.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "La 5G accessible avec un grand écran fluide.",
+  "dispo": true
+}

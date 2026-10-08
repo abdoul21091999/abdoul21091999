@@ -1,0 +1,23 @@
+{
+  "ordre": 1090,
+  "cat": "android",
+  "series": "Huawei",
+  "brand": "Huawei",
+  "name": "Huawei Pura 80 Ultra",
+  "price": 1100000,
+  "badge": "Neuf",
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#1f1f21",
+      "img": "img/p/huawei/hwp80u-noir.jpg"
+    },
+    {
+      "name": "Or",
+      "hex": "#d9c39b",
+      "img": "img/p/huawei/hwp80u-or.jpg"
+    }
+  ],
+  "desc": "Double zoom optique, capteur 1 pouce, design premium.",
+  "dispo": true
+}

@@ -1,0 +1,37 @@
+{
+  "ordre": 190,
+  "cat": "iphone",
+  "series": "iPhone 14",
+  "brand": "Apple",
+  "name": "iPhone 14 Pro",
+  "price": 400000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Violet intense",
+      "hex": "#594f63",
+      "img": "img/p/apple/ip14p-violet-intense.jpg"
+    },
+    {
+      "name": "Or",
+      "hex": "#f5dcc4",
+      "img": "img/p/apple/ip14p-or.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#e3e4e5",
+      "img": "img/p/apple/ip14p-argent.jpg"
+    },
+    {
+      "name": "Noir sidéral",
+      "hex": "#403e3d",
+      "img": "img/p/apple/ip14p-noir-sideral.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Dynamic Island, caméra 48 Mpx.",
+  "dispo": true
+}

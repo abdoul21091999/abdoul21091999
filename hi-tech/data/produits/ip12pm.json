@@ -1,0 +1,37 @@
+{
+  "ordre": 260,
+  "cat": "iphone",
+  "series": "iPhone 12",
+  "brand": "Apple",
+  "name": "iPhone 12 Pro Max",
+  "price": 270000,
+  "badge": "Reconditionné",
+  "colors": [
+    {
+      "name": "Bleu Pacifique",
+      "hex": "#2d4e5c",
+      "img": "img/p/apple/ip12pm-bleu-pacifique.jpg"
+    },
+    {
+      "name": "Or",
+      "hex": "#f5dcc4",
+      "img": "img/p/apple/ip12pm-or.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#e3e4e5",
+      "img": "img/p/apple/ip12pm-argent.jpg"
+    },
+    {
+      "name": "Graphite",
+      "hex": "#52514f",
+      "img": "img/p/apple/ip12pm-graphite.jpg"
+    }
+  ],
+  "options": [
+    "128 Go",
+    "256 Go"
+  ],
+  "desc": "Grand écran 6,7 pouces, triple caméra, 5G.",
+  "dispo": true
+}

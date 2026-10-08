@@ -1,0 +1,39 @@
+{
+  "ordre": 430,
+  "cat": "android",
+  "series": "Galaxy S",
+  "brand": "Samsung",
+  "name": "Galaxy S25 Ultra",
+  "price": 760000,
+  "oldPrice": 820000,
+  "badge": "Promo",
+  "colors": [
+    {
+      "name": "Bleu argenté titane",
+      "hex": "#8e9fbc",
+      "img": "img/p/samsung/s25u-bleu-argente-titane.jpg"
+    },
+    {
+      "name": "Noir titane",
+      "hex": "#4a4a4d",
+      "img": "img/p/samsung/s25u-noir-titane.jpg"
+    },
+    {
+      "name": "Gris titane",
+      "hex": "#b3ab9e",
+      "img": "img/p/samsung/s25u-gris-titane.jpg"
+    },
+    {
+      "name": "Blanc argenté titane",
+      "hex": "#d9d9d6",
+      "img": "img/p/samsung/s25u-blanc-argente-titane.jpg"
+    }
+  ],
+  "options": [
+    "256 Go",
+    "512 Go",
+    "1 To"
+  ],
+  "desc": "Titane, S Pen, appareil photo 200 Mpx.",
+  "dispo": true
+}
