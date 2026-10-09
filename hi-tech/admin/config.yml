@@ -20,6 +20,21 @@ media_folder: hi-tech/img/uploads        # où sont rangées les photos envoyée
 public_folder: img/uploads
 
 collections:
+  - name: reglages
+    label: Réglages du site
+    editor: { preview: false }
+    files:
+      - name: general
+        label: Affichage des prix
+        file: hi-tech/data/reglages.json
+        format: json
+        fields:
+          - label: "Afficher les prix"
+            name: afficherPrix
+            widget: boolean
+            default: false
+            hint: "Désactivé : tous les produits affichent « Prix sur demande » (les clients demandent le prix sur WhatsApp). Activez-le quand les prix de tous les produits sont à jour."
+
   - name: produits
     label: Produits
     label_singular: Produit

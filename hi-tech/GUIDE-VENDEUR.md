@@ -9,6 +9,16 @@ se met à jour tout seul en **1 à 2 minutes**.
 
 ---
 
+## 0. Afficher ou masquer les prix sur tout le site
+
+**Réglages du site** → **Affichage des prix** → **Afficher les prix**.
+- **Désactivé** (réglage actuel) : chaque produit affiche « Prix sur demande » et le client
+  demande le prix sur WhatsApp. Aucun prix n'apparaît, ni dans le panier ni dans les messages.
+- **Activé** : les prix saisis dans chaque produit s'affichent.
+- ⚠️ Les prix actuels du catalogue sont **indicatifs** : vérifiez-les tous avant d'activer.
+
+Touchez **Publier** → **Publier maintenant** ; le site change en 1 à 2 minutes.
+
 ## 1. Changer un prix
 
 1. Ouvrez **Produits**, puis touchez le produit (utilisez **Filtrer par** → iPhone, Android…

@@ -34,6 +34,7 @@ const CATEGORIES = [
    assemblée dans data/produits.json par outils/construire-catalogue.mjs.
    --------------------------------------------------------- */
 var PRODUCTS = [];
+var SHOW_PRICES = true;   // réglage « Afficher les prix » (data/reglages.json, modifiable depuis /admin)
 function catalogueUrl() {
   // Prévisualisation via htmlpreview.github.io : lire le fichier directement sur GitHub
   const m = location.href.match(/htmlpreview\.github\.io\/\?(https:\/\/[^?#]+\/)/);

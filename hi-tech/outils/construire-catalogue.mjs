@@ -27,5 +27,8 @@ for (const f of readdirSync(dir).filter((f) => f.endsWith(".json"))) {
   produits.push(clean(p));
 }
 produits.sort((a, b) => num(a.ordre || 9999) - num(b.ordre || 9999) || a.name.localeCompare(b.name));
-writeFileSync(join(root, "data", "produits.json"), JSON.stringify({ produits }) + "\n");
-console.log(`Catalogue : ${produits.length} produits → data/produits.json`);
+// Réglages généraux (ex. « Afficher les prix »), modifiables depuis /admin
+let reglages = {};
+try { reglages = JSON.parse(readFileSync(join(root, "data", "reglages.json"), "utf8")); } catch (e) {}
+writeFileSync(join(root, "data", "produits.json"), JSON.stringify({ reglages, produits }) + "\n");
+console.log(`Catalogue : ${produits.length} produits → data/produits.json (prix ${reglages.afficherPrix === false ? "masqués" : "affichés"})`);

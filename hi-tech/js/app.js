@@ -26,6 +26,9 @@ function startApp() {
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const fcfa = (n) => n ? n.toLocaleString("fr-FR").replace(/ | /g, " ") + " FCFA" : "Prix sur demande";
+  // Prix affiché : respecte le réglage « Afficher les prix » de /admin
+  const prix = (n) => (SHOW_PRICES ? fcfa(n) : "Prix sur demande");
+  const prixMsg = (n) => (SHOW_PRICES && n ? " — " + fcfa(n) : "");
   const catOf = (id) => CATEGORIES.find((c) => c.id === id) || { label: "", icon: "plug" };
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const waLink = (text) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
@@ -82,7 +85,7 @@ function startApp() {
           <div class="cart-line__info">
             <strong>${esc(p.name)}</strong>
             ${l.option ? `<span class="muted">${esc(l.option)}</span>` : ""}
-            <span class="cart-line__price">${fcfa(p.price)}</span>
+            <span class="cart-line__price">${prix(p.price)}</span>
             <div class="qty">
               <button type="button" data-qty="-1" aria-label="Diminuer">−</button>
               <span>${l.qty}</span>
@@ -95,7 +98,7 @@ function startApp() {
     }
     const total = cart.reduce((s, l) => { const p = PRODUCTS.find((x) => x.id === l.id); return s + (p ? p.price * l.qty : 0); }, 0);
     const hasQuote = cart.some((l) => { const p = PRODUCTS.find((x) => x.id === l.id); return p && !p.price; });
-    $("#cartTotal").textContent = fcfa(total) + (hasQuote ? " + devis" : "");
+    $("#cartTotal").textContent = SHOW_PRICES ? fcfa(total) + (hasQuote ? " + devis" : "") : "Sur devis";
     $("#cartCheckout").classList.toggle("is-disabled", !cart.length);
   }
 
@@ -106,9 +109,9 @@ function startApp() {
       const p = PRODUCTS.find((x) => x.id === l.id);
       if (!p) return;
       total += p.price * l.qty;
-      lines.push(`• ${l.qty} × ${p.name}${l.option ? " (" + l.option + ")" : ""} — ${fcfa(p.price)}`);
+      lines.push(`• ${l.qty} × ${p.name}${l.option ? " (" + l.option + ")" : ""} ${prixMsg(p.price)}`);
     });
-    lines.push("", `Total estimé : ${fcfa(total)}`);
+    if (SHOW_PRICES) lines.push("", `Total estimé : ${fcfa(total)}`);
     const name = ($("#cartName") || {}).value, mode = ($("#cartMode") || {}).value;
     if (name) lines.push(`Nom : ${name}`);
     if (mode) lines.push(`Retrait / livraison : ${mode}`);
@@ -137,7 +140,7 @@ function startApp() {
   }
   function waFor(p, box) {
     const c = choiceLabel(p, box);
-    return waLink(`Bonjour Hi-Tech, je souhaite commander : ${p.name}${c ? " (" + c + ")" : ""} — ${fcfa(p.price)}. Est-il disponible ?`);
+    return waLink(`Bonjour Hi-Tech, je souhaite commander : ${p.name}${c ? " (" + c + ")" : ""}${prixMsg(p.price)}. Est-il disponible ?`);
   }
 
   function choices(p) {
@@ -164,13 +167,13 @@ function startApp() {
         <h3 class="product__name"><button type="button" data-open="${p.id}">${esc(p.name)}</button></h3>
         ${choices(p)}
         <div class="product__price">
-          ${p.options && p.options.length > 1 && p.price ? `<span class="product__from">À partir de</span>` : ""}
-          <strong>${fcfa(p.price)}</strong>
-          ${p.oldPrice ? `<s>${fcfa(p.oldPrice)}</s>` : ""}
+          ${SHOW_PRICES && p.options && p.options.length > 1 && p.price ? `<span class="product__from">À partir de</span>` : ""}
+          <strong>${prix(p.price)}</strong>
+          ${SHOW_PRICES && p.oldPrice ? `<s>${fcfa(p.oldPrice)}</s>` : ""}
         </div>
         <div class="product__actions">
           ${p.dispo === false ? `<button type="button" class="btn btn--black" disabled>Épuisé</button>` : `<button type="button" class="btn btn--black" data-add="${p.id}">Commander</button>`}
-          <a class="btn btn--line" data-wa-product href="${waLink(`Bonjour Hi-Tech, je suis intéressé(e) par : ${p.name} (${fcfa(p.price)}). Est-il disponible ?`)}" target="_blank" rel="noopener">${icon("whatsapp")} WhatsApp</a>
+          <a class="btn btn--line" data-wa-product href="${waLink(`Bonjour Hi-Tech, je suis intéressé(e) par : ${p.name}${prixMsg(p.price)}. Est-il disponible ?`)}" target="_blank" rel="noopener">${icon("whatsapp")} WhatsApp</a>
         </div>
       </div>
     </article>`;
@@ -188,7 +191,7 @@ function startApp() {
         <div class="pm__info">
           <span class="product__cat">${esc(p.brand)} · ${esc(catOf(p.cat).label)}</span>
           <h2 id="pmTitle">${esc(p.name)}</h2>
-          <div class="product__price product__price--lg"><strong>${fcfa(p.price)}</strong>${p.oldPrice ? `<s>${fcfa(p.oldPrice)}</s>` : ""}</div>
+          <div class="product__price product__price--lg"><strong>${prix(p.price)}</strong>${SHOW_PRICES && p.oldPrice ? `<s>${fcfa(p.oldPrice)}</s>` : ""}</div>
           <p>${esc(p.desc || "")}</p>
           ${choices(p)}
           <ul class="pm__perks">
@@ -387,6 +390,7 @@ function startApp() {
 
   /* ---------- Page boutique ---------- */
   if (document.body.dataset.page === "shop") {
+    if (!SHOW_PRICES) $$('#shopSort option[value="asc"], #shopSort option[value="desc"]').forEach((op) => op.remove());
     const grid = $("#shopGrid"), search = $("#shopSearch"), sort = $("#shopSort"),
       chips = $("#catChips"), brandSel = $("#brandFilter"), condSel = $("#condFilter"), count = $("#shopCount");
     const params = qparams();
@@ -453,7 +457,7 @@ function startApp() {
     const calc = () => {
       const b = BASE[model.value] * COND[cond.value];
       const round = (n) => Math.round(n / 5000) * 5000;
-      out.innerHTML = b ? `Estimation : <strong>${fcfa(round(b * 0.85))} – ${fcfa(round(b))}</strong>` : `<strong>Estimation sur place</strong> — envoyez-nous des photos.`;
+      out.innerHTML = b && SHOW_PRICES ? `Estimation : <strong>${fcfa(round(b * 0.85))} – ${fcfa(round(b))}</strong>` : `<strong>Estimation sur place</strong> — envoyez-nous des photos.`;
       $("#tradeWa").href = waLink(`Bonjour Hi-Tech, je souhaite faire un échange.\nMon appareil : ${model.value}\nÉtat : ${cond.value}\nEstimation affichée sur le site : ${out.textContent.replace("Estimation : ", "")}\nQuel appareil puis-je avoir en échange ?`);
     };
     tradeForm.addEventListener("input", calc); calc();
@@ -508,6 +512,6 @@ function startApp() {
 // Charge le catalogue (data/produits.json) puis démarre le site
 fetch(catalogueUrl(), { cache: "no-cache" })
   .then((r) => r.json())
-  .then((d) => { PRODUCTS = d.produits || []; })
+  .then((d) => { PRODUCTS = d.produits || []; SHOW_PRICES = !(d.reglages && d.reglages.afficherPrix === false); })
   .catch(() => console.warn("Catalogue introuvable"))
   .finally(startApp);
