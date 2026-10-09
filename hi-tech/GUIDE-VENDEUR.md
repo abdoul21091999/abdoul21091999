@@ -2,7 +2,7 @@
 
 Tout se fait depuis le téléphone ou l'ordinateur, sans toucher au code, sur la page :
 
-**https://general-hitech.netlify.app/admin** (ou `https://votre-domaine/admin`)
+**https://generalhitech.com/admin**
 
 Connectez-vous avec **« Se connecter avec GitHub »**. Après chaque enregistrement, le site
 se met à jour tout seul en **1 à 2 minutes**.
@@ -79,7 +79,7 @@ Ouvrez le produit → menu à côté de **Publier** → **Supprimer l'entrée pu
    par `netlify.toml`).
 2. **Créer une application OAuth GitHub** : GitHub → *Settings* → *Developer settings* →
    *OAuth Apps* → *New OAuth App*
-   - Homepage URL : `https://general-hitech.netlify.app`
+   - Homepage URL : `https://generalhitech.com`
    - Authorization callback URL : `https://api.netlify.com/auth/done`
    - Copiez le **Client ID** et générez un **Client secret**.
 3. **Netlify** → votre site → *Project configuration* → *Access & security* → *OAuth* →
