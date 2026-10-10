@@ -201,7 +201,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--glow);bo
   .navl-ct{display:block}
   .bar{background:var(--night)}
 }
-@media (max-width:520px){.bar-cta{display:none}.mark span{font-size:13px;letter-spacing:.12em}}
+.mark span{white-space:nowrap}
+@media (max-width:520px){.bar-cta{display:none}.mark span{font-size:13px;letter-spacing:.12em}.bar-in{gap:10px}.bar-r{gap:8px}.lg button{padding:4px 7px}}
+@media (max-width:370px){.mark img{width:34px;height:34px}.mark{gap:8px}.mark span{font-size:12px;letter-spacing:.08em}}
 
 /* web studio */
 .web{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}

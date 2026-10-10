@@ -2,7 +2,7 @@
 
 Site vitrine officiel d'**Amãan Tech** (أمان تك) : sécurité électronique, sites web et applications, vente d'électronique, cybersécurité et réseaux. Touba, Dakar et tout le Sénégal.
 
-- Bilingue **français / arabe** (bascule FR · ع, mise en page RTL automatique, choix mémorisé)
+- Trilingue **français / arabe / anglais** (bascule FR · ع · EN, mise en page RTL automatique pour l'arabe, choix mémorisé)
 - Une seule page, sans dépendance ni étape de build : HTML, CSS et JavaScript simples
 - Plan de protection interactif (villa, commerce, bureau), terminal d'audit animé, maquette web, catalogue
 - Formulaire qui prépare la demande et l'envoie sur WhatsApp
