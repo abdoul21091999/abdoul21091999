@@ -6,7 +6,7 @@
    Format international sans espaces, ex. phone:"+221 77 123 45 67",
    whatsapp:"221771234567", email:"contact@amaantech.sn"
    ===================================================================== */
-const CONTACT={phone:"",whatsapp:"",email:""};
+const CONTACT={phone:"+221 77 194 67 73",whatsapp:"221771946773",email:"abdoulkhadir32@gmail.com"};
 
 const AR={bar_cta:"تواصل معنا",def:"اسم عربي: الطمأنينة، الثقة، الحماية.",h1:"نحمي. نبني. <span class=\"hl\">نجهّز.</span>",
 lede:"تجمع أمان تك بين الأمن الإلكتروني، وتطوير المواقع والتطبيقات، وبيع الأجهزة الإلكترونية. شريك تقني واحد للعائلات والشركات، من طوبى إلى داكار.",
@@ -139,7 +139,7 @@ build();frame();addEventListener("resize",()=>{build();if(reduce)frame()});
 
 /* ---- i18n ---- */
 function renderContact(){[["v-phone",CONTACT.phone],["v-email",CONTACT.email]].forEach(([id,v])=>{const el=document.getElementById(id);el.innerHTML="";
- if(!v){el.textContent=t("pend");el.classList.add("pend");return}el.classList.remove("pend");const s=document.createElement("span");s.dir="ltr";s.textContent=v;el.append(s);
+ if(!v){el.textContent=t("pend");el.classList.add("pend");return}el.classList.remove("pend");const s=document.createElement("a");s.dir="ltr";s.textContent=v;s.href=id==="v-email"?"mailto:"+v:"tel:"+v.replace(/\s/g,"");s.style.textDecoration="none";el.append(s);
  const b=document.createElement("button");b.type="button";b.className="cp";b.textContent=t("copy");b.onclick=()=>{try{navigator.clipboard.writeText(v).then(()=>b.textContent=t("copied"),()=>{})}catch(e){}};el.append(b)})}
 function applyLang(l){lang=l;const d=DICT[l];TERM=l==="en"?TERM_EN:TERM_FR;if(!termStarted)termAll();document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";
  document.querySelectorAll("[data-i18n]").forEach(e=>{const v=d[e.dataset.i18n];if(v!=null)e.textContent=v});

@@ -27,7 +27,7 @@ amaantech/
    ```js
    const CONTACT={phone:"+221 77 123 45 67",whatsapp:"221771234567",email:"contact@amaantech.sn"};
    ```
-   Tant que ces champs sont vides, la section Contact affiche « À compléter » et le bouton WhatsApp flottant reste caché.
+   Déjà renseignées : +221 77 194 67 73 (téléphone et WhatsApp) et abdoulkhadir32@gmail.com. Si vous les modifiez, mettez aussi à jour `telephone` et `email` dans le bloc JSON-LD de `index.html`.
 2. **Nom de domaine** — une fois le domaine choisi (ex. `amaantech.sn`), ajoutez dans `index.html` une balise
    `<link rel="canonical" href="https://amaantech.sn/">`, passez les URL `og:image` / `twitter:image` en absolu
    et indiquez ce domaine dans Google Search Console.
