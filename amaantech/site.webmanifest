@@ -1,0 +1,14 @@
+{
+  "name": "Amãan Tech",
+  "short_name": "Amãan Tech",
+  "description": "Sécurité électronique, sites web & applications, électronique et cybersécurité au Sénégal.",
+  "lang": "fr",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#050b14",
+  "theme_color": "#050b14",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/logo.webp", "sizes": "360x360", "type": "image/webp" }
+  ]
+}
