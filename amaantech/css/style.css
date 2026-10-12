@@ -6,6 +6,7 @@
   --f-display:"Oxanium","Segoe UI",system-ui,sans-serif;
   --f-body:"Readex Pro","Segoe UI",system-ui,sans-serif;
   --f-kufi:"Reem Kufi","Readex Pro",sans-serif;
+  --f-ar:"Cairo","Segoe UI","Tahoma",sans-serif;
   --f-mono:"DM Mono",ui-monospace,Menlo,monospace;
 }
 *{box-sizing:border-box}
@@ -15,7 +16,10 @@ body{background:var(--night);color:var(--ink);font-family:var(--f-body);font-wei
 a{color:inherit}
 :focus-visible{outline:2px solid var(--glow);outline-offset:3px;border-radius:4px}
 h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.05;font-weight:700}
-html[dir="rtl"] h1,html[dir="rtl"] h2,html[dir="rtl"] h3{font-family:var(--f-kufi);line-height:1.3}
+/* Arabic: Cairo for readability; Reem Kufi kept only for the decorative أمان */
+html[dir="rtl"]{--f-body:var(--f-ar)}
+html[dir="rtl"] body{font-weight:400;line-height:1.8}
+html[dir="rtl"] h1,html[dir="rtl"] h2,html[dir="rtl"] h3{font-family:var(--f-ar);font-weight:800;line-height:1.35}
 p{margin:0}
 .mono{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
 
@@ -153,7 +157,7 @@ html[dir="rtl"] .proto::before{background:linear-gradient(-90deg,var(--glow),var
 .contact{display:grid;grid-template-columns:1fr 1fr;gap:48px}
 .contact>*{min-width:0}
 .big-line{font-family:var(--f-display);font-size:clamp(26px,3.4vw,40px);font-weight:700;line-height:1.15}
-html[dir="rtl"] .big-line{font-family:var(--f-kufi)}
+html[dir="rtl"] .big-line{font-family:var(--f-ar);font-weight:800}
 .lines{margin-top:30px;display:grid;gap:0;border-top:1px solid var(--rim)}
 .lines div{display:grid;grid-template-columns:140px 1fr;gap:14px;padding-block:14px;border-bottom:1px solid var(--rim);align-items:center}
 .lines .mono{color:var(--steel)}
