@@ -13,7 +13,7 @@
    Les prix ci-dessous sont INDICATIFS : à mettre à jour par la boutique.
    ========================================================= */
 
-const WHATSAPP_NUMBER = "221775318192"; // 77 531 81 92
+const WHATSAPP_NUMBER = "221773257878"; // 77 325 78 78 (numéro commercial WhatsApp)
 const PHONE_1 = "+221 77 531 81 92";
 const PHONE_2 = "+221 76 531 81 92";
 
