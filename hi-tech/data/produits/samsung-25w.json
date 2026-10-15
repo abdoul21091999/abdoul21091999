@@ -1,0 +1,22 @@
+{
+  "ordre": 1572,
+  "cat": "accessoires",
+  "brand": "Samsung",
+  "name": "Chargeur Samsung 25 W (USB-C)",
+  "price": 10000,
+  "badge": "Original",
+  "colors": [
+    {
+      "name": "Blanc",
+      "hex": "#f2f2f2",
+      "img": "img/p/autres/samsung-25w-blanc.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#1c1c1c",
+      "img": "img/p/autres/samsung-25w-noir.jpg"
+    }
+  ],
+  "desc": "Super Fast Charging pour Galaxy. Prise européenne.",
+  "dispo": true
+}
