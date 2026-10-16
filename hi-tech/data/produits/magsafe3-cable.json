@@ -5,7 +5,18 @@
   "name": "Câble USB-C vers MagSafe 3 (2 m)",
   "price": 30000,
   "badge": "Original",
-  "img": "img/p/autres/magsafe3-cable.jpg",
   "desc": "Câble de charge tissé pour MacBook Air et MacBook Pro avec port MagSafe 3.",
-  "dispo": true
+  "dispo": true,
+  "colors": [
+    {
+      "name": "Gris sidéral",
+      "hex": "#4b4c50",
+      "img": "img/p/autres/magsafe3-gris-off.jpg"
+    },
+    {
+      "name": "Argent",
+      "hex": "#e3e4e5",
+      "img": "img/p/autres/magsafe3-argent-off.jpg"
+    }
+  ]
 }
