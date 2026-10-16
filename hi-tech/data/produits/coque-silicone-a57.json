@@ -1,0 +1,33 @@
+{
+  "ordre": 1780,
+  "name": "Coque en silicone — Galaxy A57 5G",
+  "price": 15000,
+  "colors": [
+    {
+      "name": "Gris",
+      "hex": "#808080",
+      "img": "img/p/coques/ef-pa576cj.jpg"
+    },
+    {
+      "name": "Bleu",
+      "hex": "#354957",
+      "img": "img/p/coques/ef-pa576cn.jpg"
+    },
+    {
+      "name": "Lavande",
+      "hex": "#b4b5df",
+      "img": "img/p/coques/ef-pa576cv.jpg"
+    },
+    {
+      "name": "Bleu clair",
+      "hex": "#d9e6f4",
+      "img": "img/p/coques/ef-pa576cl.jpg"
+    }
+  ],
+  "desc": "Silicone doux au toucher, protège des chocs du quotidien.",
+  "cat": "coques",
+  "series": "Coques Galaxy",
+  "brand": "Samsung",
+  "badge": "Original",
+  "dispo": true
+}

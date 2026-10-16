@@ -1,0 +1,23 @@
+{
+  "ordre": 1785,
+  "name": "Coque avec porte-carte — Galaxy A57 5G",
+  "price": 15000,
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#000000",
+      "img": "img/p/coques/ef-oa576tb.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#d3d3d3",
+      "img": "img/p/coques/ef-oa576tj.jpg"
+    }
+  ],
+  "desc": "Rangement pour une carte au dos de la coque.",
+  "cat": "coques",
+  "series": "Coques Galaxy",
+  "brand": "Samsung",
+  "badge": "Original",
+  "dispo": true
+}

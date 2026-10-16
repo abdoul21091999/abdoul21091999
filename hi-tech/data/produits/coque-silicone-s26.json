@@ -1,0 +1,43 @@
+{
+  "ordre": 1770,
+  "name": "Coque en silicone magnétique — Galaxy S26",
+  "price": 22000,
+  "colors": [
+    {
+      "name": "Violet",
+      "hex": "#666e91",
+      "img": "img/p/coques/ef-es942cv.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#494d53",
+      "img": "img/p/coques/ef-es942cb.jpg"
+    },
+    {
+      "name": "Gris",
+      "hex": "#96989b",
+      "img": "img/p/coques/ef-es942cj.jpg"
+    },
+    {
+      "name": "Bleu Clair",
+      "hex": "#b3cbd9",
+      "img": "img/p/coques/ef-es942cl.jpg"
+    },
+    {
+      "name": "Blanc",
+      "hex": "#e9e9e7",
+      "img": "img/p/coques/ef-es942cw.jpg"
+    },
+    {
+      "name": "Corail",
+      "hex": "#f57a6e",
+      "img": "img/p/coques/ef-es942co.jpg"
+    }
+  ],
+  "desc": "Silicone doux au toucher avec aimants intégrés pour les chargeurs et accessoires Qi2.",
+  "cat": "coques",
+  "series": "Coques Galaxy",
+  "brand": "Samsung",
+  "badge": "Original",
+  "dispo": true
+}

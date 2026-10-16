@@ -1,0 +1,33 @@
+{
+  "ordre": 1755,
+  "name": "Coque ultra-fine magnétique — Galaxy S26 Ultra",
+  "price": 20000,
+  "colors": [
+    {
+      "name": "Violet clair",
+      "hex": "#bdc4d6",
+      "img": "img/p/coques/ef-ss948cv.jpg"
+    },
+    {
+      "name": "Noir",
+      "hex": "#494d53",
+      "img": "img/p/coques/ef-ss948cb.jpg"
+    },
+    {
+      "name": "Gris",
+      "hex": "#a4a09d",
+      "img": "img/p/coques/ef-ss948cj.jpg"
+    },
+    {
+      "name": "Bleu Clair",
+      "hex": "#c9d6dd",
+      "img": "img/p/coques/ef-ss948cl.jpg"
+    }
+  ],
+  "desc": "Protection fine et légère, aimants intégrés.",
+  "cat": "coques",
+  "series": "Coques Galaxy",
+  "brand": "Samsung",
+  "badge": "Original",
+  "dispo": true
+}
