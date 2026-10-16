@@ -1,0 +1,53 @@
+{
+  "ordre": 1720,
+  "series": "Coques iPhone",
+  "brand": "Apple",
+  "name": "Coque en silicone MagSafe — iPhone 17",
+  "price": 30000,
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#505052",
+      "img": "img/p/coques/mgf14.jpg"
+    },
+    {
+      "name": "Bleu maritime",
+      "hex": "#5e6b75",
+      "img": "img/p/coques/mgew4.jpg"
+    },
+    {
+      "name": "Vert ardoise",
+      "hex": "#8b9973",
+      "img": "img/p/coques/mgex4.jpg"
+    },
+    {
+      "name": "Brume violette",
+      "hex": "#655d78",
+      "img": "img/p/coques/mgf04.jpg"
+    },
+    {
+      "name": "Lavande électrique",
+      "hex": "#e193c7",
+      "img": "img/p/coques/mhvt4.jpg"
+    },
+    {
+      "name": "Rose goyave",
+      "hex": "#fe747a",
+      "img": "img/p/coques/mhvq4.jpg"
+    },
+    {
+      "name": "Jaune fluo",
+      "hex": "#eff699",
+      "img": "img/p/coques/mgev4.jpg"
+    },
+    {
+      "name": "Vanille",
+      "hex": "#fff1de",
+      "img": "img/p/coques/mhvm4.jpg"
+    }
+  ],
+  "desc": "Silicone doux au toucher, intérieur en microfibre, aimants MagSafe intégrés.",
+  "cat": "coques",
+  "badge": "Original",
+  "dispo": true
+}

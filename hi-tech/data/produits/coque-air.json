@@ -1,0 +1,23 @@
+{
+  "ordre": 1730,
+  "series": "Coques iPhone",
+  "brand": "Apple",
+  "name": "Coque MagSafe — iPhone Air",
+  "price": 30000,
+  "colors": [
+    {
+      "name": "Ombre",
+      "hex": "#6f7170",
+      "img": "img/p/coques/mgh24.jpg"
+    },
+    {
+      "name": "Givre",
+      "hex": "#f7f7f7",
+      "img": "img/p/coques/mgh34.jpg"
+    }
+  ],
+  "desc": "Fine et légère pour garder l'iPhone Air ultra-fin, compatible MagSafe.",
+  "cat": "coques",
+  "badge": "Original",
+  "dispo": true
+}

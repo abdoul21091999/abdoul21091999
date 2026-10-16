@@ -56,6 +56,7 @@ collections:
       - { label: Montres, field: cat, pattern: montre }
       - { label: Audio, field: cat, pattern: audio }
       - { label: PlayStation, field: cat, pattern: gaming }
+      - { label: Coques, field: cat, pattern: coques }
       - { label: Accessoires, field: cat, pattern: accessoires }
       - { label: "Épuisés", field: dispo, pattern: "false" }
     view_groups:
@@ -73,6 +74,7 @@ collections:
           - { label: Montres, value: montre }
           - { label: Audio, value: audio }
           - { label: PlayStation, value: gaming }
+          - { label: "Coques et protections", value: coques }
           - { label: Accessoires, value: accessoires }
       - { label: "Gamme (filtre de la boutique)", name: series, widget: string, required: false, hint: "Ex. : iPhone 16, Galaxy S, Redmi, Huawei… Laisser vide si aucune." }
       - { label: "Marque", name: brand, widget: string, hint: "Ex. : Apple, Samsung, Xiaomi" }

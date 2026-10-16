@@ -1,0 +1,33 @@
+{
+  "ordre": 1735,
+  "series": "Coques iPhone",
+  "brand": "Beats",
+  "name": "Coque renforcée Beats Rugged — iPhone 17 Pro",
+  "price": 35000,
+  "colors": [
+    {
+      "name": "Noir Everest",
+      "hex": "#535353",
+      "img": "img/p/coques/mgjm4.jpg"
+    },
+    {
+      "name": "Bleu Rocheuses",
+      "hex": "#46656a",
+      "img": "img/p/coques/mgjn4.jpg"
+    },
+    {
+      "name": "Gris alpin",
+      "hex": "#aca095",
+      "img": "img/p/coques/mgjp4.jpg"
+    },
+    {
+      "name": "Orange Sierra",
+      "hex": "#ff7d40",
+      "img": "img/p/coques/mgjq4.jpg"
+    }
+  ],
+  "desc": "Protection anti-chute renforcée, compatible MagSafe et Commande de l'appareil photo.",
+  "cat": "coques",
+  "badge": "Original",
+  "dispo": true
+}

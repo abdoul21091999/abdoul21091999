@@ -1,0 +1,47 @@
+{
+  "ordre": 1700,
+  "series": "Coques iPhone",
+  "brand": "Apple",
+  "name": "Coque en silicone MagSafe — iPhone 18 Pro",
+  "price": 35000,
+  "options": [
+    "iPhone 18 Pro",
+    "iPhone 18 Pro Max"
+  ],
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#454647",
+      "img": "img/p/coques/mk8y4.jpg"
+    },
+    {
+      "name": "Bleu marine",
+      "hex": "#43484e",
+      "img": "img/p/coques/mk8x4.jpg"
+    },
+    {
+      "name": "Bleu lumineux",
+      "hex": "#d4e2ef",
+      "img": "img/p/coques/mk8w4.jpg"
+    },
+    {
+      "name": "Olive",
+      "hex": "#938563",
+      "img": "img/p/coques/mk8v4.jpg"
+    },
+    {
+      "name": "Bordeaux",
+      "hex": "#643b44",
+      "img": "img/p/coques/mk8u4.jpg"
+    },
+    {
+      "name": "Magenta",
+      "hex": "#ae4289",
+      "img": "img/p/coques/mk8t4.jpg"
+    }
+  ],
+  "desc": "Silicone doux au toucher, intérieur en microfibre, aimants MagSafe intégrés.",
+  "cat": "coques",
+  "badge": "Original",
+  "dispo": true
+}

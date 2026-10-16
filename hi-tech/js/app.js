@@ -15,6 +15,7 @@ function startApp() {
     watch:   '<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 6V2h6v4M9 18v4h6v-4M12 10v2l1.5 1.5"/>',
     audio:   '<path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/>',
     gamepad: '<path d="M6 8h12a4 4 0 0 1 4 4l-1 5a2.5 2.5 0 0 1-4.3 1.2L15 16H9l-1.7 2.2A2.5 2.5 0 0 1 3 17l-1-5a4 4 0 0 1 4-4z"/><path d="M7 11v3M5.5 12.5h3M16 12h.01M18 13.5h.01"/>',
+    case:    '<rect x="6" y="2" width="12" height="20" rx="3"/><rect x="8.5" y="4.5" width="4.5" height="5" rx="1.5"/><circle cx="10.75" cy="7" r=".6"/>',
     plug:    '<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0zM12 17v5"/>',
     cart:    '<path d="M3 3h2l2.4 12.1a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20.5" r="1.3"/><circle cx="17" cy="20.5" r="1.3"/>',
     whatsapp:'<path d="M3 21l1.6-4.8A8.5 8.5 0 1 1 8 19.6z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1.2-1.6-2.2-1.1-1 .9a5 5 0 0 1-2.2-2.2l.9-1-1.1-2.2z"/>'
@@ -363,7 +364,7 @@ function startApp() {
   const catGrid = $("#catGrid");
   if (catGrid) {
     // Visuel de chaque catégorie : rendu d'un produit phare ou photo
-    const vis = { iphone: "ip18p", android: "s26u", ordinateur: "mba13", tablette: "ipadair", montre: "aw12", audio: "apmax", gaming: "ps5", accessoires: "chg20" };
+    const vis = { iphone: "ip18p", android: "s26u", ordinateur: "mba13", tablette: "ipadair", montre: "aw12", audio: "apmax", gaming: "ps5", coques: "coque-silicone-ip18p", accessoires: "chg20" };
     catGrid.innerHTML = CATEGORIES.map((c) => {
       const n = PRODUCTS.filter((p) => p.cat === c.id).length;
       const p = PRODUCTS.find((x) => x.id === vis[c.id]);

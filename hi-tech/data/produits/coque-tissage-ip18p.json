@@ -1,0 +1,47 @@
+{
+  "ordre": 1705,
+  "series": "Coques iPhone",
+  "brand": "Apple",
+  "name": "Coque en tissage technique MagSafe — iPhone 18 Pro",
+  "price": 40000,
+  "options": [
+    "iPhone 18 Pro",
+    "iPhone 18 Pro Max"
+  ],
+  "colors": [
+    {
+      "name": "Noir",
+      "hex": "#484745",
+      "img": "img/p/coques/mkd64.jpg"
+    },
+    {
+      "name": "Bleu chambray",
+      "hex": "#6e7889",
+      "img": "img/p/coques/mkd54.jpg"
+    },
+    {
+      "name": "Taupe",
+      "hex": "#7f786f",
+      "img": "img/p/coques/mkd44.jpg"
+    },
+    {
+      "name": "Olive",
+      "hex": "#716b46",
+      "img": "img/p/coques/mkd34.jpg"
+    },
+    {
+      "name": "Mûre",
+      "hex": "#8e5165",
+      "img": "img/p/coques/mkd24.jpg"
+    },
+    {
+      "name": "Bordeaux",
+      "hex": "#715454",
+      "img": "img/p/coques/mkd14.jpg"
+    }
+  ],
+  "desc": "Tissu technique résistant à l'aspect cuir, élégant et doux, compatible MagSafe.",
+  "cat": "coques",
+  "badge": "Original",
+  "dispo": true
+}

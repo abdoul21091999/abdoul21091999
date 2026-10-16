@@ -25,6 +25,7 @@ const CATEGORIES = [
   { id: "montre",      label: "Montres",      icon: "watch"   },
   { id: "audio",       label: "Audio",        icon: "audio"   },
   { id: "gaming",      label: "PlayStation",  icon: "gamepad" },
+  { id: "coques",      label: "Coques",       icon: "case"    },
   { id: "accessoires", label: "Accessoires",  icon: "plug"    }
 ];
 
